@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <%- include('../partials/head') %>
+    <link rel="stylesheet" href="/css/admin.css" />
+</head>
+
+<body>
+
+  <!-- Mobile overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-wrapper">
+    <!-- ── Sidebar ── -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-brand">
+        <div class="logo-text">
+          <img src="/../images/MM_Logo.jpg" alt="Maths Manthra Logo" class="sidebar-logo" style="max-width: 50px; height: auto; border-radius: 6px;">
+          <span>Maths Manthra</span>
+        </div>
+        <div class="subtitle">Admin Panel</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Overview</div>
+        <a href="/admin/dashboard" class="sidebar-link <%= currentPage==='dashboard'?'active':'' %>">
+          <span class="icon"><i class="bi bi-speedometer2"></i></span> Dashboard
+        </a>
+
+        <div class="nav-section-title">Content</div>
+        <a href="/admin/courses" class="sidebar-link <%= currentPage==='courses'?'active':'' %>">
+          <span class="icon"><i class="bi bi-book"></i></span> Courses
+        </a>
+        <a href="/admin/videos" class="sidebar-link <%= currentPage==='videos'?'active':'' %>">
+          <span class="icon"><i class="bi bi-play-circle"></i></span> Videos
+        </a>
+
+        <div class="nav-section-title">Account</div>
+        <a href="/auth/logout" class="sidebar-link">
+          <span class="icon"><i class="bi bi-box-arrow-right"></i></span> Logout
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">
+            <%= currentUser.name.charAt(0).toUpperCase() %>
+          </div>
+          <div class="sidebar-user-info">
+            <div class="name">
+              <%= currentUser.name %>
+            </div>
+            <div class="role">Admin</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <div class="admin-main">
+      <!-- Topbar -->
+      <div class="admin-topbar">
+        <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Open sidebar">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <div class="page-title">
+          <%= locals.title || 'Admin' %>
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+          <span class="text-muted small d-none d-sm-block">Welcome, <%= currentUser.name.split(' ')[0] %>!</span>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <%- include('../partials/alerts') %>
+
+              <!-- Content -->
+              <div class="admin-content"><%- body %></div>
+        </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="/js/main.js"></script>
+      <script src="/js/admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,106 @@
+<!-- Admin Dashboard -->
+<div class="dashboard-grid">
+  <!-- Stats Cards -->
+  <div class="row g-4 mb-4">
+    <div class="col-sm-6 col-lg-4">
+      <div class="stat-card">
+        <div class="stat-icon bg-primary-soft"><i class="bi bi-book"></i></div>
+        <div class="stat-info">
+          <div class="stat-value"><%= totalCourses %></div>
+          <div class="stat-label">Total Courses</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <div class="stat-card">
+        <div class="stat-icon bg-accent-soft"><i class="bi bi-play-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value"><%= totalVideos %></div>
+          <div class="stat-label">Total Videos</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <div class="stat-card">
+        <div class="stat-icon bg-success-soft"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value"><%= activeCourses %></div>
+          <div class="stat-label">Active Courses</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <a href="/admin/courses/create" class="quick-action-card">
+        <i class="bi bi-plus-circle"></i>
+        <span>Create New Course</span>
+      </a>
+    </div>
+    <div class="col-md-6">
+      <a href="/admin/videos/create" class="quick-action-card">
+        <i class="bi bi-plus-circle"></i>
+        <span>Add New Video</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card-panel">
+        <h3 class="panel-title"><i class="bi bi-book"></i> Recent Courses</h3>
+        <% if (recentCourses.length === 0) { %>
+          <p class="text-muted">No courses yet.</p>
+        <% } else { %>
+          <div class="recent-list">
+            <% recentCourses.forEach(course => { %>
+              <div class="recent-item">
+                <div class="recent-info">
+                  <div class="recent-name"><%= course.title %></div>
+                  <div class="recent-meta">
+                    <span class="badge-status <%= course.isActive ? 'active' : 'inactive' %>">
+                      <%= course.isActive ? 'Active' : 'Inactive' %>
+                    </span>
+                    <span class="text-muted ms-2"><%= formatDate(course.createdAt) %></span>
+                  </div>
+                </div>
+                <a href="/admin/courses/<%= course._id %>/edit" class="btn-sm-edit" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card-panel">
+        <h3 class="panel-title"><i class="bi bi-play-circle"></i> Recent Videos</h3>
+        <% if (recentVideos.length === 0) { %>
+          <p class="text-muted">No videos yet.</p>
+        <% } else { %>
+          <div class="recent-list">
+            <% recentVideos.forEach(video => { %>
+              <div class="recent-item">
+                <div class="recent-info">
+                  <div class="recent-name">Day <%= video.dayNumber %> — <%= video.title %></div>
+                  <div class="recent-meta">
+                    <span class="text-muted"><%= video.courseId ? video.courseId.title : 'N/A' %></span>
+                    <span class="text-muted ms-2"><%= formatDate(video.createdAt) %></span>
+                  </div>
+                </div>
+                <a href="/admin/videos/<%= video._id %>/edit" class="btn-sm-edit" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

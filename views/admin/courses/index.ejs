@@ -1,0 +1,106 @@
+<!-- Admin Courses List -->
+<div class="content-header">
+  <h2><i class="bi bi-book"></i> Courses</h2>
+  <a href="/admin/courses/create" class="btn btn-primary-custom">
+    <i class="bi bi-plus-lg"></i> Create Course
+  </a>
+</div>
+
+<!-- Search -->
+<form class="search-bar mb-4" method="GET" action="/admin/courses">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="text" name="search" class="form-control" placeholder="Search courses..." value="<%= search %>" />
+    <button type="submit" class="btn btn-outline-primary">Search</button>
+    <% if (search) { %>
+      <a href="/admin/courses" class="btn btn-outline-secondary">Clear</a>
+    <% } %>
+  </div>
+</form>
+
+<% if (docs.length === 0) { %>
+  <div class="empty-state">
+    <i class="bi bi-book"></i>
+    <h4>No courses found</h4>
+    <p>Create your first course to get started.</p>
+    <a href="/admin/courses/create" class="btn btn-primary-custom">Create Course</a>
+  </div>
+<% } else { %>
+  <div class="table-responsive">
+    <table class="table admin-table">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Videos</th>
+          <th>Status</th>
+          <th>Shareable Link</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% docs.forEach(course => { %>
+          <tr>
+            <td>
+              <div class="course-cell">
+                <% if (course.thumbnail) { %>
+                  <img src="<%= course.thumbnail %>" alt="" class="course-thumb-sm" />
+                <% } else { %>
+                  <div class="course-thumb-placeholder"><i class="bi bi-book"></i></div>
+                <% } %>
+                <div>
+                  <div class="fw-semibold"><%= course.title %></div>
+                  <div class="text-muted small"><%= truncate(course.description, 60) %></div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge bg-secondary"><%= videoCountMap[course._id.toString()] || 0 %></span></td>
+            <td>
+              <button class="badge-status-btn <%= course.isActive ? 'active' : 'inactive' %>"
+                      onclick="toggleActive('<%= course._id %>', this)"
+                      title="Click to toggle">
+                <%= course.isActive ? 'Active' : 'Inactive' %>
+              </button>
+            </td>
+            <td>
+              <div class="shareable-link-cell">
+                <code class="slug-display" id="slug-<%= course._id %>"><%= appUrl %>/course/<%= course.slug %></code>
+                <button class="btn-copy" onclick="copyLink('<%= appUrl %>/course/<%= course.slug %>', this)" title="Copy link">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </td>
+            <td>
+              <div class="action-btns">
+                <a href="/admin/courses/<%= course._id %>/edit" class="btn-action edit" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="/admin/videos?courseId=<%= course._id %>" class="btn-action view" title="View Videos">
+                  <i class="bi bi-play-circle"></i>
+                </a>
+                <form action="/admin/courses/<%= course._id %>/delete" method="POST" class="d-inline"
+                      onsubmit="return confirm('Delete this course and ALL its videos? This cannot be undone.')">
+                  <button type="submit" class="btn-action delete" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+    <nav class="pagination-nav">
+      <% if (hasPrev) { %>
+        <a href="/admin/courses?page=<%= prevPage %>&search=<%= search %>" class="page-link-custom">← Previous</a>
+      <% } %>
+      <span class="page-info">Page <%= currentPage %> of <%= totalPages %></span>
+      <% if (hasNext) { %>
+        <a href="/admin/courses?page=<%= nextPage %>&search=<%= search %>" class="page-link-custom">Next →</a>
+      <% } %>
+    </nav>
+  <% } %>
+<% } %>

@@ -1,0 +1,24 @@
+<%
+/**
+ * views/partials/alerts.ejs
+ * Flash message toasts — rendered server-side, dismissed client-side.
+ */
+%>
+<div id="toastContainer" class="toast-container-custom">
+  <% if (locals.success && success.length) { %>
+    <% success.forEach(msg => { %>
+      <div class="toast-item">
+        <span class="icon">✅</span>
+        <span class="msg"><%= msg %></span>
+      </div>
+    <% }) %>
+  <% } %>
+  <% if (locals.error && error.length) { %>
+    <% error.forEach(msg => { %>
+      <div class="toast-item error">
+        <span class="icon">❌</span>
+        <span class="msg"><%= msg %></span>
+      </div>
+    <% }) %>
+  <% } %>
+</div>

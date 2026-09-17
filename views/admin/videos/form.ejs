@@ -1,0 +1,77 @@
+<!-- Admin Video Create/Edit Form -->
+<div class="content-header">
+  <h2><i class="bi bi-play-circle"></i> <%= video ? 'Edit Video' : 'Add Video' %></h2>
+  <a href="/admin/videos<%= preselectedCourse ? '?courseId=' + preselectedCourse : '' %>" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Videos
+  </a>
+</div>
+
+<div class="form-card">
+  <form action="<%= video ? `/admin/videos/${video._id}` : '/admin/videos' %>"
+        method="POST" class="admin-form">
+
+    <!-- Course Selection -->
+    <div class="mb-3">
+      <label for="courseId" class="form-label">Course <span class="text-danger">*</span></label>
+      <select id="courseId" name="courseId" class="form-select" required>
+        <option value="">Select a course...</option>
+        <% courses.forEach(c => { %>
+          <option value="<%= c._id %>"
+            <%= (video && video.courseId.toString() === c._id.toString()) || preselectedCourse === c._id.toString() ? 'selected' : '' %>>
+            <%= c.title %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <!-- Day Number -->
+    <div class="mb-3">
+      <label for="dayNumber" class="form-label">Day Number <span class="text-danger">*</span></label>
+      <input type="number" id="dayNumber" name="dayNumber" class="form-control"
+             value="<%= video ? video.dayNumber : nextDay %>"
+             min="1" required />
+      <div class="form-text">e.g. 1 for Day 1, 2 for Day 2, etc.</div>
+    </div>
+
+    <!-- Title -->
+    <div class="mb-3">
+      <label for="title" class="form-label">Video Title <span class="text-danger">*</span></label>
+      <input type="text" id="title" name="title" class="form-control"
+             value="<%= video ? video.title : '' %>"
+             placeholder="e.g. Introduction to Real Numbers" required maxlength="300" />
+    </div>
+
+    <!-- Description -->
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea id="description" name="description" class="form-control" rows="3"
+                placeholder="Brief description of this video..."
+                maxlength="3000"><%= video ? video.description : '' %></textarea>
+    </div>
+
+    <!-- YouTube URL -->
+    <div class="mb-4">
+      <label for="youtubeUrl" class="form-label">YouTube URL <span class="text-danger">*</span></label>
+      <input type="url" id="youtubeUrl" name="youtubeUrl" class="form-control"
+             value="<%= video ? (video.youtubeUrl || `https://www.youtube.com/watch?v=${video.youtubeId}`) : '' %>"
+             placeholder="https://www.youtube.com/watch?v=..." required />
+      <div class="form-text">Paste the YouTube URL (regular, short, or unlisted link).</div>
+    </div>
+
+    <% if (video) { %>
+      <div class="mb-4">
+        <label class="form-label">Current Video Preview</label>
+        <div class="video-preview-mini">
+          <img src="https://img.youtube.com/vi/<%= video.youtubeId %>/mqdefault.jpg" alt="Video thumbnail" />
+        </div>
+      </div>
+    <% } %>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary-custom">
+        <i class="bi bi-check-lg"></i> <%= video ? 'Update Video' : 'Add Video' %>
+      </button>
+      <a href="/admin/videos<%= preselectedCourse ? '?courseId=' + preselectedCourse : '' %>" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>

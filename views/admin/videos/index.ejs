@@ -1,0 +1,88 @@
+<!-- Admin Videos List -->
+<div class="content-header">
+  <h2><i class="bi bi-play-circle"></i> Videos</h2>
+  <a href="/admin/videos/create<%= courseFilter ? '?courseId=' + courseFilter : '' %>" class="btn btn-primary-custom">
+    <i class="bi bi-plus-lg"></i> Add Video
+  </a>
+</div>
+
+<!-- Filters -->
+<form class="filter-bar mb-4" method="GET" action="/admin/videos">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <input type="text" name="search" class="form-control" placeholder="Search videos..." value="<%= search %>" />
+    </div>
+    <div class="col-md-4">
+      <select name="courseId" class="form-select">
+        <option value="">All Courses</option>
+        <% courses.forEach(c => { %>
+          <option value="<%= c._id %>" <%= courseFilter === c._id.toString() ? 'selected' : '' %>><%= c.title %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-4 d-flex gap-2">
+      <button type="submit" class="btn btn-outline-primary flex-grow-1">Filter</button>
+      <% if (search || courseFilter) { %>
+        <a href="/admin/videos" class="btn btn-outline-secondary">Clear</a>
+      <% } %>
+    </div>
+  </div>
+</form>
+
+<% if (docs.length === 0) { %>
+  <div class="empty-state">
+    <i class="bi bi-play-circle"></i>
+    <h4>No videos found</h4>
+    <p>Add your first video to a course.</p>
+    <a href="/admin/videos/create" class="btn btn-primary-custom">Add Video</a>
+  </div>
+<% } else { %>
+  <div class="video-list-admin" id="videoList">
+    <% docs.forEach((video, index) => { %>
+      <div class="video-item-admin" data-id="<%= video._id %>" draggable="true">
+        <div class="drag-handle" title="Drag to reorder">
+          <i class="bi bi-grip-vertical"></i>
+        </div>
+        <div class="video-thumb-mini">
+          <img src="https://img.youtube.com/vi/<%= video.youtubeId %>/mqdefault.jpg" alt="" />
+        </div>
+        <div class="video-info-admin">
+          <div class="video-title-admin">
+            <span class="day-badge">Day <%= video.dayNumber %></span>
+            <%= video.title %>
+          </div>
+          <div class="video-meta-admin">
+            <% if (video.courseId) { %>
+              <span class="text-muted"><%= video.courseId.title %></span>
+            <% } %>
+            <span class="text-muted ms-2"><%= formatDate(video.createdAt) %></span>
+          </div>
+        </div>
+        <div class="action-btns">
+          <a href="/admin/videos/<%= video._id %>/edit" class="btn-action edit" title="Edit">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <form action="/admin/videos/<%= video._id %>/delete" method="POST" class="d-inline"
+                onsubmit="return confirm('Delete this video?')">
+            <button type="submit" class="btn-action delete" title="Delete">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+    <nav class="pagination-nav">
+      <% if (hasPrev) { %>
+        <a href="/admin/videos?page=<%= prevPage %>&search=<%= search %>&courseId=<%= courseFilter %>" class="page-link-custom">← Previous</a>
+      <% } %>
+      <span class="page-info">Page <%= currentPage %> of <%= totalPages %></span>
+      <% if (hasNext) { %>
+        <a href="/admin/videos?page=<%= nextPage %>&search=<%= search %>&courseId=<%= courseFilter %>" class="page-link-custom">Next →</a>
+      <% } %>
+    </nav>
+  <% } %>
+<% } %>
