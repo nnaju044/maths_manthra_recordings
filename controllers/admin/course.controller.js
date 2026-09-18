@@ -34,7 +34,7 @@ exports.index = async (req, res, next) => {
       search,
       videoCountMap,
       currentPage: 'courses',
-      appUrl: process.env.APP_URL || 'http://localhost:3000',
+      appUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
     });
   } catch (err) { next(err); }
 };
@@ -46,7 +46,7 @@ exports.create = (req, res) => {
     layout: 'layouts/admin',
     course: null,
     currentPage: 'courses',
-    appUrl: process.env.APP_URL || 'http://localhost:3000',
+    appUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
   });
 };
 
@@ -92,7 +92,7 @@ exports.edit = async (req, res, next) => {
       course,
       videoCount,
       currentPage: 'courses',
-      appUrl: process.env.APP_URL || 'http://localhost:3000',
+      appUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
     });
   } catch (err) { next(err); }
 };
@@ -151,7 +151,7 @@ exports.regenerateSlug = async (req, res, next) => {
     if (!course) return res.json({ success: false, message: 'Not found' });
     const newSlug = course.regenerateSlug();
     await course.save();
-    res.json({ success: true, slug: newSlug, url: `${process.env.APP_URL || 'http://localhost:3000'}/course/${newSlug}` });
+    res.json({ success: true, slug: newSlug, url: `${process.env.APP_URL || `${req.protocol}://${req.get('host')}`}/course/${newSlug}` });
   } catch (err) { next(err); }
 };
 

@@ -146,7 +146,7 @@ exports.showVideoPlayer = async (req, res, next) => {
     const nextVideo = currentIndex < allVideos.length - 1 ? allVideos[currentIndex + 1] : null;
 
     // Build embed URL server-side
-    const embedUrl = buildEmbedUrl(video.youtubeId);
+    const embedUrl = buildEmbedUrl(video.youtubeId, 0, res.locals.appUrl);
 
     res.render('course/player', {
       title: `${video.title} — ${course.title}`,

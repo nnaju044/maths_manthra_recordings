@@ -55,9 +55,9 @@ const extractYouTubeId = (input) => {
  * @param {number} [startSeconds=0] - resume position
  * @returns {string} - safe embed URL
  */
-const buildEmbedUrl = (videoId, startSeconds = 0) => {
+const buildEmbedUrl = (videoId, startSeconds = 0, appUrl = '') => {
   if (!videoId) return '';
-  const origin = process.env.APP_URL || 'http://localhost:3000';
+  const origin = appUrl || process.env.APP_URL || '';
   const params = new URLSearchParams({
     rel: '0',              // Do not show related videos from outside channel
     modestbranding: '1',   // Minimal YouTube branding

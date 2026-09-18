@@ -89,7 +89,7 @@ app.use((req, res, next) => {
   res.locals.error = req.flash('error');
   res.locals.currentUser = null; // overridden by auth middleware per-route
   res.locals.appName = process.env.APP_NAME || 'Maths Manthra';
-  res.locals.appUrl = process.env.APP_URL || 'http://localhost:3000';
+  res.locals.appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
   // Template helpers
   res.locals.formatDate = formatDate;
   res.locals.timeAgo = timeAgo;

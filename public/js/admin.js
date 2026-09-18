@@ -136,24 +136,27 @@ async function regenerateSlug(courseId) {
 }
 
 // ── Copy to Clipboard ──
-function copyLink(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const icon = btn.querySelector('i');
-    if (icon) {
-      icon.className = 'bi bi-check-lg';
-      setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
+async function copyLink(url, btn) {
+  try {
+    await navigator.clipboard.writeText(url);
+    if (btn) {
+      const icon = btn.querySelector('i');
+      if (icon) {
+        icon.className = 'bi bi-check-lg';
+        setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
+      }
     }
-    showToast('Link copied to clipboard!', 'success');
-  }).catch(() => {
+    showToast('Link copied successfully', 'success');
+  } catch (err) {
     // Fallback
     const textArea = document.createElement('textarea');
-    textArea.value = text;
+    textArea.value = url;
     document.body.appendChild(textArea);
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
-    showToast('Link copied!', 'success');
-  });
+    showToast('Link copied successfully', 'success');
+  }
 }
 
 // ── Toast Helper ──
