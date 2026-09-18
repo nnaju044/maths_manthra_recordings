@@ -83,6 +83,10 @@ app.set('layout extractStyles', true);
 // ─── Static Files ─────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ─── Trust Proxy (required for Railway / reverse proxies) ─────────────────────
+// Without this, req.protocol returns 'http' even behind Railway's HTTPS proxy.
+app.set('trust proxy', 1);
+
 // ─── Global Template Locals ───────────────────────────────────────────────────
 app.use((req, res, next) => {
   res.locals.success = req.flash('success');
@@ -90,16 +94,17 @@ app.use((req, res, next) => {
   res.locals.currentUser = null;
   res.locals.appName = process.env.APP_NAME || 'Maths Manthra';
 
-  const appUrl =
+  // ── Single source of truth for the base URL ──────────────────────────────
+  // Priority:
+  //   1. APP_URL env var (set in Railway dashboard / .env for custom domains)
+  //   2. Derived from the current request host (works for any environment)
+  // Strip trailing slash so we can always append /course/slug safely.
+  const rawUrl =
     process.env.APP_URL ||
     `${req.protocol}://${req.get('host')}`;
 
-  console.log('APP_URL ENV:', process.env.APP_URL);
-  console.log('Generated URL:', appUrl);
+  res.locals.appUrl = rawUrl.replace(/\/$/, '');
 
-  res.locals.appUrl = appUrl;
-
-  // MUST EXIST
   res.locals.formatDate = formatDate;
   res.locals.timeAgo = timeAgo;
   res.locals.truncate = truncate;

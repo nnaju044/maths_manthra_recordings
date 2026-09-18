@@ -45,4 +45,22 @@ const truncate = (text, maxLen = 100) => {
   return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
 };
 
-module.exports = { formatDate, timeAgo, truncate };
+/**
+ * Resolve the application base URL.
+ *
+ * Priority:
+ *   1. APP_URL environment variable (set in Railway dashboard / .env)
+ *   2. Derived from the Express request object (works for any host)
+ *
+ * Never returns a trailing slash, so callers can safely do:
+ *   `${getBaseUrl(req)}/course/${slug}`
+ *
+ * @param {import('express').Request} req
+ * @returns {string}
+ */
+const getBaseUrl = (req) => {
+  const raw = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  return raw.replace(/\/$/, '');
+};
+
+module.exports = { formatDate, timeAgo, truncate, getBaseUrl };

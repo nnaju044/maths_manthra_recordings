@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const Course = require('../../models/Course');
 const Video = require('../../models/Video');
 const { paginate } = require('../../utils/pagination');
+const { getBaseUrl } = require('../../utils/helpers');
 
 // List courses
 exports.index = async (req, res, next) => {
@@ -34,7 +35,7 @@ exports.index = async (req, res, next) => {
       search,
       videoCountMap,
       currentPage: 'courses',
-      appUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
+      // appUrl is injected globally by app.js middleware — no override needed
     });
   } catch (err) { next(err); }
 };
@@ -46,7 +47,7 @@ exports.create = (req, res) => {
     layout: 'layouts/admin',
     course: null,
     currentPage: 'courses',
-    appUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
+    // appUrl is injected globally by app.js middleware — no override needed
   });
 };
 
@@ -92,7 +93,7 @@ exports.edit = async (req, res, next) => {
       course,
       videoCount,
       currentPage: 'courses',
-      appUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
+      // appUrl is injected globally by app.js middleware — no override needed
     });
   } catch (err) { next(err); }
 };
@@ -151,7 +152,9 @@ exports.regenerateSlug = async (req, res, next) => {
     if (!course) return res.json({ success: false, message: 'Not found' });
     const newSlug = course.regenerateSlug();
     await course.save();
-    res.json({ success: true, slug: newSlug, url: `${process.env.APP_URL || `${req.protocol}://${req.get('host')}`}/course/${newSlug}` });
+    // getBaseUrl: APP_URL env var → request host. Never hardcoded.
+    const baseUrl = getBaseUrl(req);
+    res.json({ success: true, slug: newSlug, url: `${baseUrl}/course/${newSlug}` });
   } catch (err) { next(err); }
 };
 
