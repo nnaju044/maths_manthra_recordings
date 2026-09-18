@@ -87,15 +87,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
-  res.locals.currentUser = null; // overridden by auth middleware per-route
+  res.locals.currentUser = null;
   res.locals.appName = process.env.APP_NAME || 'Maths Manthra';
-  res.locals.appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
-  // Template helpers
-  res.locals.formatDate = formatDate;
-  res.locals.timeAgo = timeAgo;
-  res.locals.truncate = truncate;
+
+  const appUrl =
+    process.env.APP_URL ||
+    `${req.protocol}://${req.get('host')}`;
+
+  console.log('APP_URL ENV:', process.env.APP_URL);
+  console.log('Generated URL:', appUrl);
+
+  res.locals.appUrl = appUrl;
+
   next();
 });
+
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/', require('./routes/index'));
