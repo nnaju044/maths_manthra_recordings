@@ -105,12 +105,15 @@ app.use((req, res, next) => {
 
   res.locals.appUrl = rawUrl.replace(/\/$/, '');
 
-  res.locals.formatDate = formatDate;
-  res.locals.timeAgo = timeAgo;
-  res.locals.truncate = truncate;
-
   next();
 });
+
+// ─── Global Template Helpers ──────────────────────────────────────────────────
+// Define these once on app.locals so they are available to all EJS templates,
+// even if a route errors out before the middleware completes or if res.locals is reset.
+app.locals.formatDate = formatDate;
+app.locals.timeAgo = timeAgo;
+app.locals.truncate = truncate;
 
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
