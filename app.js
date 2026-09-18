@@ -99,6 +99,11 @@ app.use((req, res, next) => {
 
   res.locals.appUrl = appUrl;
 
+  // MUST EXIST
+  res.locals.formatDate = formatDate;
+  res.locals.timeAgo = timeAgo;
+  res.locals.truncate = truncate;
+
   next();
 });
 
