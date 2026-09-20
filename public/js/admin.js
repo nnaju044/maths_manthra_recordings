@@ -137,25 +137,54 @@ async function regenerateSlug(courseId) {
 
 // ── Copy to Clipboard ──
 async function copyLink(url, btn) {
-  try {
-    await navigator.clipboard.writeText(url);
-    if (btn) {
-      const icon = btn.querySelector('i');
-      if (icon) {
-        icon.className = 'bi bi-check-lg';
-        setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
-      }
+  // Always read the live URL from the DOM element rather than the
+  // baked-in string, so it stays correct after a slug regeneration.
+  const codeEl = btn && btn.previousElementSibling;
+  const liveUrl = (codeEl && codeEl.textContent.trim()) || url;
+
+  const icon = btn && btn.querySelector('i');
+
+  const onSuccess = () => {
+    if (icon) {
+      icon.className = 'bi bi-check-lg text-success';
+      setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
     }
-    showToast('Link copied successfully', 'success');
-  } catch (err) {
-    // Fallback
-    const textArea = document.createElement('textarea');
-    textArea.value = url;
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
-    showToast('Link copied successfully', 'success');
+    showToast('Link copied!', 'success');
+  };
+
+  const onError = () => {
+    if (icon) {
+      icon.className = 'bi bi-x-lg text-danger';
+      setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
+    }
+    showToast('Copy failed — please copy manually', 'error');
+  };
+
+  // Primary: Clipboard API (requires HTTPS or localhost)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(liveUrl);
+      onSuccess();
+      return;
+    } catch (_) {
+      // fall through to execCommand fallback
+    }
+  }
+
+  // Fallback: hidden textarea + execCommand (older browsers / non-secure context)
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = liveUrl;
+    // Keep the textarea off-screen and invisible
+    Object.assign(ta.style, { position: 'fixed', top: '-9999px', left: '-9999px', opacity: '0' });
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    ok ? onSuccess() : onError();
+  } catch (_) {
+    onError();
   }
 }
 

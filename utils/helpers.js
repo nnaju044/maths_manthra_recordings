@@ -59,8 +59,9 @@ const truncate = (text, maxLen = 100) => {
  * @returns {string}
  */
 const getBaseUrl = (req) => {
-  const raw = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
-  return raw.replace(/\/$/, '');
+  // Always derive from the live request so the correct domain (local or Railway)
+  // is used automatically without any APP_URL env var.
+  return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
 };
 
 module.exports = { formatDate, timeAgo, truncate, getBaseUrl };

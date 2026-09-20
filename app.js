@@ -94,18 +94,11 @@ app.use((req, res, next) => {
   res.locals.currentUser = null;
   res.locals.appName = process.env.APP_NAME || 'Maths Manthra';
 
-  // ── Single source of truth for the base URL ──────────────────────────────
-  // Priority:
-  //   1. APP_URL env var (set in Railway dashboard / .env for custom domains)
-  //   2. Derived from the current request host (works for any environment)
-  // Strip trailing slash so we can always append /course/slug safely.
-  const rawUrl =
-    process.env.APP_URL ||
-    `${req.protocol}://${req.get('host')}`;
-
-  res.locals.appUrl = rawUrl.replace(/\/$/, '');
-  console.log('APP_URL env:', process.env.APP_URL);
-  console.log('Derived from request:', `${req.protocol}://${req.get('host')}`);
+  // ── Always derive base URL from the live request ─────────────────────────
+  // req.protocol is 'https' behind Railway thanks to `trust proxy` above.
+  // This means no APP_URL env var is ever needed — the correct domain is
+  // automatically picked up in every environment (local, staging, Railway).
+  res.locals.appUrl = `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
 
   next();
 });
