@@ -1,0 +1,78 @@
+- generic [ref=f15e2]:
+  - complementary [ref=f15e3]:
+    - generic [ref=f15e4]:
+      - generic [ref=f15e5]:
+        - img "Maths Manthra Logo" [ref=f15e6]
+        - text: Maths Manthra
+      - generic [ref=f15e7]: Admin Panel
+    - navigation [ref=f15e8]:
+      - generic [ref=f15e9]: Overview
+      - link " Dashboard" [ref=f15e10] [cursor=pointer]:
+        - /url: /admin/dashboard
+        - generic [ref=f15e11]: 
+        - text: Dashboard
+      - generic [ref=f15e13]: Content
+      - link " Courses" [ref=f15e14] [cursor=pointer]:
+        - /url: /admin/courses
+        - generic [ref=f15e15]: 
+        - text: Courses
+      - link " Videos" [ref=f15e17] [cursor=pointer]:
+        - /url: /admin/videos
+        - generic [ref=f15e18]: 
+        - text: Videos
+      - generic [ref=f15e20]: Account
+      - link " Logout" [ref=f15e21] [cursor=pointer]:
+        - /url: /auth/logout
+        - generic [ref=f15e22]: 
+        - text: Logout
+    - generic [ref=f15e25]:
+      - generic [ref=f15e26]: A
+      - generic [ref=f15e27]:
+        - generic [ref=f15e28]: Admin User
+        - generic [ref=f15e29]: Admin
+  - generic [ref=f15e30]:
+    - generic [ref=f15e31]:
+      - text: 
+      - generic [ref=f15e32]: Courses — Admin
+      - generic [ref=f15e33]: Welcome, Admin!
+    - generic [ref=f15e35]:
+      - generic [ref=f15e36]:
+        - heading " Courses" [level=2] [ref=f15e37]:
+          - generic [ref=f15e38]: 
+          - text: Courses
+        - link " Create Course" [ref=f15e39] [cursor=pointer]:
+          - /url: /admin/courses/create
+          - generic [ref=f15e40]: 
+          - text: Create Course
+      - generic [ref=f15e42]:
+        - generic [ref=f15e43]: 
+        - textbox "Search courses..." [ref=f15e45]
+        - button "Search" [ref=f15e46] [cursor=pointer]
+      - table [ref=f15e48]:
+        - rowgroup [ref=f15e49]:
+          - row [ref=f15e50]:
+            - columnheader "Course" [ref=f15e51]
+            - columnheader "Videos" [ref=f15e52]
+            - columnheader "Status" [ref=f15e53]
+            - columnheader "Shareable Link" [ref=f15e54]
+            - columnheader "Actions" [ref=f15e55]
+        - rowgroup [ref=f15e56]:
+          - row [ref=f15e57]:
+            - cell "Night batch-one month Edupreneur Mentorship Program | MathsManthra Academy A de…" [ref=f15e58]:
+              - generic [ref=f15e60]:
+                - generic [ref=f15e61]: Night batch-one month
+                - generic [ref=f15e62]: Edupreneur Mentorship Program | MathsManthra Academy A de…
+            - cell "2" [ref=f15e63]
+            - cell [ref=f15e65]:
+              - button "Active" [ref=f15e66] [cursor=pointer]
+            - cell [ref=f15e67]:
+              - generic [ref=f15e68]:
+                - code [ref=f15e69]: http://localhost:3000/course/night-batch-one-month-cc698
+                - button "" [ref=f15e70] [cursor=pointer]
+            - cell [ref=f15e72]:
+              - generic [ref=f15e73]:
+                - link "" [ref=f15e74] [cursor=pointer]:
+                  - /url: /admin/courses/6aaa6a09ea7e2e4142aeecf2/edit
+                - link "" [ref=f15e76] [cursor=pointer]:
+                  - /url: /admin/videos?courseId=6aaa6a09ea7e2e4142aeecf2
+                - button "" [ref=f15e79] [cursor=pointer]

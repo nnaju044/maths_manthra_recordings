@@ -1,0 +1,58 @@
+- generic [active] [ref=f9e1]:
+  - navigation [ref=f9e2]:
+    - link " Night batch-one month" [ref=f9e3] [cursor=pointer]:
+      - /url: /course/night-batch-one-month-cc698/watch
+      - generic [ref=f9e4]: 
+      - generic [ref=f9e5]: Night batch-one month
+    - generic [ref=f9e6]: 1 / 2
+  - generic [ref=f9e8]:
+    - generic "Maths Manthra Player" [ref=f9e9]
+    - iframe [ref=f9e10]:
+      - generic [ref=f10e1]:
+        - generic "YouTube Video Player" [ref=f10e3]
+        - generic [ref=f10e5]:
+          - generic:
+            - generic:
+              - generic [ref=f10e6] [cursor=pointer]
+              - button "Play video" [ref=f10e10] [cursor=pointer]
+              - button "Hide player controls" [ref=f10e14] [cursor=pointer]
+              - generic [ref=f10e16]:
+                - generic [ref=f10e21]:
+                  - generic [ref=f10e22]:
+                    - link "Day 1 | Teacher Career & Skill Development Workshop | Night Batch" [ref=f10e23] [cursor=pointer]:
+                      - /url: https://www.youtube.com/watch?v=a5Pl4xf-aqs
+                    - link "Mathsmanthra 2.O" [ref=f10e24] [cursor=pointer]:
+                      - /url: /channel/UCxW9o_cxoPgq8uyEIDjwpzA
+                  - generic [ref=f10e26]:
+                    - button [ref=f10e27] [cursor=pointer]:
+                      - img "thumbnail-image" [ref=f10e28]
+                    - generic [ref=f10e30]:
+                      - generic: Mathsmanthra 2.O
+                      - generic: 11 subscribers
+                - generic [ref=f10e31]:
+                  - button "Copy link" [ref=f10e34] [cursor=pointer]
+                  - link "Watch on YouTube" [ref=f10e45] [cursor=pointer]:
+                    - /url: https://www.youtube.com/watch?v=a5Pl4xf-aqs
+                    - generic [ref=f10e46]: Watch on
+    - generic [aria-hidden]:
+      - generic: 📐
+      - generic: Maths Manthra
+  - generic [ref=f9e12]:
+    - alert [ref=f9e13]:
+      - generic [ref=f9e14]: 
+      - generic [ref=f9e15]: This content is for enrolled students only. Unauthorized sharing is prohibited.
+    - generic [ref=f9e16]: Day 1
+    - heading "Basics" [level=1] [ref=f9e17]
+    - paragraph [ref=f9e18]: basic starting with chatgpt
+    - link "Next Lesson Day 2 — notebooklm " [ref=f9e21] [cursor=pointer]:
+      - /url: /course/night-batch-one-month-cc698/watch/6aaa6c03ea7e2e4142aeed20
+      - generic [ref=f9e22]:
+        - generic [ref=f9e23]: Next Lesson
+        - generic [ref=f9e24]: Day 2 — notebooklm
+      - generic [ref=f9e25]: 
+    - link " View All Lessons" [ref=f9e27] [cursor=pointer]:
+      - /url: /course/night-batch-one-month-cc698/watch
+      - generic [ref=f9e28]: 
+      - text: View All Lessons
+  - contentinfo [ref=f9e29]:
+    - paragraph [ref=f9e31]: 📐 Maths Manthra — Private Recorded Classes

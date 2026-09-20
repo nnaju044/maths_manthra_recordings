@@ -28,7 +28,9 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "@playwright/test": "^1.63.0",
+    "nodemon": "^3.1.4",
+    "playwright": "^1.63.0"
   },
   "engines": {
     "node": ">=18.0.0"

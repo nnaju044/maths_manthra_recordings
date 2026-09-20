@@ -1,0 +1,37 @@
+- generic [active] [ref=f16e1]:
+  - generic [ref=f16e5]:
+    - generic [ref=f16e6]:
+      - generic [ref=f16e7]: 
+      - text: Maths Manthra
+    - heading "Night batch-one month" [level=1] [ref=f16e8]
+    - paragraph [ref=f16e9]: Edupreneur Mentorship Program | MathsManthra Academy A dedicated space for educators who are ready to build, brand & grow their own educational journey. 🚀 🎯 Mentorship & Guidance 📚 Practical Learning & Implementation 🤖 AI & Digital Tools 📣 Marketing & Student Growth 🏫 Academy & Business Building 🤝 Connect • Learn • Grow Together Let’s turn your teaching experience into a bigger educational impact. — MathsManthra Academy Better Teachers. Bigger Impact.
+    - generic [ref=f16e11]:
+      - generic [ref=f16e12]: 
+      - text: 2 Lessons
+  - generic [ref=f16e14]:
+    - heading " All Lessons" [level=2] [ref=f16e15]:
+      - generic [ref=f16e16]: 
+      - text: All Lessons
+    - generic [ref=f16e17]:
+      - link "Basics  Day 1 Basics basic starting with chatgpt " [ref=f16e18] [cursor=pointer]:
+        - /url: /course/night-batch-one-month-cc698/watch/6aaa6ab8ea7e2e4142aeed04
+        - generic [ref=f16e19]:
+          - img "Basics" [ref=f16e20]
+          - generic [ref=f16e21]: 
+        - generic [ref=f16e23]:
+          - generic [ref=f16e24]: Day 1
+          - heading "Basics" [level=3] [ref=f16e25]
+          - paragraph [ref=f16e26]: basic starting with chatgpt
+        - generic [ref=f16e27]: 
+      - link "notebooklm  Day 2 notebooklm yuioi " [ref=f16e29] [cursor=pointer]:
+        - /url: /course/night-batch-one-month-cc698/watch/6aaa6c03ea7e2e4142aeed20
+        - generic [ref=f16e30]:
+          - img "notebooklm" [ref=f16e31]
+          - generic [ref=f16e32]: 
+        - generic [ref=f16e34]:
+          - generic [ref=f16e35]: Day 2
+          - heading "notebooklm" [level=3] [ref=f16e36]
+          - paragraph [ref=f16e37]: yuioi
+        - generic [ref=f16e38]: 
+  - contentinfo [ref=f16e40]:
+    - paragraph [ref=f16e42]: 📐 Maths Manthra — Private Recorded Classes

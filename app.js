@@ -104,6 +104,8 @@ app.use((req, res, next) => {
     `${req.protocol}://${req.get('host')}`;
 
   res.locals.appUrl = rawUrl.replace(/\/$/, '');
+  console.log('APP_URL env:', process.env.APP_URL);
+  console.log('Derived from request:', `${req.protocol}://${req.get('host')}`);
 
   next();
 });

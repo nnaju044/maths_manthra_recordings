@@ -1,0 +1,20 @@
+- generic [ref=f7e3]:
+  - img "Night batch-one month" [ref=f7e5]
+  - generic [ref=f7e6]:
+    - generic [ref=f7e7]:
+      - generic [ref=f7e8]: 
+      - text: Maths Manthra
+    - heading "Night batch-one month" [level=1] [ref=f7e9]
+    - paragraph [ref=f7e10]: Edupreneur Mentorship Program | MathsManthra Academy A dedicated space for educators who are ready to build, brand & grow their own educational journey. 🚀 🎯 Mentorship & Guidance 📚 Practical Learning & Implementation 🤖 AI & Digital Tools 📣 Marketing & Student Growth 🏫 Academy & Business Building 🤝 Connect • Learn • Grow Together Let’s turn your teaching experience into a bigger educational impact. — MathsManthra Academy Better Teachers. Bigger Impact.
+    - generic [ref=f7e11]:
+      - generic [ref=f7e12]:
+        - generic [ref=f7e13]: 
+        - text: Enter Course Password
+      - textbox " Enter Course Password" [active] [ref=f7e15]:
+        - /placeholder: ● ● ● ●
+      - button " Access Course" [ref=f7e16] [cursor=pointer]:
+        - generic [ref=f7e17]: 
+        - text: Access Course
+    - generic [ref=f7e18]:
+      - generic [ref=f7e19]: 
+      - text: Ask your teacher for the 4-digit password
