@@ -41,6 +41,15 @@ const videoSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    pdfTitle: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'PDF title cannot exceed 300 characters'],
+    },
+    pdfUrl: {
+      type: String,
+      trim: true,
+    },
   },
   { timestamps: true }
 );

@@ -60,7 +60,7 @@ exports.create = async (req, res, next) => {
 // Handle create
 exports.store = async (req, res, next) => {
   try {
-    const { title, description, youtubeUrl, courseId, dayNumber } = req.body;
+    const { title, description, youtubeUrl, courseId, dayNumber, pdfTitle, pdfUrl } = req.body;
 
     // Extract video ID server-side
     const youtubeId = extractYouTubeId(youtubeUrl);
@@ -81,6 +81,8 @@ exports.store = async (req, res, next) => {
       courseId,
       dayNumber: parseInt(dayNumber) || 1,
       order,
+      pdfTitle: pdfTitle || undefined,
+      pdfUrl: pdfUrl || undefined,
     });
 
     req.flash('success', 'Video added successfully.');
@@ -112,7 +114,7 @@ exports.edit = async (req, res, next) => {
 // Handle update
 exports.update = async (req, res, next) => {
   try {
-    const { title, description, youtubeUrl, courseId, dayNumber } = req.body;
+    const { title, description, youtubeUrl, courseId, dayNumber, pdfTitle, pdfUrl } = req.body;
     const video = await Video.findById(req.params.id);
     if (!video) { req.flash('error', 'Video not found.'); return res.redirect('/admin/videos'); }
 
@@ -131,6 +133,8 @@ exports.update = async (req, res, next) => {
       description,
       courseId,
       dayNumber: parseInt(dayNumber) || 1,
+      pdfTitle: pdfTitle || undefined,
+      pdfUrl: pdfUrl || undefined,
     });
     await video.save();
 

@@ -68,6 +68,31 @@
         <p class="player-description"><%= video.description %></p>
       <% } %>
 
+      <!-- PDF Notes Section -->
+      <% if (video.pdfUrl) { %>
+        <div class="card mt-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%); border-radius: 12px;">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <span style="font-size: 1.5rem; margin-right: 0.5rem;">📄</span>
+              <h5 class="card-title mb-0" style="font-weight: 600; color: #1e293b;">Lesson Notes</h5>
+            </div>
+            <% if (video.pdfTitle) { %>
+              <p class="card-text mb-3" style="color: #475569; font-size: 0.95rem;"><%= video.pdfTitle %></p>
+            <% } %>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="<%= video.pdfUrl %>" target="_blank" rel="noopener noreferrer"
+                 class="btn btn-outline-primary btn-sm" style="border-radius: 8px; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-eye"></i> View Notes
+              </a>
+              <a href="<%= getDriveDownloadUrl(video.pdfUrl) %>" target="_blank" rel="noopener noreferrer"
+                 class="btn btn-primary btn-sm" style="border-radius: 8px; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-download"></i> Download Notes
+              </a>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
       <!-- Navigation Buttons -->
       <div class="player-navigation">
         <% if (prevVideo) { %>

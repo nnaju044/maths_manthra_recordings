@@ -58,6 +58,25 @@
       <div class="form-text">Paste the YouTube URL (regular, short, or unlisted link).</div>
     </div>
 
+    <!-- PDF Notes (Optional) -->
+    <hr class="my-4" />
+    <h6 class="mb-3"><i class="bi bi-file-earmark-pdf"></i> PDF Notes <span class="badge bg-secondary">Optional</span></h6>
+
+    <div class="mb-3">
+      <label for="pdfTitle" class="form-label">PDF Notes Title</label>
+      <input type="text" id="pdfTitle" name="pdfTitle" class="form-control"
+             value="<%= video && video.pdfTitle ? video.pdfTitle : '' %>"
+             placeholder="e.g. Algebra Worksheet" maxlength="300" />
+    </div>
+
+    <div class="mb-4">
+      <label for="pdfUrl" class="form-label">Google Drive PDF Link</label>
+      <input type="url" id="pdfUrl" name="pdfUrl" class="form-control"
+             value="<%= video && video.pdfUrl ? video.pdfUrl : '' %>"
+             placeholder="https://drive.google.com/file/d/.../view?usp=sharing" />
+      <div class="form-text">Paste the Google Drive sharing link for the PDF. Leave blank if no notes for this lesson.</div>
+    </div>
+
     <% if (video) { %>
       <div class="mb-4">
         <label class="form-label">Current Video Preview</label>

@@ -63,5 +63,34 @@ const getBaseUrl = (req) => {
   // is used automatically without any APP_URL env var.
   return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
 };
+/**
+ * Convert a Google Drive share/view URL into a direct-download URL.
+ * Supports formats:
+ *   - https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+ *   - https://drive.google.com/open?id=FILE_ID
+ *   - https://drive.google.com/uc?id=FILE_ID
+ *
+ * Returns the original URL if the file ID cannot be extracted.
+ * @param {string} url
+ * @returns {string}
+ */
+const getDriveDownloadUrl = (url) => {
+  if (!url || typeof url !== 'string') return url || '';
+  try {
+    // Pattern 1: /file/d/FILE_ID/
+    const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileMatch) {
+      return `https://drive.google.com/uc?export=download&id=${fileMatch[1]}`;
+    }
+    // Pattern 2: ?id=FILE_ID or &id=FILE_ID
+    const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (idMatch) {
+      return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+    }
+  } catch (_) {
+    // Parsing failed — fall through
+  }
+  return url;
+};
 
-module.exports = { formatDate, timeAgo, truncate, getBaseUrl };
+module.exports = { formatDate, timeAgo, truncate, getBaseUrl, getDriveDownloadUrl };

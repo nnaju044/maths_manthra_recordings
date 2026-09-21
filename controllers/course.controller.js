@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const Course = require('../models/Course');
 const Video = require('../models/Video');
 const { buildEmbedUrl } = require('../utils/youtube');
+const { getDriveDownloadUrl } = require('../utils/helpers');
 
 /**
  * GET /course/:slug
@@ -157,6 +158,7 @@ exports.showVideoPlayer = async (req, res, next) => {
       nextVideo,
       totalVideos: allVideos.length,
       currentIndex: currentIndex + 1,
+      getDriveDownloadUrl,
       layout: false,
     });
   } catch (err) { next(err); }
