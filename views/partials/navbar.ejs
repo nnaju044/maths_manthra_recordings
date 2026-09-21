@@ -1,0 +1,57 @@
+<%
+/**
+ * views/partials/navbar.ejs
+ * Public-facing responsive navbar.
+ */
+%>
+<nav class="mm-navbar">
+  <div class="container d-flex align-items-center justify-content-between py-2">
+    <!-- Brand -->
+    <a href="/" class="brand text-decoration-none" style="font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#1E40AF,#F59E0B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      📐 Maths Mantras
+    </a>
+
+    <!-- Desktop Nav -->
+    <div class="d-none d-md-flex align-items-center gap-3">
+      <a href="/" class="text-muted fw-500 text-decoration-none small <%= typeof currentPage !== 'undefined' && currentPage === 'home' ? 'text-primary' : '' %>">Home</a>
+
+      <% if (locals.currentUser) { %>
+        <% if (currentUser.role === 'superadmin') { %>
+          <a href="/admin/dashboard" class="btn-primary-custom py-2 px-3 rounded text-decoration-none" style="font-size:.85rem;">Admin Panel</a>
+        <% } else { %>
+          <a href="/student/dashboard" class="btn-primary-custom py-2 px-3 rounded text-decoration-none" style="font-size:.85rem;">My Dashboard</a>
+        <% } %>
+        <a href="/auth/logout" class="text-muted small text-decoration-none">Logout</a>
+      <% } else { %>
+        <a href="/auth/login" class="text-muted small text-decoration-none fw-500">Login</a>
+        <a href="/auth/register" class="btn-primary-custom py-2 px-3 rounded text-decoration-none" style="font-size:.85rem;">Get Started</a>
+      <% } %>
+
+      <button class="dark-toggle" id="darkToggle">🌙 Dark</button>
+    </div>
+
+    <!-- Mobile toggle -->
+    <button class="btn btn-sm border-0 d-md-none" id="navToggler" aria-label="Toggle navigation">
+      <i class="bi bi-list fs-4 text-muted"></i>
+    </button>
+  </div>
+
+  <!-- Mobile collapse -->
+  <div id="navCollapse" class="d-md-none border-top px-3 pb-3 d-none">
+    <div class="d-flex flex-column gap-2 pt-2">
+      <a href="/" class="text-muted small text-decoration-none">Home</a>
+      <% if (locals.currentUser) { %>
+        <% if (currentUser.role === 'superadmin') { %>
+          <a href="/admin/dashboard" class="text-primary small text-decoration-none fw-600">Admin Panel</a>
+        <% } else { %>
+          <a href="/student/dashboard" class="text-primary small text-decoration-none fw-600">Dashboard</a>
+        <% } %>
+        <a href="/auth/logout" class="text-danger small text-decoration-none">Logout</a>
+      <% } else { %>
+        <a href="/auth/login" class="text-muted small text-decoration-none">Login</a>
+        <a href="/auth/register" class="text-primary small text-decoration-none fw-600">Register Free</a>
+      <% } %>
+      <button class="dark-toggle mt-1" id="darkToggleMobile" onclick="document.getElementById('darkToggle')?.click()">🌙 Dark</button>
+    </div>
+  </div>
+</nav>

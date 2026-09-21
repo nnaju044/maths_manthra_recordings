@@ -88,17 +88,25 @@ document.addEventListener('DOMContentLoaded', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items }),
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        showToast('Video order saved!', 'success');
-      }
-    })
-    .catch(err => {
-      console.error('Reorder failed:', err);
-      showToast('Failed to save order', 'error');
-    });
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('Video order saved!', 'success');
+        }
+      })
+      .catch(err => {
+        console.error('Reorder failed:', err);
+        showToast('Failed to save order', 'error');
+      });
   }
+
+  // ── Copy Link Buttons ──
+  document.querySelectorAll('.btn-copy').forEach(btn => {
+    btn.addEventListener('click', function () {
+      copyLink(this.dataset.link, this);
+    });
+  });
+
 });
 
 // ── Toggle Course Active Status (AJAX) ──
@@ -136,57 +144,53 @@ async function regenerateSlug(courseId) {
 }
 
 // ── Copy to Clipboard ──
-async function copyLink(url, btn) {
-  // Always read the live URL from the DOM element rather than the
-  // baked-in string, so it stays correct after a slug regeneration.
-  const codeEl = btn && btn.previousElementSibling;
-  const liveUrl = (codeEl && codeEl.textContent.trim()) || url;
-
+function copyLink(url, btn) {
   const icon = btn && btn.querySelector('i');
 
-  const onSuccess = () => {
+  function onSuccess() {
     if (icon) {
-      icon.className = 'bi bi-check-lg text-success';
-      setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
+      icon.className = 'bi bi-check-lg';
+      icon.style.color = '#22c55e';
+      setTimeout(() => { icon.className = 'bi bi-clipboard'; icon.style.color = ''; }, 1500);
     }
     showToast('Link copied!', 'success');
-  };
+  }
 
-  const onError = () => {
+  function onError() {
     if (icon) {
-      icon.className = 'bi bi-x-lg text-danger';
-      setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1500);
+      icon.className = 'bi bi-x-lg';
+      icon.style.color = '#ef4444';
+      setTimeout(() => { icon.className = 'bi bi-clipboard'; icon.style.color = ''; }, 1500);
     }
-    showToast('Copy failed — please copy manually', 'error');
-  };
+    showToast('Copy failed — please copy the link manually', 'error');
+  }
 
-  // Primary: Clipboard API (requires HTTPS or localhost)
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  // execCommand fallback (synchronous, works everywhere within a user gesture)
+  function execFallback() {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
     try {
-      await navigator.clipboard.writeText(liveUrl);
-      onSuccess();
-      return;
-    } catch (_) {
-      // fall through to execCommand fallback
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? onSuccess() : onError();
+    } catch (e) {
+      document.body.removeChild(ta);
+      onError();
     }
   }
 
-  // Fallback: hidden textarea + execCommand (older browsers / non-secure context)
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = liveUrl;
-    // Keep the textarea off-screen and invisible
-    Object.assign(ta.style, { position: 'fixed', top: '-9999px', left: '-9999px', opacity: '0' });
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    ok ? onSuccess() : onError();
-  } catch (_) {
-    onError();
+  // Prefer the Clipboard API; fall back to execCommand if unavailable or denied
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(onSuccess).catch(execFallback);
+  } else {
+    execFallback();
   }
 }
+
 
 // ── Toast Helper ──
 function showToast(message, type = 'success') {

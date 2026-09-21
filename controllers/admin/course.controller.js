@@ -1,14 +1,14 @@
 /**
  * controllers/admin/course.controller.js
- * CRUD for courses — with password hashing, slug generation, and cascade delete.
+ * CRUD for courses — with password hashing, slug generation, Cloudinary uploads,
+ * and cascade delete.
  */
-const path = require('path');
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const Course = require('../../models/Course');
 const Video = require('../../models/Video');
 const { paginate } = require('../../utils/pagination');
 const { getBaseUrl } = require('../../utils/helpers');
+const cloudinary = require('../../config/cloudinary');
 
 // List courses
 exports.index = async (req, res, next) => {
@@ -62,7 +62,10 @@ exports.store = async (req, res, next) => {
       return res.redirect('/admin/courses/create');
     }
 
-    const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
+    // Cloudinary upload — req.file.path is the secure_url
+    const thumbnail = req.file ? req.file.path : null;
+    const thumbnailPublicId = req.file ? req.file.filename : null;
+
     const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
     const passwordHash = await bcrypt.hash(password, rounds);
 
@@ -70,13 +73,19 @@ exports.store = async (req, res, next) => {
       title,
       description,
       thumbnail,
+      thumbnailPublicId,
       passwordHash,
       isActive: isActive === 'on' || isActive === 'true' || isActive === true,
     });
 
     req.flash('success', 'Course created successfully.');
     res.redirect('/admin/courses');
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('COURSE CREATE ERROR');
+    console.error(err);
+    next(err);
+  }
+
 };
 
 // Show edit form
@@ -106,12 +115,17 @@ exports.update = async (req, res, next) => {
     if (!course) { req.flash('error', 'Course not found.'); return res.redirect('/admin/courses'); }
 
     if (req.file) {
-      // Delete old thumbnail
-      if (course.thumbnail) {
-        const oldPath = path.join(__dirname, '../../public', course.thumbnail);
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      // Delete old thumbnail from Cloudinary (if exists)
+      if (course.thumbnailPublicId) {
+        try {
+          await cloudinary.uploader.destroy(course.thumbnailPublicId);
+        } catch (e) {
+          console.error('Cloudinary delete failed (old thumbnail):', e.message);
+        }
       }
-      course.thumbnail = `/uploads/${req.file.filename}`;
+      // Save new Cloudinary URL + public_id
+      course.thumbnail = req.file.path;
+      course.thumbnailPublicId = req.file.filename;
     }
 
     // Update password only if provided (non-empty)
@@ -131,7 +145,11 @@ exports.update = async (req, res, next) => {
     await course.save();
     req.flash('success', 'Course updated successfully.');
     res.redirect('/admin/courses');
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('COURSE CREATE ERROR');
+    console.error(err);
+    next(err);
+  }
 };
 
 // Toggle active status (AJAX)
@@ -152,22 +170,25 @@ exports.regenerateSlug = async (req, res, next) => {
     if (!course) return res.json({ success: false, message: 'Not found' });
     const newSlug = course.regenerateSlug();
     await course.save();
-    // getBaseUrl: APP_URL env var → request host. Never hardcoded.
+    // getBaseUrl: derives from request host. Never hardcoded.
     const baseUrl = getBaseUrl(req);
     res.json({ success: true, slug: newSlug, url: `${baseUrl}/course/${newSlug}` });
   } catch (err) { next(err); }
 };
 
-// Delete course (cascade deletes videos)
+// Delete course (cascade deletes videos + Cloudinary thumbnail)
 exports.destroy = async (req, res, next) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) { req.flash('error', 'Course not found.'); return res.redirect('/admin/courses'); }
 
-    // Remove thumbnail
-    if (course.thumbnail) {
-      const p = path.join(__dirname, '../../public', course.thumbnail);
-      if (fs.existsSync(p)) fs.unlinkSync(p);
+    // Delete thumbnail from Cloudinary
+    if (course.thumbnailPublicId) {
+      try {
+        await cloudinary.uploader.destroy(course.thumbnailPublicId);
+      } catch (e) {
+        console.error('Cloudinary delete failed (course delete):', e.message);
+      }
     }
 
     // Cascade delete all videos

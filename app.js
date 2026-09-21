@@ -26,9 +26,18 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'www.youtube.com', 'www.youtube-nocookie.com', 'cdnjs.cloudflare.com'],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'cdnjs.cloudflare.com'],
       fontSrc: ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-      imgSrc: ["'self'", 'data:', 'img.youtube.com', 'i.ytimg.com', '*.ytimg.com'],
+      imgSrc: [
+        "'self'",
+        'data:',
+        'img.youtube.com',
+        'i.ytimg.com',
+        '*.ytimg.com',
+        'res.cloudinary.com',
+        '*.cloudinary.com'
+      ],
       frameSrc: ["'self'", 'www.youtube-nocookie.com', 'www.youtube.com'],
       connectSrc: ["'self'"],
     },

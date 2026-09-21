@@ -42,6 +42,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    thumbnailPublicId: {
+      type: String,
+      default: null,
+    },
     passwordHash: {
       type: String,
       required: [true, 'Course password is required'],

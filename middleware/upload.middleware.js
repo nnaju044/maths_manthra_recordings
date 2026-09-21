@@ -1,37 +1,34 @@
 /**
  * middleware/upload.middleware.js
- * Multer configuration for thumbnail uploads.
+ * Multer + Cloudinary storage for course thumbnail uploads.
+ * Files stream directly to Cloudinary — no local disk used.
  */
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-const UPLOAD_DIR = path.join(__dirname, '..', process.env.UPLOAD_PATH || 'public/uploads');
+console.log('Cloudinary upload middleware loaded');
+console.log('Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);
+console.log('Cloudinary object keys:', Object.keys(cloudinary));
+console.log('Cloudinary uploader:', cloudinary.uploader);
 
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'maths-manthra/course-thumbnails',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    // Auto-generate a unique public_id to avoid collisions
+    public_id: (req, file) => `course-thumb-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
   },
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extOk = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const allowedTypes = /jpeg|jpg|png|webp/;
   const mimeOk = allowedTypes.test(file.mimetype);
-  if (extOk && mimeOk) {
+  if (mimeOk) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'), false);
+    cb(new Error('Only image files are allowed (jpeg, jpg, png, webp)'), false);
   }
 };
 
