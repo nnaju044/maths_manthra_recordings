@@ -38,4 +38,25 @@ const upload = multer({
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 }, // 5MB
 });
 
-module.exports = { upload };
+// Excel upload storage (in-memory buffer for xlsx parsing)
+const excelFilter = (req, file, cb) => {
+  const isExcel =
+    file.originalname.match(/\.(xlsx|xls)$/i) ||
+    file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    file.mimetype === 'application/vnd.ms-excel' ||
+    file.mimetype === 'application/octet-stream';
+
+  if (isExcel) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only Excel files (.xlsx, .xls) are allowed'), false);
+  }
+};
+
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: excelFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});
+
+module.exports = { upload, uploadExcel };

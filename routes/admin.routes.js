@@ -5,11 +5,12 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth.middleware');
-const { upload } = require('../middleware/upload.middleware');
+const { upload, uploadExcel } = require('../middleware/upload.middleware');
 
 const dashCtrl = require('../controllers/admin/dashboard.controller');
 const courseCtrl = require('../controllers/admin/course.controller');
 const videoCtrl = require('../controllers/admin/video.controller');
+const certCtrl = require('../controllers/admin/certificate.controller');
 
 // All admin routes require auth (superadmin JWT)
 router.use(requireAuth);
@@ -35,5 +36,11 @@ router.get('/videos/:id/edit', videoCtrl.edit);
 router.post('/videos/:id', videoCtrl.update);
 router.post('/videos/:id/delete', videoCtrl.destroy);
 router.post('/videos/reorder', videoCtrl.reorder);
+
+// Certificates
+router.get('/certificates/upload', certCtrl.getUpload);
+router.post('/certificates/upload', uploadExcel.single('file'), certCtrl.postUpload);
+router.get('/certificates/students', certCtrl.getStudents);
+router.post('/certificates/students/:id/delete', certCtrl.deleteStudent);
 
 module.exports = router;
