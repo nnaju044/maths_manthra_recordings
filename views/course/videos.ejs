@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="<%= course.title %> — Recorded Classes" />
   <meta name="theme-color" content="#1E40AF" />
   <meta name="robots" content="noindex, nofollow" />
@@ -15,9 +15,24 @@
   <link rel="stylesheet" href="/css/main.css" />
   <title><%= title %></title>
 </head>
-<body class="course-page">
-  <!-- Course Banner -->
-  <div class="course-banner">
+<body class="course-page has-bottom-nav" data-course-slug="<%= course.slug %>" data-total-videos="<%= videos.length %>">
+
+  <!-- Mobile-First App Top Bar -->
+  <header class="app-top-header">
+    <div class="container d-flex align-items-center justify-content-between">
+      <div class="app-brand">
+        <span class="app-brand-icon">📐</span>
+        <span class="app-brand-name">Maths Manthra</span>
+      </div>
+      <div class="app-header-badge">
+        <i class="bi bi-play-circle-fill"></i>
+        <span><%= videos.length %> Lessons</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Course Hero / Overview -->
+  <section id="courseOverview" class="course-banner">
     <% if (course.thumbnail) { %>
       <img src="<%= course.thumbnail %>" alt="" class="course-banner-bg" />
     <% } %>
@@ -25,69 +40,142 @@
       <div class="container">
         <div class="course-banner-content">
           <div class="brand-badge-light">
-            <i class="bi bi-mortarboard"></i> Maths Manthra
+            <i class="bi bi-mortarboard-fill"></i> Private Student Portal
           </div>
           <h1 class="course-title-banner"><%= course.title %></h1>
           <% if (course.description) { %>
             <p class="course-desc-banner"><%= course.description %></p>
           <% } %>
           <div class="course-meta-banner">
-            <span><i class="bi bi-play-circle"></i> <%= videos.length %> Lessons</span>
+            <span><i class="bi bi-collection-play"></i> <%= videos.length %> Recorded Lessons</span>
+            <span><i class="bi bi-shield-check"></i> Enrolled Access</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Video List -->
-  <div class="container">
-    <div class="video-list-section">
-      <h2 class="section-title">
-        <i class="bi bi-collection-play"></i> All Lessons
-      </h2>
+  <!-- Main Content Container -->
+  <main class="container py-3">
+    <!-- Learning Progress Card -->
+    <section id="courseProgress" class="app-progress-card mb-4">
+      <div class="progress-card-header d-flex align-items-center justify-content-between mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="progress-icon-wrap"><i class="bi bi-mortarboard"></i></span>
+          <div>
+            <h6 class="progress-card-title mb-0">Your Progress</h6>
+            <small id="courseProgressCount" class="text-muted">0 of <%= videos.length %> Completed</small>
+          </div>
+        </div>
+        <div class="progress-percent-badge" id="courseProgressPercent">0%</div>
+      </div>
+      
+      <!-- Progress Indicator Track -->
+      <div class="app-progress-track mb-3">
+        <div id="courseProgressBar" class="app-progress-fill" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+
+      <!-- Quick Resume Action -->
+      <% if (videos.length > 0) { %>
+        <div class="progress-card-footer d-flex align-items-center justify-content-between">
+          <span class="progress-subtext text-muted">Pick up where you left off</span>
+          <a id="btnResumeLearning" href="/course/<%= course.slug %>/watch/<%= videos[0]._id %>" class="btn-app-resume">
+            <i class="bi bi-play-fill"></i> Resume Lesson
+          </a>
+        </div>
+      <% } %>
+    </section>
+
+    <!-- Day-wise Lessons Section -->
+    <section id="lessonsSection" class="video-list-section pt-1">
+      <div class="section-header-row mb-3 d-flex align-items-center justify-content-between">
+        <h2 class="section-title mb-0">
+          <i class="bi bi-collection-play-fill"></i> Day-wise Lessons
+        </h2>
+        <span class="lessons-count-pill"><%= videos.length %> Days</span>
+      </div>
 
       <% if (videos.length === 0) { %>
         <div class="empty-state-student">
           <i class="bi bi-hourglass-split"></i>
-          <h4>No videos yet</h4>
-          <p>Your teacher hasn't added any videos to this course yet. Check back soon!</p>
+          <h4>No videos uploaded yet</h4>
+          <p>Your instructor has not published any lessons for this course yet. Check back soon!</p>
         </div>
       <% } else { %>
         <div class="video-list-student">
           <% videos.forEach((video, index) => { %>
-            <a href="/course/<%= course.slug %>/watch/<%= video._id %>" class="video-card-student">
-              <div class="video-card-thumb">
+            <a href="/course/<%= course.slug %>/watch/<%= video._id %>" class="lesson-app-card" data-video-id="<%= video._id %>">
+              <div class="lesson-card-thumb-wrap">
                 <img src="/course/<%= course.slug %>/thumbnail/<%= video._id %>"
                      alt="<%= video.title %>" loading="lazy" />
+                <span class="lesson-day-badge">Day <%= video.dayNumber %></span>
                 <div class="play-overlay">
                   <i class="bi bi-play-circle-fill"></i>
                 </div>
               </div>
-              <div class="video-card-body">
-                <div class="day-label">Day <%= video.dayNumber %></div>
-                <h3 class="video-card-title"><%= video.title %></h3>
+              <div class="lesson-card-body">
+                <div class="lesson-header-tags mb-1">
+                  <span class="lesson-day-pill">Day <%= video.dayNumber %></span>
+                  <% if (video.pdfUrl) { %>
+                    <span class="lesson-pdf-pill"><i class="bi bi-file-earmark-pdf-fill"></i> Notes</span>
+                  <% } %>
+                </div>
+                <h3 class="lesson-card-title"><%= video.title %></h3>
                 <% if (video.description) { %>
-                  <p class="video-card-desc"><%= video.description.substring(0, 100) %><%= video.description.length > 100 ? '…' : '' %></p>
+                  <p class="lesson-card-desc"><%= video.description.substring(0, 95) %><%= video.description.length > 95 ? '…' : '' %></p>
                 <% } %>
-              </div>
-              <div class="video-card-arrow">
-                <i class="bi bi-chevron-right"></i>
+                <div class="lesson-card-meta mt-2 d-flex align-items-center justify-content-between">
+                  <span class="lesson-status-pill">
+                    <i class="bi bi-circle"></i> Unwatched
+                  </span>
+                  <span class="lesson-watch-cta">
+                    Watch <i class="bi bi-chevron-right"></i>
+                  </span>
+                </div>
               </div>
             </a>
           <% }) %>
         </div>
       <% } %>
-    </div>
-  </div>
+    </section>
+  </main>
 
-  <!-- Footer -->
+  <!-- Course Footer -->
   <footer class="course-footer">
     <div class="container">
-      <p>📐 Maths Manthra — Private Recorded Classes</p>
+      <p>📐 Maths Manthra — Private Recorded Classes Portal</p>
     </div>
   </footer>
 
+  <!-- Fixed Bottom Navigation -->
+  <nav class="app-bottom-nav" aria-label="Student Navigation">
+    <a href="#lessonsSection" class="bottom-nav-item active">
+      <i class="bi bi-collection-play-fill bottom-nav-icon"></i>
+      <span class="bottom-nav-label">Lessons</span>
+    </a>
+    <% if (videos.length > 0) { %>
+      <a id="bottomNavResume" href="/course/<%= course.slug %>/watch/<%= videos[0]._id %>" class="bottom-nav-item">
+        <i class="bi bi-play-circle-fill bottom-nav-icon"></i>
+        <span class="bottom-nav-label">Resume</span>
+      </a>
+    <% } else { %>
+      <div class="bottom-nav-item disabled">
+        <i class="bi bi-play-circle bottom-nav-icon"></i>
+        <span class="bottom-nav-label">Resume</span>
+      </div>
+    <% } %>
+    <a href="#courseProgress" class="bottom-nav-item">
+      <i class="bi bi-pie-chart-fill bottom-nav-icon"></i>
+      <span class="bottom-nav-label">Progress</span>
+    </a>
+    <a href="#courseOverview" class="bottom-nav-item">
+      <i class="bi bi-info-circle-fill bottom-nav-icon"></i>
+      <span class="bottom-nav-label">Overview</span>
+    </a>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
   <script>
     // Disable right click
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });

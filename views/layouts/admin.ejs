@@ -13,11 +13,16 @@
 
   <div class="admin-wrapper">
     <!-- ── Sidebar ── -->
-    <aside class="admin-sidebar" id="adminSidebar">
+    <aside class="admin-sidebar" id="adminSidebar" aria-label="Admin Navigation">
       <div class="sidebar-brand">
-        <div class="logo-text">
-          <img src="/../images/MM_Logo.jpg" alt="Maths Manthra Logo" class="sidebar-logo" style="max-width: 50px; height: auto; border-radius: 6px;">
-          <span>Maths Manthra</span>
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="logo-text d-flex align-items-center gap-2">
+            <img src="/images/MM_Logo.jpg" alt="Maths Manthra Logo" class="sidebar-logo" style="max-width: 48px; height: auto; border-radius: 6px;">
+            <span>Maths Manthra</span>
+          </div>
+          <button type="button" class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
         <div class="subtitle">Admin Panel</div>
       </div>
@@ -59,30 +64,39 @@
 
     <!-- ── Main ── -->
     <div class="admin-main">
-      <!-- Topbar -->
-      <div class="admin-topbar">
-        <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Open sidebar">
-          <i class="bi bi-list fs-4"></i>
-        </button>
+      <!-- Topbar / Top App Bar -->
+      <header class="admin-topbar">
+        <!-- Mobile Logo on left (< 1025px) -->
+        <a href="/admin/dashboard" class="mobile-topbar-brand" aria-label="Maths Manthra Dashboard">
+          <img src="/images/MM_Logo.jpg" alt="Maths Manthra Logo" class="mobile-topbar-logo">
+          <span class="mobile-topbar-title">Maths Manthra</span>
+        </a>
+
+        <!-- Desktop Page Title -->
         <div class="page-title">
           <%= locals.title || 'Admin' %>
         </div>
-        <div class="ms-auto d-flex align-items-center gap-2">
-          <span class="text-muted small d-none d-sm-block">Welcome, <%= currentUser.name.split(' ')[0] %>!</span>
-      </div>
-    </div>
 
-    <!-- Alerts -->
-    <%- include('../partials/alerts') %>
-
-              <!-- Content -->
-              <div class="admin-content"><%- body %></div>
+        <!-- Right Side: Welcome user & Mobile Menu Button -->
+        <div class="topbar-actions ms-auto d-flex align-items-center gap-2">
+          <span class="text-muted small d-none d-lg-block">Welcome, <%= currentUser.name.split(' ')[0] %>!</span>
+          <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="adminSidebar">
+            <i class="bi bi-list"></i>
+          </button>
         </div>
-      </div>
+      </header>
 
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-      <script src="/js/main.js"></script>
-      <script src="/js/admin.js"></script>
+      <!-- Alerts -->
+      <%- include('../partials/alerts') %>
+
+      <!-- Content -->
+      <div class="admin-content"><%- body %></div>
+    </div><!-- /.admin-main -->
+  </div><!-- /.admin-wrapper -->
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/admin.js"></script>
 </body>
 
 </html>

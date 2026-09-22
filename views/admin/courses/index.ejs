@@ -26,7 +26,8 @@
     <a href="/admin/courses/create" class="btn btn-primary-custom">Create Course</a>
   </div>
   <% } else { %>
-    <div class="table-responsive">
+    <!-- Desktop Table (visible >= 768px) -->
+    <div class="table-responsive courses-desktop-table">
       <table class="table admin-table">
         <thead>
           <tr>
@@ -94,6 +95,71 @@
             <% }) %>
         </tbody>
       </table>
+    </div>
+
+    <!-- Mobile Course Cards (visible < 768px) -->
+    <div class="courses-mobile-cards">
+      <% docs.forEach(course=> { %>
+        <div class="course-mobile-card">
+          <!-- Thumbnail -->
+          <div class="course-card-thumb-wrapper">
+            <% if (course.thumbnail) { %>
+              <img src="<%= course.thumbnail %>" alt="<%= course.title %>" class="course-card-thumb" />
+            <% } else { %>
+              <div class="course-card-thumb-placeholder">
+                <i class="bi bi-book"></i>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Card Content -->
+          <div class="course-card-body">
+            <!-- Meta: Status Toggle & Video Count -->
+            <div class="course-card-meta-row">
+              <button class="badge-status-btn <%= course.isActive ? 'active' : 'inactive' %>"
+                onclick="toggleActive('<%= course._id %>', this)" title="Click to toggle status" type="button">
+                <%= course.isActive ? 'Active' : 'Inactive' %>
+              </button>
+              <a href="/admin/videos?courseId=<%= course._id %>" class="course-card-video-count" title="View videos">
+                <i class="bi bi-play-circle-fill"></i>
+                <span><%= videoCountMap[course._id.toString()] || 0 %> Videos</span>
+              </a>
+            </div>
+
+            <!-- Course Title & Description -->
+            <h3 class="course-card-title"><%= course.title %></h3>
+            <% if (course.description) { %>
+              <p class="course-card-desc"><%= truncate(course.description, 85) %></p>
+            <% } %>
+
+            <!-- Thumb-Friendly Action Buttons -->
+            <div class="course-card-actions">
+              <button type="button" class="btn-card-action btn-card-share btn-copy"
+                data-link="<%= appUrl %>/course/<%= course.slug %>"
+                onclick="copyLink('<%= appUrl %>/course/<%= course.slug %>', this)"
+                title="Copy shareable link" aria-label="Copy share link">
+                <i class="bi bi-clipboard"></i>
+                <span>Share Link</span>
+              </button>
+
+              <a href="/admin/courses/<%= course._id %>/edit" class="btn-card-action btn-card-edit"
+                title="Edit course" aria-label="Edit course">
+                <i class="bi bi-pencil-square"></i>
+                <span>Edit</span>
+              </a>
+
+              <form action="/admin/courses/<%= course._id %>/delete" method="POST" class="course-card-delete-form"
+                onsubmit="return confirm('Delete this course and ALL its videos? This cannot be undone.')">
+                <button type="submit" class="btn-card-action btn-card-delete"
+                  title="Delete course" aria-label="Delete course">
+                  <i class="bi bi-trash"></i>
+                  <span>Delete</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% }) %>
     </div>
 
     <!-- Pagination -->

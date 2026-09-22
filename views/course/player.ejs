@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="<%= video.title %> — <%= course.title %>" />
-  <meta name="theme-color" content="#1E40AF" />
+  <meta name="theme-color" content="#0F172A" />
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,21 +15,33 @@
   <link rel="stylesheet" href="/css/main.css" />
   <title><%= title %></title>
 </head>
-<body class="player-page">
-  <!-- Top Navigation Bar -->
-  <nav class="player-nav">
-    <a href="/course/<%= course.slug %>/watch" class="player-nav-back">
-      <i class="bi bi-arrow-left"></i>
-      <span class="d-none d-sm-inline"><%= course.title %></span>
-      <span class="d-sm-none">Back</span>
-    </a>
-    <div class="player-nav-info">
-      <span class="lesson-counter"><%= currentIndex %> / <%= totalVideos %></span>
-    </div>
-  </nav>
+<body class="player-page has-bottom-nav" data-player-slug="<%= course.slug %>" data-current-video-id="<%= video._id %>">
 
-  <!-- Video Player -->
-  <div class="player-container">
+  <!-- Mobile App Player Navigation Bar -->
+  <header class="app-player-nav">
+    <div class="player-nav-inner">
+      <a href="/course/<%= course.slug %>/watch" class="player-nav-back" aria-label="Return to course lessons">
+        <i class="bi bi-chevron-left"></i>
+        <span class="d-none d-sm-inline"><%= course.title %></span>
+        <span class="d-sm-none">All Lessons</span>
+      </a>
+
+      <!-- Progress Pill -->
+      <div class="player-nav-progress">
+        <span class="badge-lesson-counter">
+          <i class="bi bi-collection-play"></i> Day <%= video.dayNumber %> (<%= currentIndex %>/<%= totalVideos %>)
+        </span>
+      </div>
+    </div>
+    
+    <!-- Thin Course Progress Bar at Bottom of App Bar -->
+    <div class="player-progress-bar-track">
+      <div class="player-progress-bar-fill" style="width: <%= totalVideos > 0 ? Math.round((currentIndex / totalVideos) * 100) : 0 %>%;"></div>
+    </div>
+  </header>
+
+  <!-- Large Video Player Section -->
+  <section id="playerContainer" class="player-container">
     <div class="player-wrapper">
       <!-- Shield overlay across the top to intercept clicks on YouTube header (Title, Watch Later, Share) -->
       <div class="player-top-shield" title="Maths Manthra Player"></div>
@@ -51,50 +63,74 @@
         <span class="watermark-text">Maths Manthra</span>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Video Info -->
-  <div class="container">
+  <!-- Video Details & Actions -->
+  <main class="container py-3">
     <div class="player-info-section">
       <!-- Anti-sharing Security Warning -->
       <div class="anti-sharing-warning" role="alert">
         <i class="bi bi-shield-lock-fill"></i>
-        <span>This content is for enrolled students only. Unauthorized sharing is prohibited.</span>
+        <span>Enrolled student access. Unauthorized recording or sharing is strictly prohibited.</span>
       </div>
 
-      <div class="player-day-badge">Day <%= video.dayNumber %></div>
+      <!-- Quick Action Bar: Day Pill + Complete Toggle -->
+      <div class="player-meta-bar d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="player-day-badge mb-0">Day <%= video.dayNumber %></span>
+          <span class="player-lesson-pill text-muted">Lesson <%= currentIndex %> of <%= totalVideos %></span>
+        </div>
+        
+        <!-- Interactive Progress Toggle -->
+        <button id="btnToggleComplete" type="button" class="btn-complete-toggle" aria-label="Toggle lesson completion">
+          <i id="completeStatusIcon" class="bi bi-check-circle"></i>
+          <span id="completeStatusText">Mark as Completed</span>
+        </button>
+      </div>
+
       <h1 class="player-title"><%= video.title %></h1>
+      
       <% if (video.description) { %>
         <p class="player-description"><%= video.description %></p>
       <% } %>
 
       <!-- PDF Notes Section -->
-      <% if (video.pdfUrl) { %>
-        <div class="card mt-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%); border-radius: 12px;">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center mb-3">
-              <span style="font-size: 1.5rem; margin-right: 0.5rem;">📄</span>
-              <h5 class="card-title mb-0" style="font-weight: 600; color: #1e293b;">Lesson Notes</h5>
+      <section id="notesSection" class="app-notes-section mb-4">
+        <% if (video.pdfUrl) { %>
+          <div class="app-notes-card">
+            <div class="notes-header d-flex align-items-start gap-3 mb-3">
+              <div class="notes-icon-box">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+              </div>
+              <div class="notes-title-wrap">
+                <div class="notes-badge">Study Material</div>
+                <h4 class="notes-title mb-1"><%= video.pdfTitle || 'Lesson Notes & Formulas' %></h4>
+                <p class="notes-subtext mb-0">Reference notes and solution sheets prepared for Day <%= video.dayNumber %>.</p>
+              </div>
             </div>
-            <% if (video.pdfTitle) { %>
-              <p class="card-text mb-3" style="color: #475569; font-size: 0.95rem;"><%= video.pdfTitle %></p>
-            <% } %>
-            <div class="d-flex gap-2 flex-wrap">
+            <div class="notes-actions d-flex gap-2 flex-wrap">
               <a href="<%= video.pdfUrl %>" target="_blank" rel="noopener noreferrer"
-                 class="btn btn-outline-primary btn-sm" style="border-radius: 8px; padding: 0.5rem 1.25rem;">
-                <i class="bi bi-eye"></i> View Notes
+                 class="btn-note-view">
+                <i class="bi bi-eye-fill"></i> View Notes
               </a>
               <a href="<%= getDriveDownloadUrl(video.pdfUrl) %>" target="_blank" rel="noopener noreferrer"
-                 class="btn btn-primary btn-sm" style="border-radius: 8px; padding: 0.5rem 1.25rem;">
-                <i class="bi bi-download"></i> Download Notes
+                 class="btn-note-download">
+                <i class="bi bi-cloud-arrow-down-fill"></i> Download Notes
               </a>
             </div>
           </div>
-        </div>
-      <% } %>
+        <% } else { %>
+          <div class="app-notes-card no-notes">
+            <div class="d-flex align-items-center gap-2 text-muted">
+              <i class="bi bi-file-earmark-x"></i>
+              <span>No PDF notes attached for this lesson.</span>
+            </div>
+          </div>
+        <% } %>
+      </section>
 
-      <!-- Navigation Buttons -->
-      <div class="player-navigation">
+      <!-- Previous / Next Navigation Buttons -->
+      <div class="player-navigation mb-4">
         <% if (prevVideo) { %>
           <a href="/course/<%= course.slug %>/watch/<%= prevVideo._id %>" class="nav-btn prev-btn">
             <i class="bi bi-chevron-left"></i>
@@ -123,20 +159,55 @@
       <!-- Back to Course Link -->
       <div class="back-to-course">
         <a href="/course/<%= course.slug %>/watch">
-          <i class="bi bi-grid"></i> View All Lessons
+          <i class="bi bi-grid-fill"></i> View All Course Lessons
         </a>
       </div>
     </div>
-  </div>
+  </main>
 
-  <!-- Footer -->
+  <!-- Course Footer -->
   <footer class="course-footer">
     <div class="container">
       <p>📐 Maths Manthra — Private Recorded Classes</p>
     </div>
   </footer>
 
+  <!-- Fixed Bottom Navigation Bar -->
+  <nav class="app-bottom-nav app-bottom-nav-dark" aria-label="Student Player Navigation">
+    <a href="/course/<%= course.slug %>/watch" class="bottom-nav-item">
+      <i class="bi bi-grid-fill bottom-nav-icon"></i>
+      <span class="bottom-nav-label">Lessons</span>
+    </a>
+    <a href="#playerContainer" class="bottom-nav-item active">
+      <i class="bi bi-play-circle-fill bottom-nav-icon"></i>
+      <span class="bottom-nav-label">Player</span>
+    </a>
+    <% if (video.pdfUrl) { %>
+      <a href="#notesSection" class="bottom-nav-item">
+        <i class="bi bi-file-earmark-pdf-fill bottom-nav-icon"></i>
+        <span class="bottom-nav-label">Notes</span>
+      </a>
+    <% } else { %>
+      <div class="bottom-nav-item disabled" title="No notes for this lesson">
+        <i class="bi bi-file-earmark bottom-nav-icon"></i>
+        <span class="bottom-nav-label">Notes</span>
+      </div>
+    <% } %>
+    <% if (nextVideo) { %>
+      <a href="/course/<%= course.slug %>/watch/<%= nextVideo._id %>" class="bottom-nav-item">
+        <i class="bi bi-skip-forward-fill bottom-nav-icon"></i>
+        <span class="bottom-nav-label">Next</span>
+      </a>
+    <% } else { %>
+      <div class="bottom-nav-item disabled" title="Course Completed!">
+        <i class="bi bi-check-circle bottom-nav-icon"></i>
+        <span class="bottom-nav-label">Finished</span>
+      </div>
+    <% } %>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
   <script>
     // 1. Disable Right Click (Context Menu)
     document.addEventListener('contextmenu', function(e) {

@@ -3,19 +3,78 @@
  * Sidebar toggle, AJAX toggle/regenerate, drag-and-drop reorder, copy-to-clipboard
  */
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Mobile Sidebar Toggle ──
+  // ── Mobile / Tablet Navigation Drawer ──
   const sidebar = document.getElementById('adminSidebar');
   const overlay = document.getElementById('sidebarOverlay');
   const toggleBtn = document.getElementById('sidebarToggle');
+  const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('sidebar-open');
+  }
+
+  function openSidebar() {
+    if (sidebar) sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('open');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('sidebar-open');
+  }
 
   if (toggleBtn && sidebar && overlay) {
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('open');
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
     });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('open');
+
+    if (drawerCloseBtn) {
+      drawerCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeSidebar();
+      });
+    }
+
+    // Close on outside click (clicking backdrop overlay)
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close on outside click anywhere outside drawer when open
+    document.addEventListener('click', (e) => {
+      if (
+        sidebar.classList.contains('open') &&
+        !sidebar.contains(e.target) &&
+        !toggleBtn.contains(e.target)
+      ) {
+        closeSidebar();
+      }
+    });
+
+    // Auto-close sidebar when a nav link is clicked on mobile/tablet
+    sidebar.querySelectorAll('.sidebar-link').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          closeSidebar();
+        }
+      });
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+        closeSidebar();
+      }
+    });
+
+    // Close drawer when resizing to desktop
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1024 && sidebar.classList.contains('open')) {
+        closeSidebar();
+      }
     });
   }
 

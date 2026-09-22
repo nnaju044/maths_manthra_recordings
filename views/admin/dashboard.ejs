@@ -1,8 +1,8 @@
 <!-- Admin Dashboard -->
 <div class="dashboard-grid">
   <!-- Stats Cards -->
-  <div class="row g-4 mb-4">
-    <div class="col-sm-6 col-lg-4">
+  <div class="row g-3 g-lg-4 mb-3 mb-lg-4 stats-cards-row">
+    <div class="col-6 col-lg-4">
       <div class="stat-card">
         <div class="stat-icon bg-primary-soft"><i class="bi bi-book"></i></div>
         <div class="stat-info">
@@ -11,7 +11,7 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-4">
+    <div class="col-6 col-lg-4">
       <div class="stat-card">
         <div class="stat-icon bg-accent-soft"><i class="bi bi-play-circle"></i></div>
         <div class="stat-info">
@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-4">
+    <div class="col-6 col-lg-4">
       <div class="stat-card">
         <div class="stat-icon bg-success-soft"><i class="bi bi-check-circle"></i></div>
         <div class="stat-info">
@@ -32,14 +32,14 @@
   </div>
 
   <!-- Quick Actions -->
-  <div class="row g-4 mb-4">
-    <div class="col-md-6">
+  <div class="row g-3 g-lg-4 mb-3 mb-lg-4">
+    <div class="col-12 col-md-6">
       <a href="/admin/courses/create" class="quick-action-card">
         <i class="bi bi-plus-circle"></i>
         <span>Create New Course</span>
       </a>
     </div>
-    <div class="col-md-6">
+    <div class="col-12 col-md-6">
       <a href="/admin/videos/create" class="quick-action-card">
         <i class="bi bi-plus-circle"></i>
         <span>Add New Video</span>
@@ -48,8 +48,8 @@
   </div>
 
   <!-- Recent Activity -->
-  <div class="row g-4">
-    <div class="col-lg-6">
+  <div class="row g-3 g-lg-4">
+    <div class="col-12 col-lg-6">
       <div class="card-panel">
         <h3 class="panel-title"><i class="bi bi-book"></i> Recent Courses</h3>
         <% if (recentCourses.length === 0) { %>
@@ -67,7 +67,7 @@
                     <span class="text-muted ms-2"><%= formatDate(course.createdAt) %></span>
                   </div>
                 </div>
-                <a href="/admin/courses/<%= course._id %>/edit" class="btn-sm-edit" title="Edit">
+                <a href="/admin/courses/<%= course._id %>/edit" class="btn-sm-edit" title="Edit" aria-label="Edit course">
                   <i class="bi bi-pencil"></i>
                 </a>
               </div>
@@ -77,7 +77,7 @@
       </div>
     </div>
 
-    <div class="col-lg-6">
+    <div class="col-12 col-lg-6">
       <div class="card-panel">
         <h3 class="panel-title"><i class="bi bi-play-circle"></i> Recent Videos</h3>
         <% if (recentVideos.length === 0) { %>
@@ -93,7 +93,7 @@
                     <span class="text-muted ms-2"><%= formatDate(video.createdAt) %></span>
                   </div>
                 </div>
-                <a href="/admin/videos/<%= video._id %>/edit" class="btn-sm-edit" title="Edit">
+                <a href="/admin/videos/<%= video._id %>/edit" class="btn-sm-edit" title="Edit" aria-label="Edit video">
                   <i class="bi bi-pencil"></i>
                 </a>
               </div>
