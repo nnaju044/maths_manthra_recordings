@@ -6,12 +6,17 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const courseCtrl = require('../controllers/course.controller');
+const certPublicCtrl = require('../controllers/certificate.controller');
 const { requireCourseAccess } = require('../middleware/auth.middleware');
 
 // Root → redirect to admin login
 router.get('/', (req, res) => {
   res.redirect('/auth/login');
 });
+
+// Certificate portal (public, no login required)
+router.get('/certificate', certPublicCtrl.showCertificatePage);
+router.post('/certificate', certPublicCtrl.handleCertificateAction);
 
 // Rate limiting for password verification — 10 attempts per 15 minutes per IP
 const coursePasswordLimiter = rateLimit({

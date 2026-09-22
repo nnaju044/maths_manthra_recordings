@@ -38,9 +38,11 @@ router.post('/videos/:id/delete', videoCtrl.destroy);
 router.post('/videos/reorder', videoCtrl.reorder);
 
 // Certificates
+router.get('/certificates', certCtrl.index);
 router.get('/certificates/upload', certCtrl.getUpload);
 router.post('/certificates/upload', uploadExcel.single('file'), certCtrl.postUpload);
-router.get('/certificates/students', certCtrl.getStudents);
-router.post('/certificates/students/:id/delete', certCtrl.deleteStudent);
+router.post('/certificates/:id/toggle-active', certCtrl.toggleActive);
+router.post('/certificates/:id/delete', certCtrl.deleteStudent);
+router.get('/certificates/students', (req, res) => res.redirect('/admin/certificates'));
 
 module.exports = router;

@@ -271,3 +271,20 @@ function showToast(message, type = 'success') {
     if (toast.parentNode) toast.parentNode.removeChild(toast);
   }, 4500);
 }
+
+// ── Toggle Certificate Student Active Status (AJAX) ──
+async function toggleStudentActive(studentId, btn) {
+  try {
+    const res = await fetch(`/admin/certificates/${studentId}/toggle-active`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      btn.className = `badge-status-btn ${data.isActive ? 'active' : 'inactive'}`;
+      btn.textContent = data.isActive ? 'Active' : 'Inactive';
+      showToast(`Student status updated to ${data.isActive ? 'Active' : 'Inactive'}`, 'success');
+    }
+  } catch (err) {
+    console.error('Toggle failed:', err);
+    showToast('Failed to update student status', 'error');
+  }
+}
+

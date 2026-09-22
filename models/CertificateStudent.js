@@ -68,6 +68,5 @@ certificateStudentSchema.pre('save', function (next) {
 
 certificateStudentSchema.index({ courseId: 1, issuedDate: -1 });
 certificateStudentSchema.index({ email: 1, courseId: 1 });
-certificateStudentSchema.index({ certificateNumber: 1 });
 
 module.exports = mongoose.model('CertificateStudent', certificateStudentSchema);

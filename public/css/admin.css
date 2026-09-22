@@ -617,12 +617,14 @@ body.sidebar-open {
   margin: 0 0 16px 0;
 }
 
-/* Courses view: Desktop Table vs Mobile Cards */
-.courses-desktop-table {
+/* Courses & Students view: Desktop Table vs Mobile Cards */
+.courses-desktop-table,
+.students-desktop-table {
   display: block;
 }
 
-.courses-mobile-cards {
+.courses-mobile-cards,
+.students-mobile-cards {
   display: none;
 }
 
@@ -1215,19 +1217,22 @@ body.sidebar-open {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* ── Courses Mobile Card View (< 768px) ── */
-  .courses-desktop-table {
+  /* ── Courses & Students Mobile Card View (< 768px) ── */
+  .courses-desktop-table,
+  .students-desktop-table {
     display: none !important;
   }
 
-  .courses-mobile-cards {
+  .courses-mobile-cards,
+  .students-mobile-cards {
     display: flex !important;
     flex-direction: column;
     gap: 16px;
     width: 100%;
   }
 
-  .course-mobile-card {
+  .course-mobile-card,
+  .student-mobile-card {
     background: var(--bg-card);
     border-radius: var(--radius);
     border: 1px solid var(--border-light);
@@ -1237,6 +1242,19 @@ body.sidebar-open {
     flex-direction: column;
     width: 100%;
     transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .student-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .student-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-dark);
   }
 
   .course-card-thumb-wrapper {

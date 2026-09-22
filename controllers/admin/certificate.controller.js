@@ -53,6 +53,41 @@ async function generateUniqueCertificateNumber() {
   return certNumber;
 }
 
+// GET /admin/certificates — Student Management Page
+exports.index = async (req, res, next) => {
+  try {
+    const { page = 1, search = '' } = req.query;
+    const filter = {};
+
+    if (search && search.trim()) {
+      const s = search.trim();
+      filter.$or = [
+        { fullName: { $regex: s, $options: 'i' } },
+        { name: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
+        { certificateNumber: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const result = await paginate(CertificateStudent, filter, {
+      page,
+      limit: 10,
+      sort: { createdAt: -1 },
+      populate: 'courseId',
+    });
+
+    res.render('admin/certificates/index', {
+      title: 'Certificate Students — Admin',
+      layout: 'layouts/admin',
+      ...result,
+      search: search.trim(),
+      currentPage: 'certificates',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // GET /admin/certificates/upload — Show Excel upload form
 exports.getUpload = async (req, res, next) => {
   try {
@@ -200,57 +235,33 @@ exports.postUpload = async (req, res, next) => {
   }
 };
 
-// GET /admin/certificates/students — View Certificate Student List
-exports.getStudents = async (req, res, next) => {
+// POST /admin/certificates/:id/toggle-active — Toggle student active status (AJAX)
+exports.toggleActive = async (req, res, next) => {
   try {
-    const { courseId, search = '', page = 1 } = req.query;
-    const courses = await Course.find().sort({ title: 1 });
-
-    const filter = {};
-    if (courseId) {
-      filter.courseId = courseId;
-    }
-    if (search) {
-      filter.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { certificateNumber: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-      ];
+    const student = await CertificateStudent.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found' });
     }
 
-    const result = await paginate(CertificateStudent, filter, {
-      page,
-      limit: 15,
-      sort: { createdAt: -1 },
-      populate: 'courseId',
-    });
+    student.isActive = !student.isActive;
+    await student.save();
 
-    res.render('admin/certificates/students', {
-      title: 'Student List — Certificates',
-      layout: 'layouts/admin',
-      ...result,
-      courses,
-      selectedCourseId: courseId || '',
-      search,
-      currentPage: 'certificates-students',
-    });
+    res.json({ success: true, isActive: student.isActive });
   } catch (err) {
-    next(err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// POST /admin/certificates/students/:id/delete — Delete a student record
+// POST /admin/certificates/:id/delete — Delete a student certificate record
 exports.deleteStudent = async (req, res, next) => {
   try {
     const student = await CertificateStudent.findByIdAndDelete(req.params.id);
     if (!student) {
       req.flash('error', 'Student record not found.');
     } else {
-      req.flash('success', `Certificate record for "${student.fullName || student.name}" deleted.`);
+      req.flash('success', `Student "${student.fullName || student.name}" deleted successfully.`);
     }
-    res.redirect('/admin/certificates/students');
+    res.redirect('/admin/certificates');
   } catch (err) {
     next(err);
   }

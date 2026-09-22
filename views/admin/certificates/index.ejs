@@ -1,0 +1,204 @@
+<!-- Admin Certificate Students List -->
+<div class="content-header">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <h2><i class="bi bi-award"></i> Certificate Students</h2>
+    <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
+      <%= totalDocs %> <%= totalDocs === 1 ? 'Student' : 'Students' %>
+    </span>
+  </div>
+  <a href="/admin/certificates/upload" class="btn btn-primary-custom">
+    <i class="bi bi-cloud-arrow-up"></i> Upload Students
+  </a>
+</div>
+
+<!-- Search Bar (search by email, name, certificate number) -->
+<form class="search-bar mb-4" method="GET" action="/admin/certificates">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="text" name="search" class="form-control"
+      placeholder="Search by name, email, or certificate number..." value="<%= search %>" />
+    <button type="submit" class="btn btn-outline-primary">Search</button>
+    <% if (search) { %>
+      <a href="/admin/certificates" class="btn btn-outline-secondary">Clear</a>
+    <% } %>
+  </div>
+</form>
+
+<% if (docs.length === 0) { %>
+  <div class="empty-state">
+    <i class="bi bi-award"></i>
+    <h4>No students found</h4>
+    <p><%= search ? 'No students match your search criteria.' : 'Upload your first student Excel sheet to get started.' %></p>
+    <a href="/admin/certificates/upload" class="btn btn-primary-custom">Upload Students</a>
+  </div>
+<% } else { %>
+  <!-- Desktop Table (visible >= 768px) -->
+  <div class="table-responsive students-desktop-table">
+    <table class="table admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Course</th>
+          <th>Certificate Number</th>
+          <th>Status</th>
+          <th>Created Date</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% docs.forEach(student => { %>
+          <tr>
+            <!-- Name -->
+            <td>
+              <div class="course-cell">
+                <% if (student.profileImage && (student.profileImage.startsWith('http://') || student.profileImage.startsWith('https://'))) { %>
+                  <img src="<%= student.profileImage %>" alt="" class="course-thumb-sm rounded-circle" onerror="this.style.display='none'" />
+                <% } else { %>
+                  <div class="course-thumb-placeholder rounded-circle" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-weight: 700; width: 42px; height: 42px; min-width: 42px; display: flex; align-items: center; justify-content: center;">
+                    <%= (student.fullName || student.name || 'S').charAt(0).toUpperCase() %>
+                  </div>
+                <% } %>
+                <div>
+                  <div class="fw-semibold">
+                    <%= student.fullName || student.name %>
+                  </div>
+                  <% if (student.qualification) { %>
+                    <div class="text-muted small">
+                      <%= student.qualification %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+
+            <!-- Email -->
+            <td>
+              <span class="text-dark"><%= student.email %></span>
+            </td>
+
+            <!-- Phone -->
+            <td>
+              <span class="text-muted"><%= student.phone || '—' %></span>
+            </td>
+
+            <!-- Course -->
+            <td>
+              <span class="fw-medium text-secondary">
+                <%= student.courseId ? student.courseId.title : '—' %>
+              </span>
+            </td>
+
+            <!-- Certificate Number -->
+            <td>
+              <code class="slug-display"><%= student.certificateNumber || '—' %></code>
+            </td>
+
+            <!-- Status -->
+            <td>
+              <button class="badge-status-btn <%= student.isActive ? 'active' : 'inactive' %>"
+                onclick="toggleStudentActive('<%= student._id %>', this)" title="Click to toggle status" type="button">
+                <%= student.isActive ? 'Active' : 'Inactive' %>
+              </button>
+            </td>
+
+            <!-- Created Date -->
+            <td>
+              <span class="text-muted small">
+                <%= formatDate(student.createdAt) %>
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-end">
+              <div class="action-btns justify-content-end">
+                <form action="/admin/certificates/<%= student._id %>/delete" method="POST" class="d-inline"
+                  onsubmit="return confirm('Delete this student certificate record? This cannot be undone.')">
+                  <button type="submit" class="btn-action delete" title="Delete Student" aria-label="Delete Student">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Student Cards (visible < 768px) -->
+  <div class="students-mobile-cards">
+    <% docs.forEach(student => { %>
+      <div class="student-mobile-card">
+        <div class="student-card-body">
+          <div class="student-card-header d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <% if (student.profileImage && (student.profileImage.startsWith('http://') || student.profileImage.startsWith('https://'))) { %>
+                <img src="<%= student.profileImage %>" alt="" class="rounded-circle" style="width: 38px; height: 38px; object-fit: cover;" onerror="this.style.display='none'" />
+              <% } else { %>
+                <div class="rounded-circle" style="background: rgba(37, 99, 235, 0.1); color: #2563eb; font-weight: 700; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+                  <%= (student.fullName || student.name || 'S').charAt(0).toUpperCase() %>
+                </div>
+              <% } %>
+              <div>
+                <h3 class="student-card-title mb-0"><%= student.fullName || student.name %></h3>
+                <small class="text-muted"><%= student.qualification || 'Student' %></small>
+              </div>
+            </div>
+            <button class="badge-status-btn <%= student.isActive ? 'active' : 'inactive' %>"
+              onclick="toggleStudentActive('<%= student._id %>', this)" title="Click to toggle status" type="button">
+              <%= student.isActive ? 'Active' : 'Inactive' %>
+            </button>
+          </div>
+
+          <div class="student-card-info-list mb-3">
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Email</span>
+              <span class="small fw-medium"><%= student.email %></span>
+            </div>
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Phone</span>
+              <span class="small"><%= student.phone || '—' %></span>
+            </div>
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Course</span>
+              <span class="small fw-medium text-end text-truncate" style="max-width: 60%;"><%= student.courseId ? student.courseId.title : '—' %></span>
+            </div>
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Certificate No.</span>
+              <code class="slug-display small"><%= student.certificateNumber || '—' %></code>
+            </div>
+            <div class="info-item d-flex justify-content-between py-1">
+              <span class="text-muted small">Created Date</span>
+              <span class="small text-muted"><%= formatDate(student.createdAt) %></span>
+            </div>
+          </div>
+
+          <div class="student-card-actions">
+            <form action="/admin/certificates/<%= student._id %>/delete" method="POST" class="w-100"
+              onsubmit="return confirm('Delete this student certificate record? This cannot be undone.')">
+              <button type="submit" class="btn-card-action btn-card-delete w-100" title="Delete Student" aria-label="Delete Student">
+                <i class="bi bi-trash"></i>
+                <span>Delete Student</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- Pagination (matching Courses design pattern) -->
+  <% if (totalPages > 1) { %>
+    <nav class="pagination-nav">
+      <% if (hasPrev) { %>
+        <a href="/admin/certificates?page=<%= prevPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="page-link-custom">← Previous</a>
+      <% } %>
+      <span class="page-info">Page <%= currentPage %> of <%= totalPages %></span>
+      <% if (hasNext) { %>
+        <a href="/admin/certificates?page=<%= nextPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="page-link-custom">Next →</a>
+      <% } %>
+    </nav>
+  <% } %>
+<% } %>

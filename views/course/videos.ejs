@@ -92,6 +92,27 @@
       <% } %>
     </section>
 
+    <!-- Course Certificate Section -->
+    <section class="app-certificate-card mb-4" aria-label="Course Certificate">
+      <div class="certificate-card-inner">
+        <div class="certificate-card-content">
+          <div class="certificate-badge">
+            <i class="bi bi-patch-check-fill text-warning"></i>
+            <span>Course Completion</span>
+          </div>
+          <h3 class="certificate-card-title">Completed Your Lessons?</h3>
+          <p class="certificate-card-subtext mb-0">
+            Verify your coursework and obtain your official student certificate for <%= course.title %>.
+          </p>
+        </div>
+        <div class="certificate-card-action">
+          <a href="/certificate?course=<%= course.slug %>" class="btn-get-certificate" id="btnGetCertificate">
+            🎓 Get Certificate
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- Day-wise Lessons Section -->
     <section id="lessonsSection" class="video-list-section pt-1">
       <div class="section-header-row mb-3 d-flex align-items-center justify-content-between">
