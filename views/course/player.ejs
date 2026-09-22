@@ -13,6 +13,12 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/main.css" />
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MathsManthra" />
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
   <title><%= title %></title>
 </head>
 <body class="player-page has-bottom-nav" data-player-slug="<%= course.slug %>" data-current-video-id="<%= video._id %>">
@@ -266,6 +272,14 @@
       topShield.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+      });
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .catch(err => console.error('SW registration failed:', err));
       });
     }
   </script>

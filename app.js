@@ -40,6 +40,8 @@ app.use(helmet({
       ],
       frameSrc: ["'self'", 'www.youtube-nocookie.com', 'www.youtube.com'],
       connectSrc: ["'self'"],
+      workerSrc: ["'self'"],
+      manifestSrc: ["'self'"],
     },
   },
 }));

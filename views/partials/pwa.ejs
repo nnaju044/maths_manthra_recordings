@@ -1,0 +1,38 @@
+<%
+/**
+ * views/partials/pwa.ejs
+ * PWA meta tags, manifest link, Apple-specific tags, and service worker registration.
+ * Include this partial inside <head> on all pages.
+ */
+%>
+<!-- PWA: Web App Manifest -->
+<link rel="manifest" href="/manifest.json" />
+
+<!-- PWA: Apple iOS Support -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="MathsManthra" />
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+
+<!-- PWA: Apple Splash Screens (auto-generated via meta) -->
+<link rel="apple-touch-startup-image" href="/images/icon-512.png" />
+
+<!-- PWA: Windows / Edge -->
+<meta name="msapplication-TileImage" content="/images/icon-192.png" />
+<meta name="msapplication-TileColor" content="#1E40AF" />
+
+<!-- PWA: Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(function(reg) {
+        // Check for updates periodically
+        setInterval(function() { reg.update(); }, 60 * 60 * 1000); // every hour
+      })
+      .catch(function(err) {
+        console.warn('SW registration failed:', err);
+      });
+  });
+}
+</script>
