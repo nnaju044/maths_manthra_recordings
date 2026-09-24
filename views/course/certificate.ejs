@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="description" content="Request and verify your official course completion certificate — Maths Manthra Academy" />
+  <meta name="description"
+    content="Request and verify your official course completion certificate — Maths Manthra Academy" />
   <meta name="theme-color" content="#1E40AF" />
   <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;900&display=swap"
+    rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/main.css" />
@@ -18,8 +22,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="MathsManthra" />
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
-  <title><%= title %></title>
+  <title>
+    <%= title %>
+  </title>
   <style>
+    /* ── Hero banner ── */
     .cert-hero {
       background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #1E40AF 100%);
       color: #ffffff;
@@ -27,6 +34,7 @@
       text-align: center;
       position: relative;
     }
+
     .cert-hero-badge {
       display: inline-flex;
       align-items: center;
@@ -41,19 +49,23 @@
       border-radius: 30px;
       margin-bottom: 12px;
     }
+
     .cert-hero-title {
       font-size: 1.8rem;
       font-weight: 800;
       letter-spacing: -0.5px;
       margin-bottom: 6px;
     }
+
+    /* ── Card wrappers ── */
     .cert-card-wrap {
-      max-width: 820px;
+      max-width: 960px;
       margin: -20px auto 40px;
       padding: 0 16px;
       position: relative;
       z-index: 10;
     }
+
     .cert-card-container {
       background: #FFFFFF;
       border-radius: var(--radius-xl);
@@ -61,75 +73,495 @@
       box-shadow: var(--shadow-xl);
       overflow: hidden;
     }
-    .cert-display-box {
-      background: radial-gradient(circle at center, #FFFFFF 0%, #F8FAFC 100%);
-      border: 6px double #1E40AF;
-      border-radius: 12px;
-      padding: 32px 24px;
-      position: relative;
-      box-shadow: inset 0 0 20px rgba(30, 64, 175, 0.04);
+
+    /* ═══════════════════════════════════════════════════
+       CERTIFICATE IMAGE-OVERLAY SYSTEM
+       The template image is the background. Every dynamic
+       field is positioned in % coordinates over the image.
+    ═══════════════════════════════════════════════════ */
+
+    /* Outer wrapper — controls max display width */
+    .certificate-container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
     }
-    .cert-seal {
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+
+    /* Background image — maintains A4 landscape aspect ratio */
+    .certificate-background {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1366 / 965;
+      overflow: hidden;
+      border-radius: 6px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    .certificate-background img.cert-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+      border-radius: 6px;
+    }
+
+    /* Overlay layer — sits on top of the background */
+    .certificate-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Shared overlay field style ── */
+    .cert-field {
+      position: absolute;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    /* ── QR code box (matches the gold-bordered square in the template) ──
+       Template QR zone: left ~5%, top ~31%, width ~14%, height ~20% */
+    .cert-field--qr {
+      left: 5%;
+      top: 31%;
+      transform: none;
+      /* QR is left-aligned, not centred */
+      width: 14%;
+      height: 20.5%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cert-field--qr img,
+    .cert-field--qr svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── Student name — on the underline at centre of page ~52.5% from top ── */
+    .cert-field--name {
+      left: 53%;
+      top: 49.5%;
+      transform: translateX(-50%) translateY(-50%);
+      font-family: 'Brush Script MT', 'Segoe Script', cursive, 'Georgia', serif;
+      font-size: 2.4em;
+      font-weight: 700;
+      color: #0b1f3a;
+      white-space: normal;
+      text-align: center;
+      width: 54%;
+    }
+
+    /* ── Qualification — just below name, if present ── */
+    .cert-field--qualification {
+      left: 53%;
+      top: 57%;
+      transform: translateX(-50%);
+      font-family: Arial, sans-serif;
+      font-size: 0.75em;
+      color: #374151;
+      text-align: center;
+      width: 50%;
+      white-space: normal;
+    }
+
+    /* ── Course name — bold text within the course line ~60–63% from top ── */
+    .cert-field--course {
+      left: 53%;
+      top: 62.5%;
+      transform: translateX(-50%);
+      font-family: Arial, sans-serif;
+      font-size: 0.82em;
+      font-weight: 800;
+      color: #0b1f3a;
+      text-align: center;
+      white-space: normal;
+      width: 55%;
+    }
+
+    /* ── Date (left signature line) ~74% from top, left ~22% ── */
+    .cert-field--date {
+      left: 32%;
+      top: 69%;
+      transform: translateX(-50%);
+      font-family: Arial, sans-serif;
+      font-size: 0.7em;
+      font-weight: 600;
+      color: #1a1a2e;
+      text-align: center;
+    }
+
+    /* ── Signature image (right signature line) ── */
+    .cert-field--signature {
+      left: 68%;
+      top: 58%;
+      transform: translateX(-50%);
+      width: 15%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cert-field--signature img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* ── Certificate ID value ── */
+    .cert-field--cert-id {
+      left: 14.5%;
+      top: 82%;
+      transform: none;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72em;
+      font-weight: 700;
+      color: #0b1f3a;
+    }
+
+    /* ── Date of Completion value ── */
+    .cert-field--completion-date {
+      left: 17.5%;
+      top: 85.1%;
+      transform: none;
+      font-family: Arial, sans-serif;
+      font-size: 0.72em;
+      font-weight: 600;
+      color: #0b1f3a;
+    }
+
+    /* ── Verification URL — very small, bottom area ── */
+    .cert-field--verify-url {
+      left: 50%;
+      top: 92.5%;
+      transform: translateX(-50%);
+      font-family: Arial, sans-serif;
+      font-size: 0.55em;
+      color: #4b5563;
+      text-align: center;
+      white-space: normal;
+      width: 60%;
+    }
+
+    /* ── Font scaling relative to certificate width ──
+       Using vw clamping so fonts scale proportionally at all sizes. */
+    .certificate-background {
+      font-size: clamp(7px, 1.7vw, 18px);
+    }
+
+    /* ── Email Verify Card ── */
+    .verify-email-card {
+      background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+      border: 2px solid #C7D2FE;
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .verify-email-card .verify-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
       border-radius: 50%;
-      color: #ffffff;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
-      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
-      border: 3px solid #FEF3C7;
+      font-size: 1.5rem;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+      margin-bottom: 12px;
     }
-    .cert-title-cinzel {
-      font-family: 'Cinzel', serif;
-      letter-spacing: 2px;
-      color: #1E3A8A;
+
+    .verify-email-card .verify-title {
+      font-size: 1.15rem;
       font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 4px;
     }
-    .cert-student-name {
-      font-size: 1.7rem;
-      font-weight: 800;
-      color: #0F172A;
+
+    .verify-email-card .verify-desc {
+      font-size: 0.88rem;
+      color: #475569;
+      margin-bottom: 16px;
+    }
+
+    .verify-email-card .input-group {
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .verify-email-card .btn-verify {
+      background: linear-gradient(135deg, #4F46E5, #6366F1);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      padding: 0.6rem 1.5rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+      transition: all 0.2s ease;
+    }
+
+    .verify-email-card .btn-verify:hover {
+      background: linear-gradient(135deg, #4338CA, #4F46E5);
+    }
+
+    /* ── Verified Results ── */
+    .verified-results-section {
+      margin-bottom: 24px;
+    }
+
+    .verified-results-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
       border-bottom: 2px solid #E2E8F0;
-      display: inline-block;
-      padding-bottom: 4px;
-      margin: 12px 0 6px;
     }
-    .cert-course-name {
-      font-size: 1.25rem;
+
+    .verified-results-header .vr-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #059669, #10B981);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+
+    .verified-cert-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-left: 5px solid #1E40AF;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .verified-cert-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .verified-cert-card .cert-info-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .verified-cert-card .cert-info-left {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .verified-cert-card .cert-info-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .verified-cert-card .vc-name {
+      font-size: 1.15rem;
       font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 2px;
+    }
+
+    .verified-cert-card .vc-course {
+      font-size: 0.95rem;
+      font-weight: 600;
       color: #1E40AF;
-      margin-top: 4px;
+      margin-bottom: 8px;
     }
-    .cert-meta-tag {
-      background: #F1F5F9;
-      border: 1px solid #CBD5E1;
-      padding: 6px 14px;
-      border-radius: 8px;
+
+    .verified-cert-card .vc-number {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
       font-size: 0.85rem;
+      color: #6366F1;
+      background: #EEF2FF;
+      border: 1px solid #C7D2FE;
+      padding: 4px 12px;
+      border-radius: 6px;
     }
+
+    .verified-cert-card .vc-date {
+      font-size: 0.82rem;
+      color: #64748B;
+    }
+
+    .btn-download-cert {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+      color: #fff !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.88rem;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-download-cert:hover {
+      background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(37, 99, 235, 0.4);
+    }
+
     @media (max-width: 576px) {
       .cert-hero-title {
         font-size: 1.4rem;
       }
-      .cert-display-box {
-        padding: 24px 16px;
+
+      .verified-cert-card .cert-info-row {
+        flex-direction: column;
       }
-      .cert-student-name {
-        font-size: 1.3rem;
+
+      .verified-cert-card .cert-info-right {
+        align-items: flex-start;
+        width: 100%;
       }
+
+      .btn-download-cert {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* ── Print styles — hide all chrome, show only the certificate ── */
+    @media print {
+
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      html,
+      body {
+        width: 297mm;
+        height: 210mm;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      body * {
+        visibility: hidden !important;
+      }
+
+      .certificate-container,
+      .certificate-container * {
+        visibility: visible !important;
+      }
+
+      .certificate-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 297mm;
+        height: 210mm;
+        margin: 0;
+        padding: 0;
+        z-index: 9999;
+      }
+
+      .certificate-background {
+        width: 297mm;
+        height: 210mm;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      /* ==========================
+     STUDENT NAME
+     ========================== */
+
+      .cert-field--name {
+        left: 50%;
+        top: 46%;
+        transform: translateX(-50%);
+      }
+
+      /* ==========================
+     QR CODE
+     ========================== */
+
+      .cert-field--qr {
+        left: 13%;
+        top: 39%;
+        transform: translate(-50%, -50%);
+      }
+
+      /* ==========================
+     CERTIFICATE DATE
+     ========================== */
+
+      .cert-field--date {
+        left: 31%;
+        top: 70%;
+        transform: translateX(-50%);
+      }
+
+      /* ==========================
+     SIGNATURE
+     ========================== */
+
+      .cert-field--signature {
+        left: 68%;
+        top: 58%;
+        transform: translateX(-50%);
+      }
+
+      /* ==========================
+     CERTIFICATE NUMBER
+     ========================== */
+
+      .cert-field--cert-id {
+        left: 15%;
+        top: 82%;
+        transform: none;
+      }
+
+      /* ==========================
+     COMPLETION DATE
+     ========================== */
+
+      .cert-field--completion-date {
+        left: 18%;
+        top: 85.5%;
+        transform: none;
+      }
+
     }
   </style>
 </head>
+
 <body class="bg-light">
 
   <!-- Top App Navigation -->
   <header class="bg-white border-bottom py-2 sticky-top">
     <div class="container d-flex align-items-center justify-content-between">
       <a href="/" class="d-flex align-items-center gap-2 text-dark text-decoration-none">
-        <img src="/images/MM_Logo.jpg" alt="Maths Manthra Logo" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover;">
+        <img src="/images/MM_Logo.jpg" alt="Maths Manthra Logo"
+          style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover;">
         <span class="fw-bold fs-5">Maths Manthra</span>
       </a>
       <div>
@@ -137,11 +569,11 @@
           <a href="/course/<%= selectedCourseSlug %>/watch" class="btn btn-sm btn-outline-primary rounded-pill">
             <i class="bi bi-arrow-left"></i> Back to Lessons
           </a>
-        <% } else { %>
-          <a href="/auth/login" class="btn btn-sm btn-outline-secondary rounded-pill">
-            Admin Login
-          </a>
-        <% } %>
+          <% } else { %>
+            <a href="/auth/login" class="btn btn-sm btn-outline-secondary rounded-pill">
+              Admin Login
+            </a>
+            <% } %>
       </div>
     </div>
   </header>
@@ -164,221 +596,329 @@
 
   <!-- Main Card Wrapper -->
   <div class="cert-card-wrap">
-    
+
     <!-- ═══════════════════════════════════════════════════════════════════════
-         CASE 1: VERIFIED CERTIFICATE FOUND / DISPLAYED
+         EMAIL VERIFICATION SECTION — Primary Entry Point
          ═══════════════════════════════════════════════════════════════════════ -->
-    <% if (student) { %>
-      <div class="cert-card-container p-4 mb-4">
-        
-        <!-- Verification Success Banner -->
-        <div class="alert alert-success d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 rounded-3 border-0 bg-success-subtle text-success-emphasis no-print">
-          <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-patch-check-fill fs-4 text-success"></i>
-            <div>
-              <strong>Verified Certificate Credential</strong>
-              <div class="small">This certificate is verified by Maths Manthra Academy records.</div>
-            </div>
-          </div>
-          <button onclick="window.print()" class="btn btn-sm btn-success rounded-pill px-3">
-            <i class="bi bi-printer-fill me-1"></i> Print / Save PDF
-          </button>
-        </div>
-
-        <!-- Official Certificate Frame -->
-        <div class="cert-display-box text-center">
-          <div class="cert-seal mb-3">
-            <i class="bi bi-award-fill"></i>
-          </div>
-
-          <div class="cert-title-cinzel fs-6 text-uppercase mb-1">Maths Manthra Academy</div>
-          <h2 class="cert-title-cinzel fs-3 mb-3">Certificate of Completion</h2>
-
-          <p class="text-muted small mb-1">This is officially presented to</p>
-          <div class="cert-student-name">
-            <%= student.fullName || student.name %>
-          </div>
-
-          <% if (student.qualification) { %>
-            <div class="text-muted small mb-2"><%= student.qualification %></div>
-          <% } %>
-
-          <p class="text-muted small mt-2 mb-1">for successfully completing all recorded lessons and coursework in</p>
-          <div class="cert-course-name">
-            <%= student.courseId ? student.courseId.title : 'Mathematics Program' %>
-          </div>
-
-          <!-- Metadata Badges -->
-          <div class="d-flex align-items-center justify-content-center flex-wrap gap-3 mt-4 pt-3 border-top">
-            <div class="cert-meta-tag">
-              <span class="text-muted small">Certificate No:</span>
-              <strong class="font-monospace text-primary ms-1"><%= student.certificateNumber %></strong>
-            </div>
-            <div class="cert-meta-tag">
-              <span class="text-muted small">Issue Date:</span>
-              <strong class="ms-1"><%= student.issuedDate ? new Date(student.issuedDate).toLocaleDateString() : new Date(student.createdAt).toLocaleDateString() %></strong>
-            </div>
-            <div class="cert-meta-tag text-success">
-              <i class="bi bi-shield-fill-check"></i> Verified
-            </div>
-          </div>
-
-          <!-- Signature / Verification Footer -->
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-4 pt-3 text-muted small">
-            <div>
-              <span class="text-dark fw-bold">📐 Maths Manthra</span> — Academic Certification
-            </div>
-            <div>
-              Authenticity Verified via <code><%= appUrl %>/certificate?cert=<%= student.certificateNumber %></code>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 pt-3 border-top no-print">
-          <a href="/certificate" class="btn btn-outline-secondary">
-            <i class="bi bi-search"></i> Search Another Certificate
-          </a>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(window.location.href); alert('Certificate link copied to clipboard!');">
-              <i class="bi bi-share-fill"></i> Share Link
-            </button>
-            <button onclick="window.print()" class="btn btn-primary">
-              <i class="bi bi-download"></i> Download / Print
-            </button>
-          </div>
-        </div>
-
+    <div class="verify-email-card mb-4">
+      <div class="verify-icon">
+        <i class="bi bi-envelope-check-fill"></i>
       </div>
-    <% } %>
+      <h2 class="verify-title">Verify Your Certificate</h2>
+      <p class="verify-desc">Enter your registered email address to check your eligibility and view your certificates.
+      </p>
+      <form action="/certificate/verify" method="POST">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-primary"></i></span>
+          <input type="email" name="email" class="form-control border-start-0" placeholder="Enter your email address"
+            value="<%= typeof verifiedEmail !== 'undefined' ? verifiedEmail : '' %>" required
+            aria-label="Email address" />
+          <button type="submit" class="btn-verify">
+            <i class="bi bi-shield-check me-1"></i> Verify
+          </button>
+        </div>
+      </form>
+    </div>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         CERTIFICATE SEARCH & REQUEST SECTION
+         VERIFIED RESULTS — Shown after POST /certificate/verify
          ═══════════════════════════════════════════════════════════════════════ -->
-    <div class="cert-card-container p-4 no-print">
-      
-      <!-- Nav Tabs -->
-      <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-3" id="certTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link <%= !student ? 'active fw-bold' : '' %>" id="tab-request" data-bs-toggle="tab" data-bs-target="#panel-request" type="button" role="tab">
-            <i class="bi bi-file-earmark-plus"></i> Request Certificate
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link <%= student ? 'active fw-bold' : '' %>" id="tab-search" data-bs-toggle="tab" data-bs-target="#panel-search" type="button" role="tab">
-            <i class="bi bi-search"></i> Verify / Look Up Certificate
-          </button>
-        </li>
-      </ul>
-
-      <div class="tab-content" id="certTabContent">
-        
-        <!-- ── TAB 1: REQUEST CERTIFICATE ── -->
-        <div class="tab-pane fade <%= !student ? 'show active' : '' %>" id="panel-request" role="tabpanel">
-          <div class="mb-3">
-            <h4 class="fw-bold mb-1"><i class="bi bi-award text-primary"></i> Request Your Completion Certificate</h4>
-            <p class="text-muted small">Enter your enrolled details to generate your certified completion credential.</p>
+    <% if (typeof verifiedStudents !=='undefined' && verifiedStudents.length> 0) { %>
+      <div class="cert-card-container p-4 mb-4">
+        <div class="verified-results-section">
+          <div class="verified-results-header">
+            <div class="vr-icon">
+              <i class="bi bi-patch-check-fill"></i>
+            </div>
+            <div>
+              <h3 class="h5 fw-bold mb-0 text-success">Certificates Found!</h3>
+              <p class="text-muted small mb-0">
+                <strong>
+                  <%= verifiedStudents.length %>
+                </strong> certificate<%= verifiedStudents.length> 1 ? 's' : '' %> found for
+                  <strong>
+                    <%= verifiedEmail %>
+                  </strong>
+              </p>
+            </div>
           </div>
 
-          <form action="/certificate" method="POST" class="needs-validation">
-            <input type="hidden" name="action" value="request" />
-
-            <div class="row g-3">
-              <!-- Full Name -->
-              <div class="col-12 col-md-6">
-                <label for="fullName" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bi bi-person"></i></span>
-                  <input type="text" id="fullName" name="fullName" class="form-control"
-                         placeholder="Enter your name as on certificate" required maxlength="100" />
+          <% verifiedStudents.forEach((s, idx)=> { %>
+            <div class="verified-cert-card">
+              <div class="cert-info-row">
+                <div class="cert-info-left">
+                  <div class="vc-name">
+                    <i class="bi bi-person-fill text-primary me-1"></i>
+                    <%= s.fullName || s.name %>
+                  </div>
+                  <div class="vc-course">
+                    <i class="bi bi-book-fill me-1"></i>
+                    <%= s.courseId ? s.courseId.title : 'Mathematics Course' %>
+                  </div>
+                  <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                    <span class="vc-number">
+                      <i class="bi bi-hash"></i>
+                      <%= s.certificateNumber %>
+                    </span>
+                    <span class="vc-date">
+                      <i class="bi bi-calendar3 me-1"></i>
+                      Issued: <%= s.issuedDate ? new Date(s.issuedDate).toLocaleDateString('en-IN', { year: 'numeric' ,
+                        month: 'short' , day: 'numeric' }) : new Date(s.createdAt).toLocaleDateString('en-IN', {
+                        year: 'numeric' , month: 'short' , day: 'numeric' }) %>
+                    </span>
+                    <span class="badge bg-success-subtle text-success">
+                      <i class="bi bi-shield-fill-check me-1"></i> Verified
+                    </span>
+                  </div>
                 </div>
-                <div class="form-text">Will be printed on your official certificate.</div>
-              </div>
-
-              <!-- Email -->
-              <div class="col-12 col-md-6">
-                <label for="email" class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                  <input type="email" id="email" name="email" class="form-control"
-                         placeholder="student@example.com" required />
+                <div class="cert-info-right">
+                  <a href="/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>" class="btn-download-cert">
+                    <i class="bi bi-download"></i> Download Certificate
+                  </a>
+                  <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                    onclick="navigator.clipboard.writeText(window.location.origin + '/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
+                    <i class="bi bi-share"></i> Share Link
+                  </button>
                 </div>
-                <div class="form-text">Used to locate your student records.</div>
-              </div>
-
-              <!-- Course Selection -->
-              <div class="col-12 col-md-6">
-                <label for="courseId" class="form-label fw-semibold">Completed Course <span class="text-danger">*</span></label>
-                <select id="courseId" name="courseId" class="form-select" required>
-                  <option value="">-- Choose Completed Course --</option>
-                  <% courses.forEach(c => { %>
-                    <option value="<%= c._id %>" <%= (selectedCourse && selectedCourse._id.toString() === c._id.toString()) ? 'selected' : '' %>>
-                      <%= c.title %>
-                    </option>
-                  <% }) %>
-                </select>
-              </div>
-
-              <!-- Phone -->
-              <div class="col-12 col-md-6">
-                <label for="phone" class="form-label fw-semibold">Phone Number</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                  <input type="tel" id="phone" name="phone" class="form-control"
-                         placeholder="+91 98765 43210" />
-                </div>
-              </div>
-
-              <!-- Qualification -->
-              <div class="col-12">
-                <label for="qualification" class="form-label fw-semibold">Qualification / Class (Optional)</label>
-                <input type="text" id="qualification" name="qualification" class="form-control"
-                       placeholder="e.g. Class 10, Class 12, B.Sc Mathematics" />
               </div>
             </div>
+            <% }); %>
+        </div>
+      </div>
+      <% } %>
 
-            <!-- Submit Button -->
-            <div class="mt-4 pt-2">
-              <button type="submit" class="btn btn-primary btn-lg w-100 py-2 fw-semibold">
-                🎓 Generate & Obtain Certificate
+        <!-- ═══════════════════════════════════════════════════════════════════════
+         CASE 1: VERIFIED CERTIFICATE FOUND / DISPLAYED (via cert number or search)
+         ═══════════════════════════════════════════════════════════════════════ -->
+        <% if (student) { %>
+          <div class="cert-card-container p-4 mb-4">
+
+            <!-- Verification Success Banner -->
+            <div
+              class="alert alert-success d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 rounded-3 border-0 bg-success-subtle text-success-emphasis no-print">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-patch-check-fill fs-4 text-success"></i>
+                <div>
+                  <strong>Verified Certificate Credential</strong>
+                  <div class="small">This certificate is verified by Maths Manthra Academy records.</div>
+                </div>
+              </div>
+              <button onclick="window.print()" class="btn btn-sm btn-success rounded-pill px-3">
+                <i class="bi bi-printer-fill me-1"></i> Print / Save PDF
               </button>
             </div>
-          </form>
-        </div>
 
-        <!-- ── TAB 2: SEARCH / VERIFY ── -->
-        <div class="tab-pane fade <%= student ? 'show active' : '' %>" id="panel-search" role="tabpanel">
-          <div class="mb-3">
-            <h4 class="fw-bold mb-1"><i class="bi bi-search text-primary"></i> Search Existing Certificate</h4>
-            <p class="text-muted small">Verify a certificate by student email or certificate identification number.</p>
-          </div>
+            <!-- ═══════════════════════════════════════════════════════════
+             IMAGE-OVERLAY CERTIFICATE
+             Background = certificate-template.jpg
+             All dynamic fields are % positioned over the image.
+        ════════════════════════════════════════════════════════════ -->
+            <div class="certificate-container">
+              <div class="certificate-background">
 
-          <form action="/certificate" method="POST">
-            <input type="hidden" name="action" value="search" />
+                <!-- Background image -->
+                <img class="cert-bg-img" src="/images/certificate-template.jpg"
+                  alt="MathsManthra Certificate of Completion" />
 
-            <div class="mb-3">
-              <label for="query" class="form-label fw-semibold">Email or Certificate Number</label>
-              <div class="input-group input-group-lg">
-                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                <input type="text" id="query" name="query" class="form-control"
-                       placeholder="e.g. MMC-2026-XXXX or your email"
-                       value="<%= searchTerm %>" required />
-                <button type="submit" class="btn btn-primary px-4">
-                  Verify
+                <div class="certificate-overlay">
+
+                  <!-- QR Code (scan-to-verify box in template) -->
+                  <div class="cert-field cert-field--qr">
+                    <%- typeof student.qrCode !=='undefined' && student.qrCode ? student.qrCode : '' %>
+                  </div>
+
+                  <!-- Student Name (on the underline) -->
+                  <div class="cert-field cert-field--name">
+                    <%= student.fullName || student.name %>
+                  </div>
+
+
+                  <!-- Completion Date (left signature line) -->
+                  <div class="cert-field cert-field--date">
+                    <%= typeof issuedDate !== 'undefined' ? issuedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                  </div>
+
+                  <!-- Signature Image (right signature line) -->
+                  <div class="cert-field cert-field--signature">
+                    <img src="/images/Signature_smija.png" alt="Director Signature" />
+                  </div>
+
+                  <!-- Certificate ID value -->
+                  <div class="cert-field cert-field--cert-id">
+                    <%= student.certificateNumber %>
+                  </div>
+
+                  <!-- Date of Completion value (footer row) -->
+                  <div class="cert-field cert-field--completion-date">
+                    <% const _certDateLong=student.courseId && student.courseId.certificateCompletionDate ? new
+                      Date(student.courseId.certificateCompletionDate) : null; %>
+                      <%= _certDateLong ? _certDateLong.toLocaleDateString('en-IN', { day: 'numeric' , month: 'long' ,
+                        year: 'numeric' }) : 'Date Not Assigned' %>
+                  </div>
+
+
+
+                </div><!-- /.certificate-overlay -->
+              </div><!-- /.certificate-background -->
+            </div><!-- /.certificate-container -->
+
+            <!-- Action Buttons -->
+            <div
+              class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 pt-3 border-top no-print">
+              <a href="/certificate" class="btn btn-outline-secondary">
+                <i class="bi bi-search"></i> Search Another Certificate
+              </a>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary"
+                  onclick="navigator.clipboard.writeText(window.location.href); alert('Certificate link copied to clipboard!');">
+                  <i class="bi bi-share-fill"></i> Share Link
+                </button>
+                <button onclick="window.print()" class="btn btn-primary">
+                  <i class="bi bi-download"></i> Download / Print
                 </button>
               </div>
-              <div class="form-text">Example certificate number format: <code>MMC-2026-XXXX-XXXX</code></div>
             </div>
-          </form>
 
-          <div class="p-3 bg-light rounded-3 mt-4 text-muted small">
-            <i class="bi bi-info-circle text-primary"></i> All certificates generated by Maths Manthra Academy are digitally signed and verifiable online anytime.
           </div>
-        </div>
+          <% } %>
 
-      </div>
+            <!-- ═══════════════════════════════════════════════════════════════════════
+         CERTIFICATE SEARCH & REQUEST SECTION
+         ═══════════════════════════════════════════════════════════════════════ -->
+            <div class="cert-card-container p-4 no-print">
 
-    </div>
+              <!-- Nav Tabs -->
+              <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-3" id="certTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link <%= !student ? 'active fw-bold' : '' %>" id="tab-request" data-bs-toggle="tab"
+                    data-bs-target="#panel-request" type="button" role="tab">
+                    <i class="bi bi-file-earmark-plus"></i> Request Certificate
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link <%= student ? 'active fw-bold' : '' %>" id="tab-search" data-bs-toggle="tab"
+                    data-bs-target="#panel-search" type="button" role="tab">
+                    <i class="bi bi-search"></i> Verify / Look Up Certificate
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content" id="certTabContent">
+
+                <!-- ── TAB 1: REQUEST CERTIFICATE ── -->
+                <div class="tab-pane fade <%= !student ? 'show active' : '' %>" id="panel-request" role="tabpanel">
+                  <div class="mb-3">
+                    <h4 class="fw-bold mb-1"><i class="bi bi-award text-primary"></i> Request Your Completion
+                      Certificate</h4>
+                    <p class="text-muted small">Enter your enrolled details to generate your certified completion
+                      credential.</p>
+                  </div>
+
+                  <form action="/certificate" method="POST" class="needs-validation">
+                    <input type="hidden" name="action" value="request" />
+
+                    <div class="row g-3">
+                      <!-- Full Name -->
+                      <div class="col-12 col-md-6">
+                        <label for="fullName" class="form-label fw-semibold">Full Name <span
+                            class="text-danger">*</span></label>
+                        <div class="input-group">
+                          <span class="input-group-text"><i class="bi bi-person"></i></span>
+                          <input type="text" id="fullName" name="fullName" class="form-control"
+                            placeholder="Enter your name as on certificate" required maxlength="100" />
+                        </div>
+                        <div class="form-text">Will be printed on your official certificate.</div>
+                      </div>
+
+                      <!-- Email -->
+                      <div class="col-12 col-md-6">
+                        <label for="email" class="form-label fw-semibold">Email Address <span
+                            class="text-danger">*</span></label>
+                        <div class="input-group">
+                          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                          <input type="email" id="email" name="email" class="form-control"
+                            placeholder="student@example.com" required />
+                        </div>
+                        <div class="form-text">Used to locate your student records.</div>
+                      </div>
+
+                      <!-- Course Selection -->
+                      <div class="col-12 col-md-6">
+                        <label for="courseId" class="form-label fw-semibold">Completed Course <span
+                            class="text-danger">*</span></label>
+                        <select id="courseId" name="courseId" class="form-select" required>
+                          <option value="">-- Choose Completed Course --</option>
+                          <% courses.forEach(c=> { %>
+                            <option value="<%= c._id %>" <%=(selectedCourse &&
+                              selectedCourse._id.toString()===c._id.toString()) ? 'selected' : '' %>>
+                              <%= c.title %>
+                            </option>
+                            <% }) %>
+                        </select>
+                      </div>
+
+                      <!-- Phone -->
+                      <div class="col-12 col-md-6">
+                        <label for="phone" class="form-label fw-semibold">Phone Number</label>
+                        <div class="input-group">
+                          <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                          <input type="tel" id="phone" name="phone" class="form-control"
+                            placeholder="+91 98765 43210" />
+                        </div>
+                      </div>
+
+                      <!-- Qualification -->
+                      <div class="col-12">
+                        <label for="qualification" class="form-label fw-semibold">Qualification / Class
+                          (Optional)</label>
+                        <input type="text" id="qualification" name="qualification" class="form-control"
+                          placeholder="e.g. Class 10, Class 12, B.Sc Mathematics" />
+                      </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="mt-4 pt-2">
+                      <button type="submit" class="btn btn-primary btn-lg w-100 py-2 fw-semibold">
+                        🎓 Generate & Obtain Certificate
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- ── TAB 2: SEARCH / VERIFY ── -->
+                <div class="tab-pane fade <%= student ? 'show active' : '' %>" id="panel-search" role="tabpanel">
+                  <div class="mb-3">
+                    <h4 class="fw-bold mb-1"><i class="bi bi-search text-primary"></i> Search Existing Certificate</h4>
+                    <p class="text-muted small">Verify a certificate by student email or certificate identification
+                      number.</p>
+                  </div>
+
+                  <form action="/certificate" method="POST">
+                    <input type="hidden" name="action" value="search" />
+
+                    <div class="mb-3">
+                      <label for="query" class="form-label fw-semibold">Email or Certificate Number</label>
+                      <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" id="query" name="query" class="form-control"
+                          placeholder="e.g. MMC-2026-XXXX or your email" value="<%= searchTerm %>" required />
+                        <button type="submit" class="btn btn-primary px-4">
+                          Verify
+                        </button>
+                      </div>
+                      <div class="form-text">Example certificate number format: <code>MMC-2026-XXXX-XXXX</code></div>
+                    </div>
+                  </form>
+
+                  <div class="p-3 bg-light rounded-3 mt-4 text-muted small">
+                    <i class="bi bi-info-circle text-primary"></i> All certificates generated by Maths Manthra Academy
+                    are digitally signed and verifiable online anytime.
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
 
   </div>
 
@@ -393,10 +933,11 @@
   <script>
     // PWA: Register Service Worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { });
       });
     }
   </script>
 </body>
+
 </html>

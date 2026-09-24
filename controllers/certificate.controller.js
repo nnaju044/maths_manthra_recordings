@@ -36,7 +36,7 @@ exports.showCertificatePage = async (req, res, next) => {
   try {
     const { course: courseSlug = '', cert = '', email = '', query = '', msg = '' } = req.query;
 
-    const courses = await Course.find({ isActive: true }).sort({ title: 1 });
+    const courses = await Course.find({ isActive: true, certificateEnabled: true }).sort({ title: 1 });
 
     // Pre-select course if slug provided
     let selectedCourse = null;
@@ -57,6 +57,12 @@ exports.showCertificatePage = async (req, res, next) => {
         ],
         isActive: true,
       }).populate('courseId');
+
+      // Block if certificate is disabled for this course
+      if (student && student.courseId && !student.courseId.certificateEnabled) {
+        student = null;
+        req.flash('error', 'Certificate generation is currently disabled for this course.');
+      }
     }
 
     res.render('course/certificate', {
@@ -65,8 +71,11 @@ exports.showCertificatePage = async (req, res, next) => {
       selectedCourse,
       selectedCourseSlug: courseSlug,
       student,
+      verifiedStudents: [],
+      verifiedEmail: '',
       searchTerm,
       msg,
+      issuedDate: new Date(),
       layout: false,
     });
   } catch (err) {
@@ -129,6 +138,12 @@ exports.handleCertificateAction = async (req, res, next) => {
       return res.redirect('/certificate');
     }
 
+    // Block if certificate is disabled for this course
+    if (!course.certificateEnabled) {
+      req.flash('error', 'Certificate generation is currently disabled for this course.');
+      return res.redirect('/certificate');
+    }
+
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check if student already has a certificate for this course
@@ -159,6 +174,53 @@ exports.handleCertificateAction = async (req, res, next) => {
 
     req.flash('success', `Congratulations! Your certificate has been issued. Certificate Number: ${certificateNumber}`);
     return res.redirect(`/certificate?cert=${encodeURIComponent(student.certificateNumber)}&msg=issued`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /certificate/verify
+ * Verify student eligibility by email.
+ * Returns all active certificates for the given email address.
+ */
+exports.verifyCertificate = async (req, res, next) => {
+  try {
+    const { email = '' } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!normalizedEmail) {
+      req.flash('error', 'Please enter your email address to verify.');
+      return res.redirect('/certificate');
+    }
+
+    // Find all active certificates for this email
+    const students = await CertificateStudent.find({
+      email: normalizedEmail,
+      isActive: true,
+    }).populate('courseId').sort({ createdAt: -1 });
+
+    if (!students || students.length === 0) {
+      req.flash('error', `No certificate found for "${email}". Please check your email or request a new certificate below.`);
+      return res.redirect('/certificate?notfound=1');
+    }
+
+    // Load courses for the request form
+    const courses = await Course.find({ isActive: true }).sort({ title: 1 });
+
+    res.render('course/certificate', {
+      title: 'Your Certificates — Maths Manthra',
+      courses,
+      selectedCourse: null,
+      selectedCourseSlug: '',
+      student: null,
+      verifiedStudents: students,
+      verifiedEmail: normalizedEmail,
+      searchTerm: '',
+      msg: '',
+      issuedDate: new Date(),
+      layout: false,
+    });
   } catch (err) {
     next(err);
   }

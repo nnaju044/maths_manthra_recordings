@@ -54,6 +54,14 @@ const courseSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    certificateCompletionDate: {
+      type: Date,
+      default: null,
+    },
+    certificateEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

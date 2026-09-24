@@ -54,7 +54,7 @@ exports.create = (req, res) => {
 // Handle create
 exports.store = async (req, res, next) => {
   try {
-    const { title, description, password, isActive } = req.body;
+    const { title, description, password, isActive, certificateCompletionDate, certificateEnabled } = req.body;
 
     // Validate 4-digit password
     if (!password || !/^\d{4}$/.test(password)) {
@@ -76,6 +76,8 @@ exports.store = async (req, res, next) => {
       thumbnailPublicId,
       passwordHash,
       isActive: isActive === 'on' || isActive === 'true' || isActive === true,
+      certificateCompletionDate: certificateCompletionDate ? new Date(certificateCompletionDate) : null,
+      certificateEnabled: certificateEnabled === 'on' || certificateEnabled === 'true' || certificateEnabled === true,
     });
 
     req.flash('success', 'Course created successfully.');
@@ -109,6 +111,13 @@ exports.edit = async (req, res, next) => {
 
 // Handle update
 exports.update = async (req, res, next) => {
+  console.log("========== COURSE UPDATE ==========");
+  console.log(req.body);
+
+  console.log(
+    "Certificate Date:",
+    req.body.certificateCompletionDate
+  );
   try {
     const { title, description, password, isActive } = req.body;
     const course = await Course.findById(req.params.id);
@@ -141,6 +150,11 @@ exports.update = async (req, res, next) => {
     course.title = title;
     course.description = description;
     course.isActive = isActive === 'on' || isActive === 'true' || isActive === true;
+    // Update or clear the admin-set certificate completion date
+    course.certificateCompletionDate = req.body.certificateCompletionDate
+      ? new Date(req.body.certificateCompletionDate)
+      : null;
+    course.certificateEnabled = req.body.certificateEnabled === 'on' || req.body.certificateEnabled === 'true' || req.body.certificateEnabled === true;
 
     await course.save();
     req.flash('success', 'Course updated successfully.');

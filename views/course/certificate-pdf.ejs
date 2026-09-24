@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 297mm;
+      height: 210mm;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    /* ── Certificate container — exact A4 landscape ── */
+    .certificate-container {
+      width: 297mm;
+      height: 210mm;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .certificate-background {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      font-size: 14px;
+    }
+
+    .certificate-background img.cert-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+    }
+
+    .certificate-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Shared overlay field ── */
+    .cert-field {
+      position: absolute;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    /* ── QR code ── */
+    .cert-field--qr {
+      left: 5%;
+      top: 31%;
+      transform: none;
+      width: 14%;
+      height: 20.5%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cert-field--qr img,
+    .cert-field--qr svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── Student Name ── */
+    .cert-field--name {
+      left: 53%;
+      top: 49.5%;
+      transform: translateX(-50%) translateY(-50%);
+      font-family: 'Brush Script MT', 'Segoe Script', cursive, 'Georgia', serif;
+      font-size: 2.4em;
+      font-weight: 700;
+      color: #0b1f3a;
+      white-space: normal;
+      text-align: center;
+      width: 54%;
+    }
+
+    /* ── Date (left signature line) ── */
+    .cert-field--date {
+      left: 32%;
+      top: 69%;
+      transform: translateX(-50%);
+      font-family: Arial, sans-serif;
+      font-size: 0.7em;
+      font-weight: 600;
+      color: #1a1a2e;
+      text-align: center;
+    }
+
+    /* ── Signature image ── */
+    .cert-field--signature {
+      left: 68%;
+      top: 58%;
+      transform: translateX(-50%);
+      width: 15%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cert-field--signature img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* ── Certificate ID ── */
+    .cert-field--cert-id {
+      left: 14.5%;
+      top: 82%;
+      transform: none;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72em;
+      font-weight: 700;
+      color: #0b1f3a;
+    }
+
+    /* ── Date of Completion ── */
+    .cert-field--completion-date {
+      left: 17.5%;
+      top: 85.1%;
+      transform: none;
+      font-family: Arial, sans-serif;
+      font-size: 0.72em;
+      font-weight: 600;
+      color: #0b1f3a;
+    }
+
+    /* ── Verification URL ── */
+    .cert-field--verify-url {
+      left: 50%;
+      top: 92.5%;
+      transform: translateX(-50%);
+      font-family: Arial, sans-serif;
+      font-size: 0.55em;
+      color: #4b5563;
+      text-align: center;
+      white-space: normal;
+      width: 60%;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate-container">
+    <div class="certificate-background">
+
+      <!-- Background image (absolute path for Puppeteer file:// access) -->
+      <img class="cert-bg-img" src="<%= bgImagePath %>"
+        alt="MathsManthra Certificate of Completion" />
+
+      <div class="certificate-overlay">
+
+        <!-- QR Code -->
+        <div class="cert-field cert-field--qr">
+          <%- qrCode %>
+        </div>
+
+        <!-- Student Name -->
+        <div class="cert-field cert-field--name">
+          <%= studentName %>
+        </div>
+
+        <!-- Issued Date (left signature line) -->
+        <div class="cert-field cert-field--date">
+          <%= issuedDate %>
+        </div>
+
+        <!-- Signature Image -->
+        <div class="cert-field cert-field--signature">
+          <img src="<%= signaturePath %>" alt="Director Signature" />
+        </div>
+
+        <!-- Certificate ID -->
+        <div class="cert-field cert-field--cert-id">
+          <%= certificateNumber %>
+        </div>
+
+        <!-- Date of Completion (footer row) -->
+        <div class="cert-field cert-field--completion-date">
+          <%= completionDate %>
+        </div>
+
+      </div><!-- /.certificate-overlay -->
+    </div><!-- /.certificate-background -->
+  </div><!-- /.certificate-container -->
+</body>
+</html>

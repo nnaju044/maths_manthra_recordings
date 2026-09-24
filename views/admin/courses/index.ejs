@@ -33,6 +33,8 @@
           <tr>
             <th>Course</th>
             <th>Videos</th>
+            <th>Certificate Date</th>
+            <th>Cert Status</th>
             <th>Status</th>
             <th>Shareable Link</th>
             <th>Actions</th>
@@ -61,6 +63,22 @@
               <td><span class="badge bg-secondary">
                   <%= videoCountMap[course._id.toString()] || 0 %>
                 </span></td>
+              <td class="text-nowrap small">
+                <% if (course.certificateCompletionDate) { %>
+                  <span class="text-success fw-semibold">
+                    <%= new Date(course.certificateCompletionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                  </span>
+                <% } else { %>
+                  <span class="text-muted fst-italic">Not set</span>
+                <% } %>
+              </td>
+              <td class="text-nowrap small text-center">
+                <% if (course.certificateEnabled) { %>
+                  <span class="text-success" title="Certificate Enabled">🟢 Enabled</span>
+                <% } else { %>
+                  <span class="text-danger" title="Certificate Disabled">🔴 Disabled</span>
+                <% } %>
+              </td>
               <td>
                 <button class="badge-status-btn <%= course.isActive ? 'active' : 'inactive' %>"
                   onclick="toggleActive('<%= course._id %>', this)" title="Click to toggle">

@@ -93,6 +93,7 @@
     </section>
 
     <!-- Course Certificate Section -->
+    <% if (course.certificateEnabled) { %>
     <section class="app-certificate-card mb-4" aria-label="Course Certificate">
       <div class="certificate-card-inner">
         <div class="certificate-card-content">
@@ -112,6 +113,7 @@
         </div>
       </div>
     </section>
+    <% } %>
 
     <!-- Day-wise Lessons Section -->
     <section id="lessonsSection" class="video-list-section pt-1">

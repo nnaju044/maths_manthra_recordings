@@ -1,0 +1,474 @@
+/* =========================================================
+   Certificate of Completion — A4 Landscape
+   Optimized for Puppeteer PDF generation (pure HTML + CSS)
+   ========================================================= */
+
+@page {
+  size: 297mm 210mm;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 297mm;
+  height: 210mm;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: #ffffff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+:root {
+  --navy: #0b1f3a;
+  --navy-dark: #081527;
+  --gold: #c8a24a;
+  --gold-light: #e3c887;
+  --gold-dark: #9c7a2e;
+  --cream: #fdfbf5;
+  --text-dark: #16243f;
+}
+
+/* ── Page & certificate container ── */
+.page {
+  width: 297mm;
+  height: 210mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream);
+}
+
+.certificate {
+  position: relative;
+  width: 297mm;
+  height: 210mm;
+  background: var(--cream);
+  overflow: hidden;
+}
+
+/* ── Decorative navy corner triangles ── */
+.corner {
+  position: absolute;
+  width: 130mm;
+  height: 90mm;
+  z-index: 1;
+}
+
+.corner--tl {
+  top: 0;
+  left: 0;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy) 45%, transparent 46%);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.corner--br {
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(315deg, var(--navy) 0%, var(--navy) 45%, transparent 46%);
+  clip-path: polygon(100% 100%, 100% 0, 0 100%);
+}
+
+/* Gold diagonal accent stripes along the corner edge */
+.corner--tl::after,
+.corner--br::after {
+  content: "";
+  position: absolute;
+  width: 150mm;
+  height: 3mm;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 35%, var(--gold-light) 50%, var(--gold) 65%, transparent 100%);
+}
+
+.corner--tl::after {
+  top: 32mm;
+  left: -18mm;
+  transform: rotate(-40deg);
+}
+
+.corner--br::after {
+  bottom: 32mm;
+  right: -18mm;
+  transform: rotate(-40deg);
+}
+
+/* Soft gold sweep lines crossing the certificate */
+.certificate::before,
+.certificate::after {
+  content: "";
+  position: absolute;
+  height: 0.6mm;
+  width: 220mm;
+  background: linear-gradient(90deg, transparent, var(--gold) 45%, var(--gold-light) 50%, var(--gold) 55%, transparent);
+  opacity: 0.55;
+  z-index: 2;
+}
+
+.certificate::before {
+  top: 60mm;
+  left: -30mm;
+  transform: rotate(-18deg);
+}
+
+.certificate::after {
+  bottom: 55mm;
+  right: -30mm;
+  transform: rotate(-18deg);
+}
+
+/* ── Dotted accent grids ── */
+.dots {
+  position: absolute;
+  width: 22mm;
+  height: 14mm;
+  background-image: radial-gradient(var(--gold) 0.5mm, transparent 0.6mm);
+  background-size: 3.2mm 3.2mm;
+  opacity: 0.85;
+  z-index: 2;
+}
+
+.dots--tl {
+  top: 8mm;
+  left: 8mm;
+}
+
+.dots--br {
+  bottom: 8mm;
+  right: 8mm;
+}
+
+/* ── Gold frame lines ── */
+.frame {
+  position: absolute;
+  border: 0.6mm solid var(--gold);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.frame--outer {
+  top: 5mm;
+  left: 5mm;
+  right: 5mm;
+  bottom: 5mm;
+}
+
+.frame--inner {
+  top: 6.3mm;
+  left: 6.3mm;
+  right: 6.3mm;
+  bottom: 6.3mm;
+  border-width: 0.2mm;
+  opacity: 0.6;
+}
+
+/* ── QR / verification block ──
+   Vertically centred in the left margin band.
+   Left column: 16mm gap + 42mm QR box = 58mm, +6mm gutter = 64mm total. */
+.qr-block {
+  position: absolute;
+  top: 50%;
+  left: 16mm;
+  transform: translateY(-50%);
+  width: 42mm;
+  z-index: 4;
+  text-align: center;
+}
+
+.qr-box {
+  width: 42mm;
+  height: 42mm;
+  border: 0.5mm solid var(--gold);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.qr-box img,
+.qr-box svg {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+
+.qr-label {
+  margin-top: 2.5mm;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.4pt;
+  color: var(--text-dark);
+}
+
+/* ── Main content column ──
+   position:absolute filling the certificate height.
+   left: 64mm clears the QR column; right: 64mm mirrors it.
+   padding-bottom: 28mm reserves room for the absolute signature row + footer. */
+.content {
+  position: absolute;
+  top: 0;
+  left: 64mm;
+  right: 64mm;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10mm 0 28mm;
+}
+
+/* ── Logo ── */
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 3mm;
+}
+
+.logo-mark {
+  width: 14mm;
+  height: 14mm;
+  border-radius: 50%;
+  border: 0.4mm solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2mm;
+}
+
+.bulb-icon {
+  width: 9.5mm;
+  height: 9.5mm;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.logo-title {
+  font-family: Arial, sans-serif;
+  font-size: 12pt;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: 0.2pt;
+}
+
+.logo-sub {
+  font-family: Arial, sans-serif;
+  font-size: 6pt;
+  font-weight: 700;
+  letter-spacing: 2.5pt;
+  color: var(--navy);
+}
+
+.logo-tag {
+  font-family: Arial, sans-serif;
+  font-size: 4.5pt;
+  letter-spacing: 0.3pt;
+  color: #6a7280;
+  margin-top: 0.5mm;
+}
+
+/* ── Headings ── */
+.title {
+  font-size: 36pt;
+  font-weight: 700;
+  letter-spacing: 5pt;
+  color: var(--navy);
+  margin-bottom: 0.8mm;
+  line-height: 1;
+}
+
+.subtitle {
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: 4pt;
+  color: var(--gold-dark);
+  margin-bottom: 4mm;
+}
+
+/* ── Body copy ── */
+.intro {
+  font-size: 10pt;
+  font-style: italic;
+  color: var(--text-dark);
+  margin-bottom: 3mm;
+}
+
+.name-line {
+  width: 120mm;
+  border-bottom: 0.35mm solid var(--gold);
+  padding-bottom: 1.5mm;
+  margin-bottom: 3.5mm;
+}
+
+.name-value {
+  font-size: 18pt;
+  font-weight: 700;
+  color: var(--navy);
+  font-family: 'Brush Script MT', 'Segoe Script', cursive, 'Georgia', serif;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.course-line {
+  font-size: 10.5pt;
+  color: var(--text-dark);
+  line-height: 1.55;
+  max-width: 155mm;
+  margin-bottom: 0;
+}
+
+.course-name {
+  color: var(--navy);
+  font-weight: 700;
+}
+
+/* ── Signature row ──
+   Absolute relative to .certificate.
+   top: 158mm sits below the content column and above the footer zone (~170mm). */
+.signature-row {
+  position: absolute;
+  top: 158mm;
+  left: 64mm;
+  right: 64mm;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  gap: 50mm;
+}
+
+.sig-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 42mm;
+}
+
+.sig-line {
+  width: 100%;
+  border-bottom: 0.3mm solid var(--gold-dark);
+  margin-bottom: 1.5mm;
+  height: 5mm;
+}
+
+.sig-name {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.sig-label {
+  font-family: Arial, sans-serif;
+  font-size: 7pt;
+  color: var(--text-dark);
+  letter-spacing: 0.3pt;
+}
+
+/* ── Footer metadata ──
+   Anchored bottom-left, above the outer frame (5mm) with 3mm breathing room. */
+.meta-block {
+  position: absolute;
+  left: 16mm;
+  bottom: 8mm;
+  z-index: 4;
+  font-family: Arial, sans-serif;
+}
+
+.meta-row {
+  font-size: 7pt;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1mm;
+  white-space: nowrap;
+}
+
+.meta-row:last-child {
+  margin-bottom: 0;
+}
+
+.meta-value {
+  font-weight: 400;
+  margin-left: 1mm;
+}
+
+/* ── Certification badges ──
+   Anchored bottom-right so they never overlap the meta-block on the left. */
+.badges {
+  position: absolute;
+  bottom: 7mm;
+  right: 12mm;
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+  z-index: 4;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+}
+
+.badge--msme {
+  border: 0.3mm solid #cc2b2b;
+  padding: 1.5mm 2.5mm;
+  background: #ffffff;
+}
+
+.badge-emblem {
+  color: #cc2b2b;
+  font-size: 9pt;
+}
+
+.badge-text {
+  font-family: Arial, sans-serif;
+  font-size: 7.5pt;
+  font-weight: 800;
+  color: #cc2b2b;
+  line-height: 1.2;
+}
+
+.badge-text small {
+  font-size: 4pt;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: 0.2pt;
+}
+
+.badge-circle {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 15mm;
+  height: 15mm;
+  border-radius: 50%;
+  border: 0.4mm solid #1a63c9;
+  font-family: Arial, sans-serif;
+  font-size: 3.5pt;
+  font-weight: 700;
+  color: #1a63c9;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.badge-circle strong {
+  font-size: 5pt;
+}

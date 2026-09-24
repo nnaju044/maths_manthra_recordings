@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Certificate of Completion</title>
+<link rel="stylesheet" href="certificate.css">
+</head>
+<body>
+  <div class="page">
+    <div class="certificate">
+
+      <!-- Decorative corners -->
+      <div class="corner corner--tl"></div>
+      <div class="corner corner--br"></div>
+      <div class="dots dots--tl"></div>
+      <div class="dots dots--br"></div>
+
+      <!-- Outer / inner gold frame -->
+      <div class="frame frame--outer"></div>
+      <div class="frame frame--inner"></div>
+
+      <!-- QR box — vertically centred in left margin -->
+      <div class="qr-block">
+        <div class="qr-box">
+          <%- typeof qrCode !== 'undefined' ? qrCode : '{{qrCode}}' %>
+        </div>
+        <div class="qr-label">SCAN TO VERIFY</div>
+      </div>
+
+      <!-- Main content column -->
+      <div class="content">
+
+        <!-- Academy logo -->
+        <div class="logo">
+          <div class="logo-mark">
+            <svg viewBox="0 0 64 64" class="bulb-icon" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="24" r="16" fill="none" stroke="#e07a2c" stroke-width="3"/>
+              <line x1="32" y1="40" x2="32" y2="50" stroke="#e07a2c" stroke-width="3"/>
+              <line x1="24" y1="50" x2="40" y2="50" stroke="#e07a2c" stroke-width="3"/>
+              <text x="32" y="30" text-anchor="middle" font-size="14" fill="#0b1f3a" font-family="serif">&#2323;</text>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <span class="logo-title">MathsManthra</span>
+            <span class="logo-sub">ACADEMY</span>
+            <span class="logo-tag">An ISO 9001:2015 Certified Academy</span>
+          </div>
+        </div>
+
+        <h1 class="title">CERTIFICATE</h1>
+        <div class="subtitle">OF COMPLETION</div>
+
+        <p class="intro">This is to certify that</p>
+
+        <div class="name-line">
+          <span class="name-value"><%= typeof studentName !== 'undefined' ? studentName : '{{studentName}}' %></span>
+        </div>
+
+        <p class="course-line">
+          has successfully completed the
+          <strong class="course-name"><%= typeof courseName !== 'undefined' ? courseName : '{{courseName}}' %></strong><br>
+          conducted by MathsManthra Academy.
+        </p>
+
+      </div><!-- /.content -->
+
+      <!-- Signature row — absolute, below content column -->
+      <div class="signature-row">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-label">Date</div>
+        </div>
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-name">Smija K S</div>
+          <div class="sig-label">Founder &amp; CEO</div>
+        </div>
+      </div>
+
+      <!-- Footer metadata — bottom left -->
+      <div class="meta-block">
+        <div class="meta-row">
+          <span class="meta-label">Certificate ID:</span>
+          <span class="meta-value"><%= typeof certificateNumber !== 'undefined' ? certificateNumber : '{{certificateNumber}}' %></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Date of Completion:</span>
+          <span class="meta-value"><%= typeof completionDate !== 'undefined' ? completionDate : '{{completionDate}}' %></span>
+        </div>
+      </div>
+
+      <!-- Certification badges — bottom right -->
+      <div class="badges">
+        <div class="badge badge--msme">
+          <span class="badge-emblem">&#9733;</span>
+          <span class="badge-text">MSME<br><small>MICRO, SMALL &amp; MEDIUM ENTERPRISES</small></span>
+        </div>
+        <div class="badge badge--iso">
+          <span class="badge-circle">
+            CERTIFIED<br><strong>ISO</strong><br>9001:2015<br>COMPANY
+          </span>
+        </div>
+      </div>
+
+    </div><!-- /.certificate -->
+  </div><!-- /.page -->
+</body>
+</html>

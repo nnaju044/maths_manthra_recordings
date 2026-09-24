@@ -1,29 +1,30 @@
 <!-- Admin Course Create/Edit Form -->
 <div class="content-header">
-  <h2><i class="bi bi-book"></i> <%= course ? 'Edit Course' : 'Create Course' %></h2>
+  <h2><i class="bi bi-book"></i>
+    <%= course ? 'Edit Course' : 'Create Course' %>
+  </h2>
   <a href="/admin/courses" class="btn btn-outline-secondary">
     <i class="bi bi-arrow-left"></i> Back to Courses
   </a>
 </div>
 
 <div class="form-card">
-  <form action="<%= course ? `/admin/courses/${course._id}` : '/admin/courses' %>"
-        method="POST" enctype="multipart/form-data" class="admin-form">
+  <form action="<%= course ? `/admin/courses/${course._id}` : '/admin/courses' %>" method="POST"
+    enctype="multipart/form-data" class="admin-form">
 
     <!-- Title -->
     <div class="mb-3">
       <label for="title" class="form-label">Course Title <span class="text-danger">*</span></label>
-      <input type="text" id="title" name="title" class="form-control"
-             value="<%= course ? course.title : '' %>"
-             placeholder="e.g. Class 10 Mathematics - Night Batch" required maxlength="200" />
+      <input type="text" id="title" name="title" class="form-control" value="<%= course ? course.title : '' %>"
+        placeholder="e.g. Class 10 Mathematics - Night Batch" required maxlength="200" />
     </div>
 
     <!-- Description -->
     <div class="mb-3">
       <label for="description" class="form-label">Description</label>
       <textarea id="description" name="description" class="form-control" rows="4"
-                placeholder="Brief description of this course..."
-                maxlength="2000"><%= course ? course.description : '' %></textarea>
+        placeholder="Brief description of this course..."
+        maxlength="2000"><%= course ? course.description : '' %></textarea>
     </div>
 
     <!-- Thumbnail -->
@@ -33,31 +34,49 @@
         <div class="current-thumbnail mb-2">
           <img src="<%= course.thumbnail %>" alt="Current thumbnail" class="img-preview" />
         </div>
-      <% } %>
-      <input type="file" id="thumbnail" name="thumbnail" class="form-control" accept="image/*" />
-      <div class="form-text">Recommended: 1280×720px (16:9). Max 5MB. JPEG, PNG, WebP.</div>
+        <% } %>
+          <input type="file" id="thumbnail" name="thumbnail" class="form-control" accept="image/*" />
+          <div class="form-text">Recommended: 1280×720px (16:9). Max 5MB. JPEG, PNG, WebP.</div>
     </div>
 
     <!-- Password -->
     <div class="mb-3">
       <label for="password" class="form-label">
-        Course Password (4 digits) <% if (!course) { %><span class="text-danger">*</span><% } %>
+        Course Password (4 digits) <% if (!course) { %><span class="text-danger">*</span>
+          <% } %>
       </label>
       <input type="text" id="password" name="password" class="form-control password-input"
-             placeholder="<%= course ? 'Leave blank to keep current password' : 'e.g. 4587' %>"
-             pattern="\d{4}" maxlength="4" inputmode="numeric"
-             <%= !course ? 'required' : '' %> />
+        placeholder="<%= course ? 'Leave blank to keep current password' : 'e.g. 4587' %>" pattern="\d{4}" maxlength="4"
+        inputmode="numeric" <%=!course ? 'required' : '' %> />
       <div class="form-text">Must be exactly 4 digits. This password is shared with students.</div>
     </div>
 
     <!-- Active Status -->
-    <div class="mb-4">
+    <div class="mb-3">
       <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="isActive" name="isActive"
-               <%= !course || course.isActive ? 'checked' : '' %> />
+        <input class="form-check-input" type="checkbox" id="isActive" name="isActive" <%=!course || course.isActive
+          ? 'checked' : '' %> />
         <label class="form-check-label" for="isActive">Course is Active</label>
       </div>
       <div class="form-text">Inactive courses cannot be accessed by students.</div>
+    </div>
+
+    <!-- Certificate Completion Date -->
+    <div class="mb-4">
+      <label for="certificateCompletionDate" class="form-label">Certificate Completion Date</label>
+      <input type="date" id="certificateCompletionDate" name="certificateCompletionDate" class="form-control"
+        value="<%= course && course.certificateCompletionDate ? new Date(course.certificateCompletionDate).toISOString().substring(0,10) : '' %>" />
+      <div class="form-text">Date printed on student certificates. Leave blank to show "Date Not Assigned".</div>
+    </div>
+
+    <!-- Enable Certificate -->
+    <div class="mb-4">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="certificateEnabled" name="certificateEnabled"
+          <%=course && course.certificateEnabled ? 'checked' : '' %> />
+        <label class="form-check-label" for="certificateEnabled">Enable Certificate</label>
+      </div>
+      <div class="form-text">When disabled, students cannot access or request certificates for this course.</div>
     </div>
 
     <% if (course) { %>
@@ -72,7 +91,7 @@
         </div>
         <div class="mt-2">
           <button type="button" class="btn btn-outline-warning btn-sm" id="regenerateSlugBtn"
-                  onclick="regenerateSlug('<%= course._id %>')">
+            onclick="regenerateSlug('<%= course._id %>')">
             <i class="bi bi-arrow-repeat"></i> Generate New Link
           </button>
           <span class="form-text ms-2">Warning: Old link will stop working!</span>
@@ -82,17 +101,20 @@
       <!-- Stats -->
       <div class="mb-4">
         <div class="form-text">
-          <i class="bi bi-play-circle"></i> <strong><%= typeof videoCount !== 'undefined' ? videoCount : 0 %></strong> videos in this course
+          <i class="bi bi-play-circle"></i> <strong>
+            <%= typeof videoCount !=='undefined' ? videoCount : 0 %>
+          </strong> videos in this course
           <a href="/admin/videos?courseId=<%= course._id %>" class="ms-2">View Videos →</a>
         </div>
       </div>
-    <% } %>
+      <% } %>
 
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary-custom">
-        <i class="bi bi-check-lg"></i> <%= course ? 'Update Course' : 'Create Course' %>
-      </button>
-      <a href="/admin/courses" class="btn btn-outline-secondary">Cancel</a>
-    </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-check-lg"></i>
+            <%= course ? 'Update Course' : 'Create Course' %>
+          </button>
+          <a href="/admin/courses" class="btn btn-outline-secondary">Cancel</a>
+        </div>
   </form>
 </div>
