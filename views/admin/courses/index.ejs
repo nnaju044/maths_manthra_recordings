@@ -61,23 +61,24 @@
                 </div>
               </td>
               <td><span class="badge bg-secondary">
-                  <%= videoCountMap[course._id.toString()] || 0 %>
+                  <%= (typeof videoCountMap !== 'undefined' && videoCountMap[course._id.toString()]) || 0 %>
                 </span></td>
               <td class="text-nowrap small">
                 <% if (course.certificateCompletionDate) { %>
                   <span class="text-success fw-semibold">
-                    <%= new Date(course.certificateCompletionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                    <%= new Date(course.certificateCompletionDate).toLocaleDateString('en-IN', { day: 'numeric' ,
+                      month: 'short' , year: 'numeric' }) %>
                   </span>
-                <% } else { %>
-                  <span class="text-muted fst-italic">Not set</span>
-                <% } %>
+                  <% } else { %>
+                    <span class="text-muted fst-italic">Not set</span>
+                    <% } %>
               </td>
               <td class="text-nowrap small text-center">
                 <% if (course.certificateEnabled) { %>
                   <span class="text-success" title="Certificate Enabled">🟢 Enabled</span>
-                <% } else { %>
-                  <span class="text-danger" title="Certificate Disabled">🔴 Disabled</span>
-                <% } %>
+                  <% } else { %>
+                    <span class="text-danger" title="Certificate Disabled">🔴 Disabled</span>
+                    <% } %>
               </td>
               <td>
                 <button class="badge-status-btn <%= course.isActive ? 'active' : 'inactive' %>"
@@ -123,11 +124,11 @@
           <div class="course-card-thumb-wrapper">
             <% if (course.thumbnail) { %>
               <img src="<%= course.thumbnail %>" alt="<%= course.title %>" class="course-card-thumb" />
-            <% } else { %>
-              <div class="course-card-thumb-placeholder">
-                <i class="bi bi-book"></i>
-              </div>
-            <% } %>
+              <% } else { %>
+                <div class="course-card-thumb-placeholder">
+                  <i class="bi bi-book"></i>
+                </div>
+                <% } %>
           </div>
 
           <!-- Card Content -->
@@ -140,44 +141,57 @@
               </button>
               <a href="/admin/videos?courseId=<%= course._id %>" class="course-card-video-count" title="View videos">
                 <i class="bi bi-play-circle-fill"></i>
-                <span><%= videoCountMap[course._id.toString()] || 0 %> Videos</span>
+                <span>
+                  <%= (typeof videoCountMap !== 'undefined' && videoCountMap[course._id.toString()]) || 0 %> Videos
+                </span>
               </a>
+              <% if (course.certificateEnabled) { %>
+                <span class="badge bg-success-subtle text-success border border-success-subtle"
+                  title="Certificate Enabled">🟢 Cert Enabled</span>
+                <% } else { %>
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle"
+                    title="Certificate Disabled">🔴 Cert Disabled</span>
+                  <% } %>
             </div>
 
             <!-- Course Title & Description -->
-            <h3 class="course-card-title"><%= course.title %></h3>
+            <h3 class="course-card-title">
+              <%= course.title %>
+            </h3>
             <% if (course.description) { %>
-              <p class="course-card-desc"><%= truncate(course.description, 85) %></p>
-            <% } %>
+              <p class="course-card-desc">
+                <%= truncate(course.description, 85) %>
+              </p>
+              <% } %>
 
-            <!-- Thumb-Friendly Action Buttons -->
-            <div class="course-card-actions">
-              <button type="button" class="btn-card-action btn-card-share btn-copy"
-                data-link="<%= appUrl %>/course/<%= course.slug %>"
-                onclick="copyLink('<%= appUrl %>/course/<%= course.slug %>', this)"
-                title="Copy shareable link" aria-label="Copy share link">
-                <i class="bi bi-clipboard"></i>
-                <span>Share Link</span>
-              </button>
+                <!-- Thumb-Friendly Action Buttons -->
+                <div class="course-card-actions">
+                  <button type="button" class="btn-card-action btn-card-share btn-copy"
+                    data-link="<%= appUrl %>/course/<%= course.slug %>"
+                    onclick="copyLink('<%= appUrl %>/course/<%= course.slug %>', this)" title="Copy shareable link"
+                    aria-label="Copy share link">
+                    <i class="bi bi-clipboard"></i>
+                    <span>Share Link</span>
+                  </button>
 
-              <a href="/admin/courses/<%= course._id %>/edit" class="btn-card-action btn-card-edit"
-                title="Edit course" aria-label="Edit course">
-                <i class="bi bi-pencil-square"></i>
-                <span>Edit</span>
-              </a>
+                  <a href="/admin/courses/<%= course._id %>/edit" class="btn-card-action btn-card-edit"
+                    title="Edit course" aria-label="Edit course">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Edit</span>
+                  </a>
 
-              <form action="/admin/courses/<%= course._id %>/delete" method="POST" class="course-card-delete-form"
-                onsubmit="return confirm('Delete this course and ALL its videos? This cannot be undone.')">
-                <button type="submit" class="btn-card-action btn-card-delete"
-                  title="Delete course" aria-label="Delete course">
-                  <i class="bi bi-trash"></i>
-                  <span>Delete</span>
-                </button>
-              </form>
-            </div>
+                  <form action="/admin/courses/<%= course._id %>/delete" method="POST" class="course-card-delete-form"
+                    onsubmit="return confirm('Delete this course and ALL its videos? This cannot be undone.')">
+                    <button type="submit" class="btn-card-action btn-card-delete" title="Delete course"
+                      aria-label="Delete course">
+                      <i class="bi bi-trash"></i>
+                      <span>Delete</span>
+                    </button>
+                  </form>
+                </div>
           </div>
         </div>
-      <% }) %>
+        <% }) %>
     </div>
 
     <!-- Pagination -->

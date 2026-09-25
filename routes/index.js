@@ -22,6 +22,7 @@ router.get('/certificate', (req, res, next) => {
 }, certPublicCtrl.showCertificatePage);
 router.post('/certificate', certPublicCtrl.handleCertificateAction);
 router.post('/certificate/verify', certPublicCtrl.verifyCertificate);
+router.get('/certificate/download/:certificateId', certPublicCtrl.downloadCertificate);
 
 // Rate limiting for password verification — 10 attempts per 15 minutes per IP
 const coursePasswordLimiter = rateLimit({

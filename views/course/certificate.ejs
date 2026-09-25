@@ -703,9 +703,9 @@
                   <div class="small">This certificate is verified by Maths Manthra Academy records.</div>
                 </div>
               </div>
-              <button onclick="window.print()" class="btn btn-sm btn-success rounded-pill px-3">
-                <i class="bi bi-printer-fill me-1"></i> Print / Save PDF
-              </button>
+              <a href="/certificate/download/<%= student.certificateNumber %>" class="btn btn-sm btn-success rounded-pill px-3">
+                <i class="bi bi-download me-1"></i> Download PDF
+              </a>
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════
@@ -773,9 +773,9 @@
                   onclick="navigator.clipboard.writeText(window.location.href); alert('Certificate link copied to clipboard!');">
                   <i class="bi bi-share-fill"></i> Share Link
                 </button>
-                <button onclick="window.print()" class="btn btn-primary">
-                  <i class="bi bi-download"></i> Download / Print
-                </button>
+                <a href="/certificate/download/<%= student.certificateNumber %>" class="btn btn-primary">
+                  <i class="bi bi-download me-1"></i> Download PDF
+                </a>
               </div>
             </div>
 

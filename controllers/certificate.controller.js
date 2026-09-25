@@ -3,9 +3,34 @@
  * Public-facing certificate request and verification controller.
  * Accessible to all students without requiring login.
  */
+const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+const ejs = require('ejs');
+const puppeteer = require('puppeteer');
+const QRCode = require('qrcode');
 const CertificateStudent = require('../models/CertificateStudent');
 const Course = require('../models/Course');
+
+let cachedBgDataUri = null;
+let cachedSigDataUri = null;
+
+function getCertificateAssets() {
+  if (!cachedBgDataUri) {
+    const bgPath = path.join(__dirname, '../public/images/certificate-template.jpg');
+    if (fs.existsSync(bgPath)) {
+      cachedBgDataUri = 'data:image/jpeg;base64,' + fs.readFileSync(bgPath).toString('base64');
+    }
+  }
+  if (!cachedSigDataUri) {
+    const sigPath = path.join(__dirname, '../public/images/Signature_smija.png');
+    if (fs.existsSync(sigPath)) {
+      cachedSigDataUri = 'data:image/png;base64,' + fs.readFileSync(sigPath).toString('base64');
+    }
+  }
+  return { bgDataUri: cachedBgDataUri, sigDataUri: cachedSigDataUri };
+}
 
 /**
  * Generate a collision-resistant unique certificate number
@@ -62,6 +87,17 @@ exports.showCertificatePage = async (req, res, next) => {
       if (student && student.courseId && !student.courseId.certificateEnabled) {
         student = null;
         req.flash('error', 'Certificate generation is currently disabled for this course.');
+      } else if (student) {
+        try {
+          const verifyUrl = `${req.protocol}://${req.get('host')}/certificate?cert=${encodeURIComponent(student.certificateNumber)}`;
+          student.qrCode = await QRCode.toString(verifyUrl, {
+            type: 'svg',
+            margin: 1,
+            color: { dark: '#000000', light: '#ffffff' },
+          });
+        } catch (e) {
+          student.qrCode = '';
+        }
       }
     }
 
@@ -223,5 +259,131 @@ exports.verifyCertificate = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+/**
+ * GET /certificate/download/:certificateId
+ * Generate and download official PDF certificate securely using Puppeteer.
+ * Fetches verified certificate, student, and course data directly from MongoDB.
+ */
+exports.downloadCertificate = async (req, res, next) => {
+  let browser = null;
+  try {
+    const { certificateId } = req.params;
+    const certParam = (certificateId || '').trim();
+
+    if (!certParam) {
+      req.flash('error', 'Certificate ID is required.');
+      return res.redirect('/certificate');
+    }
+
+    const query = [
+      { certificateNumber: certParam.toUpperCase() },
+      { certificateNumber: certParam },
+    ];
+
+    if (mongoose.Types.ObjectId.isValid(certParam)) {
+      query.push({ _id: certParam });
+    }
+
+    const student = await CertificateStudent.findOne({
+      $or: query,
+      isActive: true,
+    }).populate('courseId');
+
+    if (!student) {
+      return res.status(404).render('404', {
+        title: 'Certificate Not Found — Maths Manthra',
+        message: 'The requested certificate could not be found.',
+      });
+    }
+
+    // Direct access protection: check if certificates are enabled for this course
+    if (student.courseId && student.courseId.certificateEnabled === false) {
+      return res.status(403).send('Certificate generation is currently disabled for this course.');
+    }
+
+    // Dynamic dates
+    const issuedDate = new Date().toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const certDateLong = student.courseId && student.courseId.certificateCompletionDate
+      ? new Date(student.courseId.certificateCompletionDate)
+      : null;
+    const completionDate = certDateLong
+      ? certDateLong.toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : 'Date Not Assigned';
+
+    // Verification URL for QR code
+    const verifyUrl = `${req.protocol}://${req.get('host')}/certificate?cert=${encodeURIComponent(student.certificateNumber)}`;
+    const qrCodeSvg = await QRCode.toString(verifyUrl, {
+      type: 'svg',
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#ffffff',
+      },
+    });
+
+    // Template assets
+    const { bgDataUri, sigDataUri } = getCertificateAssets();
+
+    // Render HTML template
+    const templatePath = path.join(__dirname, '../views/course/certificate-pdf.ejs');
+    const html = await ejs.renderFile(templatePath, {
+      bgImagePath: bgDataUri,
+      signaturePath: sigDataUri,
+      qrCode: qrCodeSvg,
+      studentName: student.fullName || student.name || 'Student',
+      issuedDate,
+      certificateNumber: student.certificateNumber,
+      completionDate,
+    });
+
+    // Generate PDF using Puppeteer
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, {
+      waitUntil: 'networkidle0',
+    });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      landscape: true,
+      printBackground: true,
+      margin: {
+        top: '0',
+        right: '0',
+        bottom: '0',
+        left: '0',
+      },
+    });
+
+    const filename = `MathsManthra-Certificate-${student.certificateNumber}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    return res.send(pdfBuffer);
+  } catch (err) {
+    console.error('Error generating certificate PDF:', err);
+    return next(err);
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
   }
 };

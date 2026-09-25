@@ -6,12 +6,19 @@
     /* ── Reset ── */
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+    @page {
+      size: A4 landscape;
+      margin: 0;
+    }
+
     html, body {
       width: 297mm;
       height: 210mm;
       margin: 0;
       padding: 0;
       overflow: hidden;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     /* ── Certificate container — exact A4 landscape ── */

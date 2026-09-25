@@ -17,16 +17,35 @@ exports.index = async (req, res, next) => {
     const filter = {};
     if (search) filter.title = { $regex: search, $options: 'i' };
 
-    const result = await paginate(Course, filter, { page, limit: 10, sort: { createdAt: -1 } });
+    const result = await paginate(Course, filter, {
+      page,
+      limit: 10,
+      sort: { createdAt: -1 }
+    });
+
+    console.log('===== COURSE DATA =====');
+
+    result.docs.forEach(course => {
+      console.log({
+        title: course.title,
+        certificateEnabled: course.certificateEnabled,
+        certificateCompletionDate: course.certificateCompletionDate
+      });
+    });
 
     // Count videos per course
     const courseIds = result.docs.map(c => c._id);
+
     const videoCounts = await Video.aggregate([
       { $match: { courseId: { $in: courseIds } } },
       { $group: { _id: '$courseId', count: { $sum: 1 } } },
     ]);
+
     const videoCountMap = {};
-    videoCounts.forEach(v => { videoCountMap[v._id.toString()] = v.count; });
+
+    videoCounts.forEach(v => {
+      videoCountMap[v._id.toString()] = v.count;
+    });
 
     res.render('admin/courses/index', {
       title: 'Courses — Admin',
@@ -34,10 +53,12 @@ exports.index = async (req, res, next) => {
       ...result,
       search,
       videoCountMap,
-      currentPage: 'courses',
-      // appUrl is injected globally by app.js middleware — no override needed
+      currentPage: 'courses'
     });
-  } catch (err) { next(err); }
+
+  } catch (err) {
+    next(err);
+  }
 };
 
 // Show create form
@@ -54,7 +75,7 @@ exports.create = (req, res) => {
 // Handle create
 exports.store = async (req, res, next) => {
   try {
-    const { title, description, password, isActive, certificateCompletionDate, certificateEnabled } = req.body;
+    const { title, description, password, isActive, certificateCompletionDate } = req.body;
 
     // Validate 4-digit password
     if (!password || !/^\d{4}$/.test(password)) {
@@ -69,7 +90,9 @@ exports.store = async (req, res, next) => {
     const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
     const passwordHash = await bcrypt.hash(password, rounds);
 
-    await Course.create({
+    const isCertEnabled = req.body.certificateEnabled === 'on' || req.body.certificateEnabled === 'true' || req.body.certificateEnabled === true;
+
+    const course = await Course.create({
       title,
       description,
       thumbnail,
@@ -77,8 +100,11 @@ exports.store = async (req, res, next) => {
       passwordHash,
       isActive: isActive === 'on' || isActive === 'true' || isActive === true,
       certificateCompletionDate: certificateCompletionDate ? new Date(certificateCompletionDate) : null,
-      certificateEnabled: certificateEnabled === 'on' || certificateEnabled === 'true' || certificateEnabled === true,
+      certificateEnabled: isCertEnabled,
     });
+
+    console.log('certificateEnabled from form (create):', req.body.certificateEnabled);
+    console.log('certificateEnabled after create:', course.certificateEnabled);
 
     req.flash('success', 'Course created successfully.');
     res.redirect('/admin/courses');
@@ -111,15 +137,9 @@ exports.edit = async (req, res, next) => {
 
 // Handle update
 exports.update = async (req, res, next) => {
-  console.log("========== COURSE UPDATE ==========");
-  console.log(req.body);
 
-  console.log(
-    "Certificate Date:",
-    req.body.certificateCompletionDate
-  );
   try {
-    const { title, description, password, isActive } = req.body;
+    const { title, description, password, isActive, certificateEnabled } = req.body;
     const course = await Course.findById(req.params.id);
     if (!course) { req.flash('error', 'Course not found.'); return res.redirect('/admin/courses'); }
 
@@ -154,9 +174,18 @@ exports.update = async (req, res, next) => {
     course.certificateCompletionDate = req.body.certificateCompletionDate
       ? new Date(req.body.certificateCompletionDate)
       : null;
-    course.certificateEnabled = req.body.certificateEnabled === 'on' || req.body.certificateEnabled === 'true' || req.body.certificateEnabled === true;
+
+    // Handle certificateEnabled toggle
+    const isCertEnabled = req.body.certificateEnabled === 'on' || req.body.certificateEnabled === 'true' || req.body.certificateEnabled === true;
+    console.log('certificateEnabled from form:', req.body.certificateEnabled);
+    course.certificateEnabled = isCertEnabled;
+    console.log('certificateEnabled before save:', course.certificateEnabled);
 
     await course.save();
+
+    const verifyCourse = await Course.findById(course._id);
+    console.log('certificateEnabled after save:', verifyCourse.certificateEnabled);
+
     req.flash('success', 'Course updated successfully.');
     res.redirect('/admin/courses');
   } catch (err) {
