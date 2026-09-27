@@ -21,9 +21,17 @@ const nodemailer = require('nodemailer');
  *   3. Use that as SMTP_PASS
  */
 function createTransporter() {
+
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT, 10) || 587;
   const secure = port === 465; // true for 465, false for others
+
+  console.log('[SMTP CONFIG]', {
+    host,
+    port,
+    secure,
+    user: process.env.SMTP_USER,
+  });
 
   return nodemailer.createTransport({
     host,
