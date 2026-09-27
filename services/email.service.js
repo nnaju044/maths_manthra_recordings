@@ -24,7 +24,7 @@ function createTransporter() {
 
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT, 10) || 587;
-  const secure = port === 465; // true for 465, false for others
+  const secure = process.env.SMTP_SECURE === 'true';
 
   console.log('[SMTP CONFIG]', {
     host,
