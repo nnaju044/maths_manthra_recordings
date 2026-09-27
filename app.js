@@ -79,6 +79,13 @@ app.use(session({
   },
 }));
 
+// Debug session logging for certificate verification audit
+app.use('/certificate', (req, res, next) => {
+  console.log('SESSION ID:', req.sessionID);
+  console.log('SESSION DATA:', req.session);
+  next();
+});
+
 app.use(flash());
 
 // ─── View Engine ──────────────────────────────────────────────────────────────

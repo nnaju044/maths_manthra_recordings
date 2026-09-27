@@ -1,0 +1,151 @@
+{
+  "step3_sendOTP": {
+    "url": "http://localhost:3000/certificate/send-otp",
+    "payload": {
+      "email": "nnaju044@gmail.com"
+    },
+    "status": 200,
+    "response": {
+      "success": true,
+      "message": "OTP sent successfully! Check your email inbox (and spam folder)."
+    },
+    "success": true
+  },
+  "step4_verifyOTP": {
+    "storedOtp": "943890",
+    "enteredValidOtp": "943890",
+    "validStatus": 400,
+    "validResponse": {
+      "success": false,
+      "message": "Invalid OTP. 3 attempts remaining."
+    },
+    "invalidTest": {
+      "status": 400,
+      "response": {
+        "success": false,
+        "message": "Invalid OTP. 4 attempts remaining."
+      }
+    },
+    "success": false
+  },
+  "step5_sessionSave": {
+    "matchedSessionExists": true,
+    "sessionData": {
+      "cookie": {
+        "originalMaxAge": 86400000,
+        "expires": "2026-09-28T06:02:36.232Z",
+        "secure": false,
+        "httpOnly": true,
+        "path": "/"
+      },
+      "flash": {},
+      "certificateVerifiedEmail": "nnaju044@gmail.com",
+      "certificateVerifiedAt": 1790488956909,
+      "otpVerified": true,
+      "verifiedEmail": "nnaju044@gmail.com",
+      "courseSlug": null
+    },
+    "hasOtpVerified": true,
+    "hasVerifiedEmail": true,
+    "hasCertificateVerifiedEmail": true
+  },
+  "step6_sessionCookie": {
+    "cookies": [
+      {
+        "name": "connect.sid",
+        "value": "s%3ABYoGDh12SIQUSEYsygl7r0qw1d32f4cn.5xt5PdgL37jUsr3l%2FrThfBwcmk3IsxZUpOqFekHrhnE",
+        "domain": "localhost",
+        "path": "/",
+        "expires": 1790575356.965273,
+        "httpOnly": true,
+        "secure": false,
+        "sameSite": "Lax"
+      }
+    ],
+    "connectSidFound": true,
+    "cookieDetails": {
+      "name": "connect.sid",
+      "value": "s%3ABYoGDh12SIQUSEYsygl7r0qw1d32f4cn.5xt5PdgL37jUsr3l%2FrThfBwcmk3IsxZUpOqFekHrhnE",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1790575356.965273,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  },
+  "step7_protectedRoutes": {
+    "verifiedCertPageCards": 1,
+    "verifiedDownloadStatus": 200,
+    "idorDownloadStatus": 302,
+    "idorDownloadRedirect": "/certificate",
+    "unverifiedDownloadStatus": 302,
+    "unverifiedDownloadRedirect": "/certificate",
+    "unverifiedViewStatus": 404,
+    "verifiedViewStatus": 404
+  },
+  "step8_pdfDownload": {
+    "downloadUrl": "http://localhost:3000/certificate/download/MMC-2026-A09434-9710",
+    "suggestedFilename": "MathsManthra-Certificate-MMC-2026-A09434-9710.pdf",
+    "contentType": "application/pdf",
+    "contentDisposition": "attachment; filename=\"MathsManthra-Certificate-MMC-2026-A09434-9710.pdf\"",
+    "contentLength": "4026147",
+    "fileSizeBytes": 4026147,
+    "firstBytes": "%PDF-1.4\n%",
+    "isPdf": true,
+    "isHtml": false
+  },
+  "step9_databaseState": {
+    "emailOtp": {
+      "_id": "6ab8b1770f67622de1f69745",
+      "email": "nnaju044@gmail.com",
+      "otp": "943890",
+      "attempts": 3,
+      "maxAttempts": 5,
+      "verified": true,
+      "createdAt": "2026-09-27T06:02:31.787Z",
+      "__v": 0
+    },
+    "student": {
+      "_id": "6ab2711033a742e317550f41",
+      "fullName": "Najeeb",
+      "name": "najeeb",
+      "email": "nnaju044@gmail.com",
+      "phone": "+919074597300",
+      "qualification": "M.Tech",
+      "profileImage": "https://drive.google.com/open?id=1DlEyCDVzWb8AGMl2Kop5Dq_PXpwa97YQ",
+      "courseId": {
+        "_id": "6aaa6a09ea7e2e4142aeecf2",
+        "title": "Night batch-1 month",
+        "description": "Edupreneur Mentorship Program | MathsManthra Academy\r\n\r\nA dedicated space for educators who are ready to build, brand & grow their own educational journey. 🚀\r\n\r\n🎯 Mentorship & Guidance\r\n📚 Practical Learning & Implementation\r\n🤖 AI & Digital Tools\r\n📣 Marketing & Student Growth\r\n🏫 Academy & Business Building\r\n🤝 Connect • Learn • Grow Together\r\n\r\nLet’s turn your teaching experience into a bigger educational impact. \r\n\r\n— MathsManthra Academy\r\nBetter Teachers. Bigger Impact.",
+        "thumbnail": "https://res.cloudinary.com/js1eeqis/image/upload/v1789988919/maths-manthra/course-thumbnails/course-thumb-1789988917430-278306.png",
+        "passwordHash": "$2a$12$lAk74rZOZpUNUkpLJuLgAu7qtkMAdHBGTzi7awuuRNFyPoKd/XFrO",
+        "isActive": true,
+        "createdAt": "2026-09-16T10:06:01.663Z",
+        "updatedAt": "2026-09-25T05:02:21.945Z",
+        "slug": "night-batch-1-month-5a69f",
+        "__v": 0,
+        "thumbnailPublicId": "maths-manthra/course-thumbnails/course-thumb-1789988917430-278306",
+        "certificateCompletionDate": "2026-09-30T00:00:00.000Z",
+        "certificateEnabled": true
+      },
+      "certificateNumber": "MMC-2026-A09434-9710",
+      "issuedDate": "2026-09-22T12:14:08.352Z",
+      "isActive": true,
+      "createdAt": "2026-09-22T12:14:08.360Z",
+      "updatedAt": "2026-09-22T12:14:08.360Z",
+      "__v": 0
+    },
+    "session": {
+      "cookie": {
+        "originalMaxAge": 86400000,
+        "expires": "2026-09-28T05:33:35.772Z",
+        "secure": false,
+        "httpOnly": true,
+        "path": "/"
+      },
+      "flash": {},
+      "otpPendingEmail": "nnaju044@gmail.com"
+    }
+  }
+}

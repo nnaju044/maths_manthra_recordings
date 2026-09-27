@@ -149,9 +149,9 @@
       left: 53%;
       top: 49.5%;
       transform: translateX(-50%) translateY(-50%);
-      font-family: 'Brush Script MT', 'Segoe Script', cursive, 'Georgia', serif;
+      font-family: 'Great Vibes', cursive;
       font-size: 2.4em;
-      font-weight: 700;
+      font-weight: 600;
       color: #0b1f3a;
       white-space: normal;
       text-align: center;
@@ -598,26 +598,90 @@
   <div class="cert-card-wrap">
 
     <!-- ═══════════════════════════════════════════════════════════════════════
-         EMAIL VERIFICATION SECTION — Primary Entry Point
+         EMAIL OTP VERIFICATION SECTION — Primary Entry Point
          ═══════════════════════════════════════════════════════════════════════ -->
-    <div class="verify-email-card mb-4">
+    <div class="verify-email-card mb-4" id="otpSection">
       <div class="verify-icon">
-        <i class="bi bi-envelope-check-fill"></i>
+        <i class="bi bi-shield-lock-fill"></i>
       </div>
-      <h2 class="verify-title">Verify Your Certificate</h2>
-      <p class="verify-desc">Enter your registered email address to check your eligibility and view your certificates.
-      </p>
-      <form action="/certificate/verify" method="POST">
+      <h2 class="verify-title">Verify Your Identity</h2>
+      <p class="verify-desc">Enter your registered email to receive a one-time verification code (OTP).</p>
+
+      <!-- ── STEP 1: Enter Email ── -->
+      <div id="otpStep1" style="<%= (typeof otpVerified !== 'undefined' && otpVerified) ? 'display:none;' : '' %>">
         <div class="input-group input-group-lg">
           <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-primary"></i></span>
-          <input type="email" name="email" class="form-control border-start-0" placeholder="Enter your email address"
+          <input type="email" id="otpEmail" class="form-control border-start-0" placeholder="Enter your email address"
             value="<%= typeof verifiedEmail !== 'undefined' ? verifiedEmail : '' %>" required
             aria-label="Email address" />
-          <button type="submit" class="btn-verify">
+          <button type="button" class="btn-verify" id="btnSendOTP" onclick="handleSendOTP()">
+            <i class="bi bi-send me-1"></i> Send OTP
+          </button>
+        </div>
+        <div class="form-text mt-2 text-center" style="color:rgba(255,255,255,0.6);">
+          <i class="bi bi-info-circle me-1"></i> A 6-digit code will be sent to your email.
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Enter OTP ── -->
+      <div id="otpStep2" style="display:none;">
+        <div class="mb-3 text-center">
+          <span class="badge bg-light text-dark px-3 py-2 rounded-pill">
+            <i class="bi bi-envelope-check me-1"></i> OTP sent to <strong id="otpSentEmail"></strong>
+          </span>
+        </div>
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-key text-warning"></i></span>
+          <input type="text" id="otpCode" class="form-control border-start-0 text-center fw-bold"
+            placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}"
+            style="letter-spacing:8px; font-size:1.4rem;" autocomplete="one-time-code" aria-label="OTP Code" />
+          <button type="button" class="btn-verify" id="btnVerifyOTP" onclick="handleVerifyOTP()">
             <i class="bi bi-shield-check me-1"></i> Verify
           </button>
         </div>
-      </form>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none"
+            onclick="handleBackToEmail()">
+            <i class="bi bi-arrow-left me-1"></i> Change Email
+          </button>
+          <div>
+            <span id="otpTimer" class="text-white-50 small me-2"></span>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill" id="btnResendOTP"
+              onclick="handleResendOTP()" disabled>
+              <i class="bi bi-arrow-clockwise me-1"></i> Resend OTP
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: Verified (success) ── -->
+      <div id="otpStep3" style="<%= (typeof otpVerified !== 'undefined' && otpVerified) ? '' : 'display:none;' %>">
+        <div class="text-center">
+          <div class="mb-2">
+            <span class="badge bg-success px-4 py-2 fs-6 rounded-pill">
+              <i class="bi bi-patch-check-fill me-1"></i> Email Verified
+            </span>
+          </div>
+          <p class="text-white-50 small mb-3">
+            Your identity has been confirmed. You can now view and download your certificates.
+          </p>
+          <form action="/certificate/verify" method="POST" id="otpVerifiedForm">
+            <input type="hidden" name="email" id="otpVerifiedEmail"
+              value="<%= typeof verifiedEmail !== 'undefined' ? verifiedEmail : '' %>" />
+            <button type="submit" class="btn btn-light btn-lg rounded-pill px-4 fw-semibold">
+              <i class="bi bi-award me-1"></i> View My Certificates
+            </button>
+          </form>
+          <div class="mt-3">
+            <a href="/certificate?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>" class="btn btn-sm btn-outline-light rounded-pill">
+              <i class="bi bi-arrow-repeat me-1"></i> Verify Again
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── OTP Status Message ── -->
+      <div id="otpMessage" class="mt-3" style="display:none;"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
@@ -626,20 +690,30 @@
     <% if (typeof verifiedStudents !=='undefined' && verifiedStudents.length> 0) { %>
       <div class="cert-card-container p-4 mb-4">
         <div class="verified-results-section">
-          <div class="verified-results-header">
-            <div class="vr-icon">
-              <i class="bi bi-patch-check-fill"></i>
-            </div>
-            <div>
-              <h3 class="h5 fw-bold mb-0 text-success">Certificates Found!</h3>
-              <p class="text-muted small mb-0">
-                <strong>
-                  <%= verifiedStudents.length %>
-                </strong> certificate<%= verifiedStudents.length> 1 ? 's' : '' %> found for
+          <div class="verified-results-header justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <div class="vr-icon">
+                <i class="bi bi-patch-check-fill"></i>
+              </div>
+              <div>
+                <h3 class="h5 fw-bold mb-0 text-success">Certificates Found!</h3>
+                <p class="text-muted small mb-0">
                   <strong>
-                    <%= verifiedEmail %>
-                  </strong>
-              </p>
+                    <%= verifiedStudents.length %>
+                  </strong> certificate<%= verifiedStudents.length> 1 ? 's' : '' %> found for
+                    <strong>
+                      <%= verifiedEmail %>
+                    </strong>
+                </p>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="/certificate<%= selectedCourseSlug ? '?course=' + selectedCourseSlug : '' %>" class="btn btn-sm btn-outline-secondary rounded-pill">
+                <i class="bi bi-arrow-left"></i> Back
+              </a>
+              <a href="/certificate?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>" class="btn btn-sm btn-outline-primary rounded-pill">
+                <i class="bi bi-arrow-repeat me-1"></i> Verify Again
+              </a>
             </div>
           </div>
 
@@ -672,13 +746,18 @@
                   </div>
                 </div>
                 <div class="cert-info-right">
-                  <a href="/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>" class="btn-download-cert">
-                    <i class="bi bi-download"></i> Download Certificate
+                  <a href="/certificate/download/<%= s.certificateNumber %>" class="btn-download-cert">
+                    <i class="bi bi-download"></i> Download PDF
                   </a>
-                  <button class="btn btn-sm btn-outline-secondary rounded-pill"
-                    onclick="navigator.clipboard.writeText(window.location.origin + '/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
-                    <i class="bi bi-share"></i> Share Link
-                  </button>
+                  <div class="d-flex gap-2">
+                    <a href="/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>" class="btn btn-sm btn-outline-primary rounded-pill">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                      onclick="navigator.clipboard.writeText(window.location.origin + '/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
+                      <i class="bi bi-share"></i> Share Link
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -703,7 +782,8 @@
                   <div class="small">This certificate is verified by Maths Manthra Academy records.</div>
                 </div>
               </div>
-              <a href="/certificate/download/<%= student.certificateNumber %>" class="btn btn-sm btn-success rounded-pill px-3">
+              <a href="/certificate/download/<%= student.certificateNumber %>"
+                class="btn btn-sm btn-success rounded-pill px-3">
                 <i class="bi bi-download me-1"></i> Download PDF
               </a>
             </div>
@@ -735,7 +815,9 @@
 
                   <!-- Completion Date (left signature line) -->
                   <div class="cert-field cert-field--date">
-                    <%= typeof issuedDate !== 'undefined' ? issuedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                    <%= typeof issuedDate !=='undefined' ? issuedDate.toLocaleDateString('en-IN', { day: 'numeric' ,
+                      month: 'short' , year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric' ,
+                      month: 'short' , year: 'numeric' }) %>
                   </div>
 
                   <!-- Signature Image (right signature line) -->
@@ -937,6 +1019,254 @@
         navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { });
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // OTP VERIFICATION CLIENT-SIDE LOGIC
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let otpTimerInterval = null;
+    let currentOTPEmail = '';
+
+    /**
+     * Show a status message in the OTP section.
+     */
+    function showOTPMessage(msg, type) {
+      const el = document.getElementById('otpMessage');
+      el.className = 'mt-3 alert alert-' + type + ' py-2 small rounded-3';
+      el.innerHTML = msg;
+      el.style.display = 'block';
+      // Auto-hide success messages after 5s
+      if (type === 'success') {
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+      }
+    }
+
+    /**
+     * Hide the OTP message.
+     */
+    function hideOTPMessage() {
+      const el = document.getElementById('otpMessage');
+      el.style.display = 'none';
+    }
+
+    /**
+     * Switch visible OTP step (1, 2, or 3).
+     */
+    function showOTPStep(step) {
+      document.getElementById('otpStep1').style.display = step === 1 ? '' : 'none';
+      document.getElementById('otpStep2').style.display = step === 2 ? '' : 'none';
+      document.getElementById('otpStep3').style.display = step === 3 ? '' : 'none';
+    }
+
+    /**
+     * Start the 60-second resend countdown.
+     */
+    function startResendTimer() {
+      const timerEl = document.getElementById('otpTimer');
+      const resendBtn = document.getElementById('btnResendOTP');
+      let seconds = 60;
+
+      resendBtn.disabled = true;
+      timerEl.textContent = `Resend in ${seconds}s`;
+
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+
+      otpTimerInterval = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(otpTimerInterval);
+          otpTimerInterval = null;
+          timerEl.textContent = '';
+          resendBtn.disabled = false;
+        } else {
+          timerEl.textContent = `Resend in ${seconds}s`;
+        }
+      }, 1000);
+    }
+
+    /**
+     * Set loading state on a button.
+     */
+    function setButtonLoading(btn, loading, originalHTML) {
+      if (loading) {
+        btn.disabled = true;
+        btn.dataset.originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Please wait...';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML || btn.dataset.originalHtml || btn.innerHTML;
+      }
+    }
+
+    /**
+     * STEP 1 → 2: Send OTP to email.
+     */
+    async function handleSendOTP() {
+      const emailInput = document.getElementById('otpEmail');
+      const email = emailInput.value.trim();
+      const btn = document.getElementById('btnSendOTP');
+
+      if (!email) {
+        showOTPMessage('<i class="bi bi-exclamation-circle me-1"></i> Please enter your email address.', 'warning');
+        emailInput.focus();
+        return;
+      }
+
+      // Basic email validation
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showOTPMessage('<i class="bi bi-exclamation-circle me-1"></i> Please enter a valid email address.', 'warning');
+        emailInput.focus();
+        return;
+      }
+
+      hideOTPMessage();
+      setButtonLoading(btn, true);
+
+      try {
+        const resp = await fetch('/certificate/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+          currentOTPEmail = email;
+          document.getElementById('otpSentEmail').textContent = email;
+          showOTPStep(2);
+          startResendTimer();
+          document.getElementById('otpCode').value = '';
+          document.getElementById('otpCode').focus();
+          showOTPMessage('<i class="bi bi-check-circle me-1"></i> ' + data.message, 'success');
+        } else {
+          showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> ' + data.message, 'danger');
+        }
+      } catch (err) {
+        showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> Network error. Please try again.', 'danger');
+      } finally {
+        setButtonLoading(btn, false, '<i class="bi bi-send me-1"></i> Send OTP');
+      }
+    }
+
+    /**
+     * STEP 2 → 3: Verify the OTP code.
+     */
+    async function handleVerifyOTP() {
+      const otpInput = document.getElementById('otpCode');
+      const otp = otpInput.value.trim();
+      const btn = document.getElementById('btnVerifyOTP');
+
+      if (!otp || otp.length !== 6) {
+        showOTPMessage('<i class="bi bi-exclamation-circle me-1"></i> Please enter the 6-digit OTP code.', 'warning');
+        otpInput.focus();
+        return;
+      }
+
+      hideOTPMessage();
+      setButtonLoading(btn, true);
+
+      try {
+        const resp = await fetch('/certificate/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentOTPEmail, otp }),
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+          // Update the hidden form with verified email
+          document.getElementById('otpVerifiedEmail').value = currentOTPEmail;
+          showOTPStep(3);
+          showOTPMessage('<i class="bi bi-patch-check-fill me-1"></i> ' + data.message, 'success');
+
+          // Clear timer
+          if (otpTimerInterval) {
+            clearInterval(otpTimerInterval);
+            otpTimerInterval = null;
+          }
+        } else {
+          showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> ' + data.message, 'danger');
+          otpInput.value = '';
+          otpInput.focus();
+        }
+      } catch (err) {
+        showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> Network error. Please try again.', 'danger');
+      } finally {
+        setButtonLoading(btn, false, '<i class="bi bi-shield-check me-1"></i> Verify');
+      }
+    }
+
+    /**
+     * Resend OTP to the same email.
+     */
+    async function handleResendOTP() {
+      const btn = document.getElementById('btnResendOTP');
+      hideOTPMessage();
+      setButtonLoading(btn, true);
+
+      try {
+        const resp = await fetch('/certificate/resend-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentOTPEmail }),
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+          showOTPMessage('<i class="bi bi-check-circle me-1"></i> ' + data.message, 'success');
+          startResendTimer();
+          document.getElementById('otpCode').value = '';
+          document.getElementById('otpCode').focus();
+        } else {
+          showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> ' + data.message, 'danger');
+        }
+      } catch (err) {
+        showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> Network error. Please try again.', 'danger');
+      } finally {
+        setButtonLoading(btn, false, '<i class="bi bi-arrow-clockwise me-1"></i> Resend OTP');
+      }
+    }
+
+    /**
+     * Go back to Step 1 (change email).
+     */
+    function handleBackToEmail() {
+      showOTPStep(1);
+      hideOTPMessage();
+      if (otpTimerInterval) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+      }
+      document.getElementById('otpEmail').focus();
+    }
+
+    // Allow Enter key to trigger actions
+    document.addEventListener('DOMContentLoaded', function () {
+      const emailInput = document.getElementById('otpEmail');
+      const otpInput = document.getElementById('otpCode');
+
+      if (emailInput) {
+        emailInput.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); handleSendOTP(); }
+        });
+      }
+
+      if (otpInput) {
+        otpInput.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); handleVerifyOTP(); }
+        });
+        // Auto-submit when 6 digits entered
+        otpInput.addEventListener('input', function () {
+          this.value = this.value.replace(/[^0-9]/g, '');
+          if (this.value.length === 6) {
+            setTimeout(() => handleVerifyOTP(), 200);
+          }
+        });
+      }
+    });
   </script>
 </body>
 

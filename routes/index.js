@@ -15,13 +15,34 @@ router.get('/', (req, res) => {
 });
 
 // Certificate portal (public, no login required)
-router.get('/certificate', (req, res, next) => {
-  console.log('=== CERTIFICATE ROUTE HIT ===');
-  console.log(req.query);
-  next();
-}, certPublicCtrl.showCertificatePage);
+router.get('/certificate', certPublicCtrl.showCertificatePage);
 router.post('/certificate', certPublicCtrl.handleCertificateAction);
 router.post('/certificate/verify', certPublicCtrl.verifyCertificate);
+
+// ── OTP Rate Limiters ────────────────────────────────────────────────────────
+const sendOTPLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: { success: false, message: 'Too many OTP requests. Please try again in an hour.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+});
+
+const verifyOTPLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { success: false, message: 'Too many verification attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+});
+
+// OTP verification routes
+router.post('/certificate/send-otp', sendOTPLimiter, certPublicCtrl.sendOTP);
+router.post('/certificate/verify-otp', verifyOTPLimiter, certPublicCtrl.verifyOTP);
+router.post('/certificate/resend-otp', sendOTPLimiter, certPublicCtrl.resendOTP);
+
 router.get('/certificate/download/:certificateId', certPublicCtrl.downloadCertificate);
 
 // Rate limiting for password verification — 10 attempts per 15 minutes per IP

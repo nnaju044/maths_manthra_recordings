@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <style>
     /* ── Reset ── */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     @page {
       size: A4 landscape;
       margin: 0;
     }
 
-    html, body {
+    html,
+    body {
       width: 297mm;
       height: 210mm;
       margin: 0;
@@ -62,11 +70,11 @@
 
     /* ── QR code ── */
     .cert-field--qr {
-      left: 5%;
-      top: 31%;
+      left: 20.7mm;
+      top: 64.0mm;
+      width: 36.0mm;
+      height: 36.0mm;
       transform: none;
-      width: 14%;
-      height: 20.5%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -81,39 +89,43 @@
 
     /* ── Student Name ── */
     .cert-field--name {
-      left: 53%;
-      top: 49.5%;
-      transform: translateX(-50%) translateY(-50%);
+      position: absolute;
+      left: 148.5mm;
+      top: 108.5mm;
+      transform: translate(-50%, -100%);
       font-family: 'Brush Script MT', 'Segoe Script', cursive, 'Georgia', serif;
-      font-size: 2.4em;
+      font-size: 2.8em;
       font-weight: 700;
       color: #0b1f3a;
-      white-space: normal;
+      white-space: nowrap;
       text-align: center;
-      width: 54%;
+      line-height: 1;
     }
 
     /* ── Date (left signature line) ── */
     .cert-field--date {
-      left: 32%;
-      top: 69%;
-      transform: translateX(-50%);
+      left: 93.6mm;
+      top: 151.8mm;
+      transform: translate(-50%, -100%);
       font-family: Arial, sans-serif;
-      font-size: 0.7em;
+      font-size: 0.78em;
       font-weight: 600;
       color: #1a1a2e;
       text-align: center;
+      white-space: nowrap;
+      line-height: 1;
     }
 
     /* ── Signature image ── */
     .cert-field--signature {
-      left: 68%;
-      top: 58%;
-      transform: translateX(-50%);
-      width: 15%;
+      left: 201.7mm;
+      top: 154.5mm;
+      width: 44mm;
+      transform: translate(-50%, -100%);
       display: flex;
       align-items: center;
       justify-content: center;
+      pointer-events: none;
     }
 
     .cert-field--signature img {
@@ -124,24 +136,26 @@
 
     /* ── Certificate ID ── */
     .cert-field--cert-id {
-      left: 14.5%;
-      top: 82%;
+      left: 44.5mm;
+      top: 173.4mm;
       transform: none;
       font-family: 'Courier New', monospace;
       font-size: 0.72em;
       font-weight: 700;
       color: #0b1f3a;
+      line-height: 1.2;
     }
 
     /* ── Date of Completion ── */
     .cert-field--completion-date {
-      left: 17.5%;
-      top: 85.1%;
+      left: 53.5mm;
+      top: 180.8mm;
       transform: none;
       font-family: Arial, sans-serif;
       font-size: 0.72em;
       font-weight: 600;
       color: #0b1f3a;
+      line-height: 1.2;
     }
 
     /* ── Verification URL ── */
@@ -158,13 +172,13 @@
     }
   </style>
 </head>
+
 <body>
   <div class="certificate-container">
     <div class="certificate-background">
 
       <!-- Background image (absolute path for Puppeteer file:// access) -->
-      <img class="cert-bg-img" src="<%= bgImagePath %>"
-        alt="MathsManthra Certificate of Completion" />
+      <img class="cert-bg-img" src="<%= bgImagePath %>" alt="MathsManthra Certificate of Completion" />
 
       <div class="certificate-overlay">
 
@@ -202,4 +216,5 @@
     </div><!-- /.certificate-background -->
   </div><!-- /.certificate-container -->
 </body>
+
 </html>
