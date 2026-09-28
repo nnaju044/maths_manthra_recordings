@@ -209,6 +209,201 @@
           </div>
         </section>
 
+        <!-- ══════════════════════════════════════════════════════════════════════
+             PROGRESS REPORT SECTION
+             ══════════════════════════════════════════════════════════════════════ -->
+        <% if (student.hasProgressReport || (student.progressCard && student.progressCard.trim())) { %>
+        <section class="progress-report-section" aria-label="Progress Report">
+          <div class="progress-report-header">
+            <div class="progress-report-badge">
+              <i class="bi bi-file-earmark-bar-graph-fill"></i>
+              <span>PROGRESS REPORT</span>
+            </div>
+            <div class="progress-report-subtitle">
+              Comprehensive Continuous Evaluation & Academic Growth Record
+            </div>
+          </div>
+
+          <!-- Section 1: Weekly Performance -->
+          <% if (student.hasWeeklyPerformance) { %>
+          <div class="report-block">
+            <div class="report-block-title">
+              <i class="bi bi-calendar4-week text-primary"></i>
+              <span>Section 1: Weekly Performance</span>
+            </div>
+
+            <div class="table-responsive-wrapper">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th class="col-criteria">Performance Criteria</th>
+                    <th>Week 1</th>
+                    <th>Week 2</th>
+                    <th>Week 3</th>
+                    <th>Week 4</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="row-criteria-label">
+                      <i class="bi bi-person-video3"></i> Class Performance
+                    </td>
+                    <td><%= (student.week1 && student.week1.classPerformance) ? student.week1.classPerformance : '—' %></td>
+                    <td><%= (student.week2 && student.week2.classPerformance) ? student.week2.classPerformance : '—' %></td>
+                    <td><%= (student.week3 && student.week3.classPerformance) ? student.week3.classPerformance : '—' %></td>
+                    <td><%= (student.week4 && student.week4.classPerformance) ? student.week4.classPerformance : '—' %></td>
+                  </tr>
+                  <tr>
+                    <td class="row-criteria-label">
+                      <i class="bi bi-journal-check"></i> Assignment / Homework
+                    </td>
+                    <td><%= (student.week1 && student.week1.assignmentHomework) ? student.week1.assignmentHomework : '—' %></td>
+                    <td><%= (student.week2 && student.week2.assignmentHomework) ? student.week2.assignmentHomework : '—' %></td>
+                    <td><%= (student.week3 && student.week3.assignmentHomework) ? student.week3.assignmentHomework : '—' %></td>
+                    <td><%= (student.week4 && student.week4.assignmentHomework) ? student.week4.assignmentHomework : '—' %></td>
+                  </tr>
+                  <tr>
+                    <td class="row-criteria-label">
+                      <i class="bi bi-activity"></i> Activity / Engagement
+                    </td>
+                    <td><%= (student.week1 && student.week1.activityEngagement) ? student.week1.activityEngagement : '—' %></td>
+                    <td><%= (student.week2 && student.week2.activityEngagement) ? student.week2.activityEngagement : '—' %></td>
+                    <td><%= (student.week3 && student.week3.activityEngagement) ? student.week3.activityEngagement : '—' %></td>
+                    <td><%= (student.week4 && student.week4.activityEngagement) ? student.week4.activityEngagement : '—' %></td>
+                  </tr>
+                  <tr class="row-mark-highlight">
+                    <td class="row-criteria-label">
+                      <i class="bi bi-trophy-fill text-warning"></i> Weekly Performance Mark
+                    </td>
+                    <td class="mark-val"><%= (student.week1 && typeof student.week1.weeklyMark === 'number' && student.week1.weeklyMark > 0) ? student.week1.weeklyMark + ' / 100' : (student.week1 && student.week1.weeklyMark === 0 ? '0' : '—') %></td>
+                    <td class="mark-val"><%= (student.week2 && typeof student.week2.weeklyMark === 'number' && student.week2.weeklyMark > 0) ? student.week2.weeklyMark + ' / 100' : (student.week2 && student.week2.weeklyMark === 0 ? '0' : '—') %></td>
+                    <td class="mark-val"><%= (student.week3 && typeof student.week3.weeklyMark === 'number' && student.week3.weeklyMark > 0) ? student.week3.weeklyMark + ' / 100' : (student.week3 && student.week3.weeklyMark === 0 ? '0' : '—') %></td>
+                    <td class="mark-val"><%= (student.week4 && typeof student.week4.weeklyMark === 'number' && student.week4.weeklyMark > 0) ? student.week4.weeklyMark + ' / 100' : (student.week4 && student.week4.weeklyMark === 0 ? '0' : '—') %></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Section 2: Final Assessment -->
+          <% if (student.hasFinalAssessment) { %>
+          <div class="report-block">
+            <div class="report-block-title">
+              <i class="bi bi-award-fill text-success"></i>
+              <span>Section 2: Final Assessment</span>
+            </div>
+
+            <div class="final-assessment-grid">
+              <div class="assessment-card">
+                <div class="assessment-icon"><i class="bi bi-clipboard2-check"></i></div>
+                <div class="assessment-content">
+                  <span class="assessment-label">Internal Mark</span>
+                  <span class="assessment-score"><%= student.internalMark || 0 %></span>
+                </div>
+              </div>
+
+              <div class="assessment-card">
+                <div class="assessment-icon"><i class="bi bi-book"></i></div>
+                <div class="assessment-content">
+                  <span class="assessment-label">Theory Mark</span>
+                  <span class="assessment-score"><%= student.theoryMark || 0 %></span>
+                </div>
+              </div>
+
+              <div class="assessment-card">
+                <div class="assessment-icon"><i class="bi bi-laptop"></i></div>
+                <div class="assessment-content">
+                  <span class="assessment-label">Practical Mark</span>
+                  <span class="assessment-score"><%= student.practicalMark || 0 %></span>
+                </div>
+              </div>
+
+              <div class="assessment-card assessment-total">
+                <div class="assessment-icon"><i class="bi bi-star-fill"></i></div>
+                <div class="assessment-content">
+                  <span class="assessment-label">Total Mark</span>
+                  <span class="assessment-score"><%= student.totalMark || (student.internalMark + student.theoryMark + student.practicalMark) %></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Section 3: Overall Progress -->
+          <% if (student.hasOverallProgress) { %>
+          <div class="report-block">
+            <div class="report-block-title">
+              <i class="bi bi-graph-up-arrow text-info"></i>
+              <span>Section 3: Overall Progress</span>
+            </div>
+
+            <div class="overall-progress-grid">
+              <% if (student.academicPerformance) { %>
+              <div class="progress-pill-card">
+                <div class="pill-icon pill-icon-primary"><i class="bi bi-mortarboard-fill"></i></div>
+                <div class="pill-text">
+                  <span class="pill-label">Academic Performance</span>
+                  <span class="pill-value"><%= student.academicPerformance %></span>
+                </div>
+              </div>
+              <% } %>
+
+              <% if (student.assignmentCompletion) { %>
+              <div class="progress-pill-card">
+                <div class="pill-icon pill-icon-success"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="pill-text">
+                  <span class="pill-label">Assignment Completion</span>
+                  <span class="pill-value"><%= student.assignmentCompletion %></span>
+                </div>
+              </div>
+              <% } %>
+
+              <% if (student.practicalSkills) { %>
+              <div class="progress-pill-card">
+                <div class="pill-icon pill-icon-info"><i class="bi bi-tools"></i></div>
+                <div class="pill-text">
+                  <span class="pill-label">Practical Skills</span>
+                  <span class="pill-value"><%= student.practicalSkills %></span>
+                </div>
+              </div>
+              <% } %>
+
+              <% if (student.overallProgress) { %>
+              <div class="progress-pill-card full-width">
+                <div class="pill-icon pill-icon-purple"><i class="bi bi-chat-square-quote-fill"></i></div>
+                <div class="pill-text">
+                  <span class="pill-label">Overall Progress</span>
+                  <span class="pill-value"><%= student.overallProgress %></span>
+                </div>
+              </div>
+              <% } %>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Section 4: Progress Card -->
+          <% if (student.progressCard && student.progressCard.trim()) { %>
+          <div class="report-block">
+            <div class="report-block-title">
+              <i class="bi bi-card-text text-primary"></i>
+              <span>Section 4: Progress Card</span>
+            </div>
+
+            <div class="report-progress-card">
+              <div class="report-progress-card-badge">
+                <i class="bi bi-patch-check-fill"></i> Official Progress Remarks
+              </div>
+              <p class="report-progress-text">
+                <%= student.progressCard %>
+              </p>
+            </div>
+          </div>
+          <% } %>
+
+        </section>
+        <% } %>
+
         <!-- Actions Toolbar -->
         <div class="verify-actions no-print">
           <a href="/verify" class="btn-verify btn-verify-outline">

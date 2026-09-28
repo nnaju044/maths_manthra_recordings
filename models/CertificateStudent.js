@@ -69,6 +69,43 @@ const certificateStudentSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // --- WEEKLY PERFORMANCE ---
+    week1: {
+      classPerformance: { type: String, default: '', trim: true },
+      assignmentHomework: { type: String, default: '', trim: true },
+      activityEngagement: { type: String, default: '', trim: true },
+      weeklyMark: { type: Number, default: 0 },
+    },
+    week2: {
+      classPerformance: { type: String, default: '', trim: true },
+      assignmentHomework: { type: String, default: '', trim: true },
+      activityEngagement: { type: String, default: '', trim: true },
+      weeklyMark: { type: Number, default: 0 },
+    },
+    week3: {
+      classPerformance: { type: String, default: '', trim: true },
+      assignmentHomework: { type: String, default: '', trim: true },
+      activityEngagement: { type: String, default: '', trim: true },
+      weeklyMark: { type: Number, default: 0 },
+    },
+    week4: {
+      classPerformance: { type: String, default: '', trim: true },
+      assignmentHomework: { type: String, default: '', trim: true },
+      activityEngagement: { type: String, default: '', trim: true },
+      weeklyMark: { type: Number, default: 0 },
+    },
+
+    // --- FINAL ASSESSMENT ---
+    internalMark: { type: Number, default: 0 },
+    theoryMark: { type: Number, default: 0 },
+    practicalMark: { type: Number, default: 0 },
+    totalMark: { type: Number, default: 0 },
+
+    // --- OVERALL PROGRESS ---
+    academicPerformance: { type: String, default: '', trim: true },
+    assignmentCompletion: { type: String, default: '', trim: true },
+    practicalSkills: { type: String, default: '', trim: true },
+    overallProgress: { type: String, default: '', trim: true },
   },
   { timestamps: true }
 );

@@ -732,6 +732,294 @@ body.verify-body {
   transform: translateY(0);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROGRESS REPORT SECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+.progress-report-section {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 2px dashed #cbd5e1;
+}
+
+.progress-report-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.progress-report-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  color: #ffffff;
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+}
+
+.progress-report-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.report-block {
+  margin-bottom: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.report-block-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-block-title i {
+  font-size: 1.15rem;
+}
+
+/* ── Section 1: Weekly Performance Table ── */
+.table-responsive-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-sm);
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.report-table th,
+.report-table td {
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.report-table th {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-table th.col-criteria {
+  text-align: left;
+  min-width: 190px;
+  background: #e2e8f0;
+}
+
+.report-table td.row-criteria-label {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #f8fafc;
+}
+
+.report-table td.row-criteria-label i {
+  margin-right: 6px;
+  color: var(--primary);
+}
+
+.report-table tr.row-mark-highlight {
+  background: #eff6ff;
+  font-weight: 700;
+}
+
+.report-table tr.row-mark-highlight td.mark-val {
+  color: var(--primary);
+}
+
+/* ── Section 2: Final Assessment ── */
+.final-assessment-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.assessment-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.assessment-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.assessment-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.assessment-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.assessment-score {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.assessment-card.assessment-total {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  border-color: #1e3a8a;
+  color: #ffffff;
+}
+
+.assessment-card.assessment-total .assessment-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fbbf24;
+}
+
+.assessment-card.assessment-total .assessment-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.assessment-card.assessment-total .assessment-score {
+  color: #ffffff;
+}
+
+/* ── Section 3: Overall Progress ── */
+.overall-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.progress-pill-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.progress-pill-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.pill-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.pill-icon-primary {
+  background: #eff6ff;
+  color: var(--primary);
+}
+
+.pill-icon-success {
+  background: #ecfdf5;
+  color: var(--success);
+}
+
+.pill-icon-info {
+  background: #f0fdfa;
+  color: #0d9488;
+}
+
+.pill-icon-purple {
+  background: #faf5ff;
+  color: #9333ea;
+}
+
+.pill-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.pill-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.pill-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Section 4: Progress Card ── */
+.report-progress-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.report-progress-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.report-progress-text {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
 /* ── Mobile Responsiveness ────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .verify-wrapper {
@@ -794,6 +1082,20 @@ body.verify-body {
     gap: 12px;
   }
 
+  .final-assessment-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .overall-progress-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+
   .search-box-form {
     flex-direction: column;
   }
@@ -835,6 +1137,26 @@ body.verify-body {
   }
 
   .marks-card {
+    background: #1e3a8a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .progress-report-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .report-table {
+    border: 1px solid #333333 !important;
+  }
+
+  .report-table th,
+  .report-table td {
+    border: 1px solid #666666 !important;
+  }
+
+  .assessment-card.assessment-total {
     background: #1e3a8a !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

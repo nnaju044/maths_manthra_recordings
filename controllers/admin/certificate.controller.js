@@ -73,6 +73,68 @@ async function generateUniqueStudentId() {
   return sid;
 }
 
+/**
+ * Helper to extract nested progress fields from req.body
+ */
+function extractProgressFields(body) {
+  const getNested = (week, field) => {
+    if (body[week] && typeof body[week] === 'object' && body[week][field] !== undefined) {
+      return String(body[week][field]).trim();
+    }
+    if (body[`${week}_${field}`] !== undefined) {
+      return String(body[`${week}_${field}`]).trim();
+    }
+    return '';
+  };
+  const getNum = (val) => {
+    if (val === undefined || val === null || String(val).trim() === '') return 0;
+    const n = Number(val);
+    return isNaN(n) ? 0 : Math.max(0, n);
+  };
+
+  const internalMark = getNum(body.internalMark);
+  const theoryMark = getNum(body.theoryMark);
+  const practicalMark = getNum(body.practicalMark);
+  const totalMark = (body.totalMark !== undefined && body.totalMark !== null && String(body.totalMark).trim() !== '')
+    ? getNum(body.totalMark)
+    : (internalMark + theoryMark + practicalMark);
+
+  return {
+    week1: {
+      classPerformance: getNested('week1', 'classPerformance'),
+      assignmentHomework: getNested('week1', 'assignmentHomework'),
+      activityEngagement: getNested('week1', 'activityEngagement'),
+      weeklyMark: getNum(getNested('week1', 'weeklyMark')),
+    },
+    week2: {
+      classPerformance: getNested('week2', 'classPerformance'),
+      assignmentHomework: getNested('week2', 'assignmentHomework'),
+      activityEngagement: getNested('week2', 'activityEngagement'),
+      weeklyMark: getNum(getNested('week2', 'weeklyMark')),
+    },
+    week3: {
+      classPerformance: getNested('week3', 'classPerformance'),
+      assignmentHomework: getNested('week3', 'assignmentHomework'),
+      activityEngagement: getNested('week3', 'activityEngagement'),
+      weeklyMark: getNum(getNested('week3', 'weeklyMark')),
+    },
+    week4: {
+      classPerformance: getNested('week4', 'classPerformance'),
+      assignmentHomework: getNested('week4', 'assignmentHomework'),
+      activityEngagement: getNested('week4', 'activityEngagement'),
+      weeklyMark: getNum(getNested('week4', 'weeklyMark')),
+    },
+    internalMark,
+    theoryMark,
+    practicalMark,
+    totalMark,
+    academicPerformance: body.academicPerformance ? String(body.academicPerformance).trim() : '',
+    assignmentCompletion: body.assignmentCompletion ? String(body.assignmentCompletion).trim() : '',
+    practicalSkills: body.practicalSkills ? String(body.practicalSkills).trim() : '',
+    overallProgress: body.overallProgress ? String(body.overallProgress).trim() : '',
+  };
+}
+
 // GET /admin/certificates — Student Management Page
 exports.index = async (req, res, next) => {
   try {
@@ -180,6 +242,8 @@ exports.postCreate = async (req, res, next) => {
       }
     }
 
+    const progressFields = extractProgressFields(req.body);
+
     await CertificateStudent.create({
       fullName: fullName.trim(),
       name: fullName.trim(),
@@ -195,6 +259,7 @@ exports.postCreate = async (req, res, next) => {
       progressCard: progressCard ? progressCard.trim() : '',
       studentId: finalStudentId,
       verificationStatus: verificationStatus === 'true' || verificationStatus === true,
+      ...progressFields,
     });
 
     req.flash('success', `Student "${fullName.trim()}" created successfully with certificate ${certificateNumber}.`);
@@ -280,6 +345,31 @@ exports.postUpdate = async (req, res, next) => {
       }
     }
 
+    // Validation for marks
+    const markValidations = [
+      { label: 'Marks', val: marks },
+      { label: 'Week 1 Mark', val: req.body.week1?.weeklyMark || req.body.week1_weeklyMark },
+      { label: 'Week 2 Mark', val: req.body.week2?.weeklyMark || req.body.week2_weeklyMark },
+      { label: 'Week 3 Mark', val: req.body.week3?.weeklyMark || req.body.week3_weeklyMark },
+      { label: 'Week 4 Mark', val: req.body.week4?.weeklyMark || req.body.week4_weeklyMark },
+      { label: 'Internal Mark', val: req.body.internalMark },
+      { label: 'Theory Mark', val: req.body.theoryMark },
+      { label: 'Practical Mark', val: req.body.practicalMark },
+      { label: 'Total Mark', val: req.body.totalMark },
+    ];
+
+    for (const item of markValidations) {
+      if (item.val !== undefined && item.val !== null && String(item.val).trim() !== '') {
+        const num = Number(item.val);
+        if (isNaN(num) || num < 0) {
+          req.flash('error', `${item.label} must be a valid non-negative number.`);
+          return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+        }
+      }
+    }
+
+    const progressFields = extractProgressFields(req.body);
+
     // Update fields
     student.fullName = fullName.trim();
     student.name = fullName.trim();
@@ -295,6 +385,9 @@ exports.postUpdate = async (req, res, next) => {
     student.progressCard = progressCard ? progressCard.trim() : '';
     student.studentId = newStudentId || student.studentId;
     student.verificationStatus = verificationStatus === 'true' || verificationStatus === true;
+    
+    // Assign progress fields
+    Object.assign(student, progressFields);
 
     await student.save();
 

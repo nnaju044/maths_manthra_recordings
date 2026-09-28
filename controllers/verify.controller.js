@@ -79,6 +79,24 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       }
     }
 
+    // Check if progress report data exists
+    const hasWeeklyPerformance = [student.week1, student.week2, student.week3, student.week4].some(
+      w => w && (w.classPerformance || w.assignmentHomework || w.activityEngagement || (typeof w.weeklyMark === 'number' && w.weeklyMark > 0))
+    );
+    const hasFinalAssessment = Boolean(
+      (typeof student.internalMark === 'number' && student.internalMark > 0) ||
+      (typeof student.theoryMark === 'number' && student.theoryMark > 0) ||
+      (typeof student.practicalMark === 'number' && student.practicalMark > 0) ||
+      (typeof student.totalMark === 'number' && student.totalMark > 0)
+    );
+    const hasOverallProgress = Boolean(
+      (student.academicPerformance && student.academicPerformance.trim()) ||
+      (student.assignmentCompletion && student.assignmentCompletion.trim()) ||
+      (student.practicalSkills && student.practicalSkills.trim()) ||
+      (student.overallProgress && student.overallProgress.trim())
+    );
+    const hasProgressReport = hasWeeklyPerformance || hasFinalAssessment || hasOverallProgress;
+
     // Strictly whitelist allowed fields — NEVER expose MongoDB IDs, admin data, or internal flags
     const safeStudent = {
       fullName: student.fullName || student.name || 'Verified Student',
@@ -92,6 +110,23 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       profileImage: formattedProfileImage,
       verificationStatus: student.verificationStatus !== false,
       courseTitle: (student.courseId && student.courseId.title) ? student.courseId.title : 'Maths Manthra Academy Program',
+      // Progress Report Fields
+      week1: student.week1 || {},
+      week2: student.week2 || {},
+      week3: student.week3 || {},
+      week4: student.week4 || {},
+      internalMark: typeof student.internalMark === 'number' ? student.internalMark : 0,
+      theoryMark: typeof student.theoryMark === 'number' ? student.theoryMark : 0,
+      practicalMark: typeof student.practicalMark === 'number' ? student.practicalMark : 0,
+      totalMark: typeof student.totalMark === 'number' ? student.totalMark : 0,
+      academicPerformance: student.academicPerformance || '',
+      assignmentCompletion: student.assignmentCompletion || '',
+      practicalSkills: student.practicalSkills || '',
+      overallProgress: student.overallProgress || '',
+      hasProgressReport,
+      hasWeeklyPerformance,
+      hasFinalAssessment,
+      hasOverallProgress,
     };
 
     return res.render('verify', {
