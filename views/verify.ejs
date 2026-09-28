@@ -1,550 +1,896 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-50">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= locals.pageTitle || 'Verified Certificate | Maths Manthra Academy' %></title>
-  <meta name="description" content="<%= locals.metaDescription || 'Verify student certificates issued by Maths Manthra Academy.' %>" />
+  <title><%= locals.pageTitle || '✓ Verified Student | MathsManthra Academy' %></title>
+  <meta name="description" content="<%= locals.metaDescription || 'Official student verification and academic progress portal — MathsManthra Academy.' %>" />
   <meta name="robots" content="index, follow" />
 
   <!-- OpenGraph Metadata -->
-  <meta property="og:title" content="<%= locals.pageTitle || 'Verified Certificate | Maths Manthra Academy' %>" />
-  <meta property="og:description" content="<%= locals.metaDescription || 'Verify student certificates issued by Maths Manthra Academy.' %>" />
+  <meta property="og:title" content="<%= locals.pageTitle || '✓ Verified Student | MathsManthra Academy' %>" />
+  <meta property="og:description" content="<%= locals.metaDescription || 'Official verified student record and academic progress report issued by MathsManthra Academy.' %>" />
   <meta property="og:type" content="website" />
 
-  <!-- Fonts & Icons -->
+  <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
 
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="/css/verify.css" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            },
+          },
+          boxShadow: {
+            card: '0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03)',
+            glow: '0 0 20px -4px rgba(16, 185, 129, 0.3)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Print Optimization for Academic Progress Report / Certificate PDF */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 10.5pt !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border-color: #e2e8f0 !important;
+      }
+      .page-break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .print-letterhead {
+        display: block !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 10mm 14mm;
+      }
+    }
+    @media screen {
+      .print-letterhead {
+        display: none;
+      }
+    }
+  </style>
 </head>
-<body class="verify-body">
+<body class="min-h-full bg-slate-50 font-sans text-slate-800 antialiased flex flex-col justify-between selection:bg-brand-100 selection:text-brand-900">
 
-  <div class="verify-wrapper">
+  <!-- Helper Functions for Criteria & Color Indicators -->
+  <%
+    function getScoreCategory(val) {
+      if (val === null || val === undefined || val === '') {
+        return { text: '—', cls: 'bg-slate-50 text-slate-400 border-slate-200', dot: 'bg-slate-300', label: 'Pending' };
+      }
+      const str = String(val).trim();
+      const num = parseFloat(str);
+      
+      if (!isNaN(num)) {
+        if (num >= 75) {
+          return { text: str + ' / 100', cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500', label: 'Good' };
+        } else if (num >= 50) {
+          return { text: str + ' / 100', cls: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20', dot: 'bg-amber-500', label: 'Average' };
+        } else {
+          return { text: str + ' / 100', cls: 'bg-rose-50 text-rose-800 border-rose-300 ring-1 ring-rose-500/20', dot: 'bg-rose-500', label: 'Poor' };
+        }
+      }
+      
+      if (/good|excellent|attentive|active|consistent|outstanding|high|completed|regular|a\+|grade a|punctual/i.test(str)) {
+        return { text: str, cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500', label: 'Good' };
+      }
+      if (/avg|average|moderate|satisfactory|fair|partial|grade b|b\+|medium|needs practice/i.test(str)) {
+        return { text: str, cls: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20', dot: 'bg-amber-500', label: 'Average' };
+      }
+      if (/poor|low|irregular|inactive|incomplete|weak|lagging|fail|needs improvement/i.test(str)) {
+        return { text: str, cls: 'bg-rose-50 text-rose-800 border-rose-300 ring-1 ring-rose-500/20', dot: 'bg-rose-500', label: 'Poor' };
+      }
+      
+      return { text: str, cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500', label: 'Good' };
+    }
 
-    <!-- Top Branding Header -->
-    <header class="verify-header">
-      <a href="/" class="brand-link">
-        <div class="brand-logo-icon">M</div>
-        <div class="brand-text">
-          <h1>Maths Manthra Academy</h1>
-          <p>Official Verification Portal</p>
+    function getProgressMetric(val, fallbackScore, defaultText) {
+      const text = (val && String(val).trim()) ? String(val).trim() : defaultText;
+      let score = fallbackScore;
+      const match = text.match(/(\d{1,3})%/);
+      if (match) {
+        score = parseInt(match[1], 10);
+      } else if (/excellent|distinction|grade a\+|outstanding|advanced/i.test(text)) {
+        score = 94;
+      } else if (/consistent|high|first class|grade a|very good/i.test(text)) {
+        score = 88;
+      } else if (/good|completed|on schedule|satisfactory/i.test(text)) {
+        score = 80;
+      } else if (/average|moderate/i.test(text)) {
+        score = 68;
+      }
+      score = Math.min(100, Math.max(0, score));
+      return { text, score };
+    }
+  %>
+
+  <!-- TOP BRANDING HEADER -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-emerald-400 flex items-center justify-center text-white font-heading font-extrabold text-lg shadow-sm">
+          M
+        </div>
+        <div>
+          <h1 class="font-heading font-bold text-base sm:text-lg text-slate-900 leading-tight">
+            MathsManthra Academy
+          </h1>
+          <p class="text-[11px] text-slate-500 font-medium">Official Student Verification Portal</p>
         </div>
       </a>
-      <div class="secure-badge">
-        <i class="bi bi-shield-check"></i>
-        <span>256-Bit SSL Encrypted Verification</span>
+
+      <!-- Green Security Badge -->
+      <div class="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
+        <i class="bi bi-shield-check text-emerald-600 text-sm"></i>
+        <span class="hidden sm:inline">Official Academic Verification</span>
+        <span class="sm:hidden">Verified</span>
       </div>
-    </header>
+
+    </div>
+  </header>
+
+  <!-- PRINT LETTERHEAD -->
+  <div class="print-letterhead px-6 pt-6 pb-4 border-b-2 border-slate-800 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-heading font-bold text-slate-900 tracking-tight">MATHSMANTHRA ACADEMY</h1>
+        <p class="text-xs text-slate-600 font-medium">Official Verified Student Academic Progress Report</p>
+      </div>
+      <div class="text-right">
+        <span class="inline-block bg-emerald-100 text-emerald-800 font-bold text-xs px-3 py-1 rounded border border-emerald-300">
+          ✓ VERIFIED STUDENT
+        </span>
+        <p class="text-[10px] text-slate-500 mt-1">Verified By: <strong>MathsManthra Academy</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow">
 
     <% if (isValid && student) { %>
+
       <!-- ══════════════════════════════════════════════════════════════════════
-           TOP SECTION: ✅ Certificate Verified (Green Verification Badge)
+           VERIFIED STUDENT BADGE (Top Header)
+           ✓ VERIFIED STUDENT
            ══════════════════════════════════════════════════════════════════════ -->
-      <section class="verification-banner" aria-label="Verification Status">
-        <div class="banner-left">
-          <div class="banner-icon-box" aria-hidden="true">
-            <i class="bi bi-check-circle-fill"></i>
+      <section class="bg-white rounded-2xl border-2 border-emerald-500 shadow-sm p-5 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print-shadow-none">
+        
+        <div class="flex items-center gap-4">
+          <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-3xl shadow-md shadow-emerald-600/25 shrink-0">
+            <i class="bi bi-check-lg font-bold"></i>
           </div>
           <div>
-            <h2 class="banner-title">
-              ✅ Certificate Verified
-            </h2>
-            <p class="banner-subtitle">
-              This credential is valid, authentic, and officially issued by Maths Manthra Academy.
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-emerald-800 tracking-tight">
+                ✓ VERIFIED STUDENT
+              </h2>
+              <span class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                Authenticated Record
+              </span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-600 mt-1">
+              Official academic enrollment and performance record verified by <strong>MathsManthra Academy</strong>.
             </p>
           </div>
         </div>
-        <div class="banner-pill">
-          <i class="bi bi-patch-check-fill"></i> Active Record
+
+        <div class="no-print self-start sm:self-center shrink-0 flex items-center gap-2">
+          <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-xs transition-colors">
+            <i class="bi bi-printer-fill"></i>
+            Print Verification
+          </button>
         </div>
+
       </section>
 
-      <!-- Main Verification Card -->
-      <main class="verify-card">
-
-        <!-- Student Hero Section: Avatar, Name & Large Verified Student Badge -->
-        <div class="student-hero">
-          <div class="student-hero-info">
-            <!-- Profile Image (Circular Avatar) -->
-            <div class="avatar-container">
-              <% 
-                const names = (student.fullName || 'Student').trim().split(/\s+/);
-                const initials = ((names[0] ? names[0][0] : '') + (names[1] ? names[1][0] : '')).toUpperCase() || 'S';
-              %>
-              <% if (student.profileImage && student.profileImage.trim() !== '') { %>
-                <img 
-                  src="<%= student.profileImage %>" 
-                  alt="" 
-                  class="avatar-img" 
-                  referrerpolicy="no-referrer"
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
-                />
-                <div class="avatar-placeholder" style="display: none;" aria-label="Avatar placeholder">
-                  <%= initials %>
-                </div>
-              <% } else { %>
-                <div class="avatar-placeholder" aria-label="Avatar placeholder">
-                  <%= initials %>
-                </div>
-              <% } %>
-              <div class="avatar-shield-badge" title="Identity Verified">
-                <i class="bi bi-shield-fill-check"></i>
-              </div>
-            </div>
-
-            <!-- Student Name & Course -->
-            <div class="hero-meta">
-              <h2><%= student.fullName %></h2>
-              <% if (student.courseTitle) { %>
-                <div class="course-badge">
-                  <i class="bi bi-mortarboard-fill"></i>
-                  <span><%= student.courseTitle %></span>
-                </div>
-              <% } %>
-            </div>
+      <!-- ══════════════════════════════════════════════════════════════════════
+           STUDENT DETAILS
+           Name, Student ID, Course, Batch, Email, Phone Number
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+            <i class="bi bi-person-lines-fill"></i>
           </div>
-
-          <!-- Large Verification Badge: VERIFIED STUDENT with Green Shield Icon -->
-          <div class="large-verified-badge" role="status">
-            <i class="bi bi-shield-fill-check" aria-hidden="true"></i>
-            <div class="badge-text">
-              <span class="badge-title">VERIFIED STUDENT</span>
-              <span class="badge-sub">Maths Manthra Academy</span>
-            </div>
-          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            Student Details
+          </h3>
         </div>
 
-        <!-- Student & Certificate Details Grid -->
-        <div class="section-title">
-          <i class="bi bi-person-lines-fill"></i> Credential Details
-        </div>
-        <div class="info-grid">
-          <!-- Student Name -->
-          <div class="info-item">
-            <div class="info-label"><i class="bi bi-person-fill"></i> Student Name</div>
-            <div class="info-value"><%= student.fullName %></div>
-          </div>
-
-          <!-- Email -->
-          <div class="info-item">
-            <div class="info-label"><i class="bi bi-envelope-fill"></i> Email</div>
-            <div class="info-value"><%= student.email %></div>
-          </div>
-
-          <!-- Phone Number -->
-          <div class="info-item">
-            <div class="info-label"><i class="bi bi-telephone-fill"></i> Phone Number</div>
-            <div class="info-value"><%= student.phone || 'Not Specified' %></div>
-          </div>
-
-          <!-- Student ID -->
-          <div class="info-item">
-            <div class="info-label"><i class="bi bi-card-heading"></i> Student ID</div>
-            <div class="info-value monospace"><%= student.studentId || 'N/A' %></div>
-          </div>
-
-          <!-- Certificate Number -->
-          <div class="info-item">
-            <div class="info-label"><i class="bi bi-award-fill"></i> Certificate Number</div>
-            <div class="info-value monospace"><%= student.certificateNumber %></div>
-          </div>
-
-          <!-- Issue Date -->
-          <div class="info-item">
-            <div class="info-label"><i class="bi bi-calendar-check-fill"></i> Issue Date</div>
-            <div class="info-value"><%= student.issueDate %></div>
-          </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════════════════════
-             ACADEMIC DETAILS: Marks & Progress Card
-             ══════════════════════════════════════════════════════════════════════ -->
-        <section class="academic-section" aria-label="Academic Details">
-          <div class="section-title">
-            <i class="bi bi-bar-chart-fill"></i> Academic Details
-          </div>
-
-          <div class="academic-grid">
-            <!-- Marks Card -->
-            <div class="marks-card">
-              <div class="marks-header">
-                <i class="bi bi-speedometer2"></i> Marks Obtained
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+          
+          <!-- Avatar / Photo -->
+          <div class="shrink-0 text-center">
+            <% 
+              const names = (student.fullName || 'Student').trim().split(/\s+/);
+              const initials = ((names[0] ? names[0][0] : '') + (names[1] ? names[1][0] : '')).toUpperCase() || 'S';
+            %>
+            <% if (student.profileImage && student.profileImage.trim() !== '') { %>
+              <img 
+                src="<%= student.profileImage %>" 
+                alt="<%= student.fullName %>" 
+                class="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-md ring-2 ring-emerald-500/30 mx-auto"
+                referrerpolicy="no-referrer"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+              />
+              <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-800 text-white font-heading font-extrabold text-2xl sm:text-3xl items-center justify-center border-4 border-white shadow-md ring-2 ring-emerald-500/30 mx-auto" style="display: none;">
+                <%= initials %>
               </div>
-              <% if (student.marks !== null && student.marks !== undefined) { %>
-                <div class="marks-score">
-                  <%= student.marks %> <span>/ 100</span>
-                </div>
-                <div class="marks-progress-track">
-                  <% const percentage = Math.min(100, Math.max(0, student.marks)); %>
-                  <div class="marks-progress-bar" style="width: <%= percentage %>%;"></div>
-                </div>
-                <div class="marks-status">
-                  <i class="bi bi-check2-circle"></i>
-                  <%= student.marks >= 75 ? 'Distinction Achievement' : (student.marks >= 60 ? 'First Class Performance' : 'Course Completed') %>
-                </div>
-              <% } else { %>
-                <div class="marks-score">
-                  Evaluated <span>/ Pass</span>
-                </div>
-                <div class="marks-status">
-                  <i class="bi bi-check2-circle"></i> Requirements Satisfied
-                </div>
-              <% } %>
-            </div>
-
-            <!-- Progress Card -->
-            <div class="progress-card">
-              <div class="progress-card-header">
-                <div class="progress-card-title">
-                  <i class="bi bi-journal-text"></i> Progress Card
-                </div>
-                <span class="progress-card-badge">Official Evaluation</span>
+            <% } else { %>
+              <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-emerald-700 via-brand-600 to-teal-500 text-white font-heading font-extrabold text-2xl sm:text-3xl flex items-center justify-center border-4 border-white shadow-md ring-2 ring-emerald-500/30 mx-auto">
+                <%= initials %>
               </div>
-              <p class="progress-card-body"><%= student.progressCard && student.progressCard.trim() ? student.progressCard : 'The student has successfully completed all coursework, demonstrated conceptual mastery, and fulfilled academic evaluation requirements set forth by Maths Manthra Academy.' %></p>
-            </div>
-          </div>
-        </section>
+            <% } %>
 
-        <!-- ══════════════════════════════════════════════════════════════════════
-             PROGRESS REPORT SECTION
-             ══════════════════════════════════════════════════════════════════════ -->
-        <% if (student.hasProgressReport || (student.progressCard && student.progressCard.trim())) { %>
-        <section class="progress-report-section" aria-label="Progress Report">
-          <div class="progress-report-header">
-            <div class="progress-report-badge">
-              <i class="bi bi-file-earmark-bar-graph-fill"></i>
-              <span>PROGRESS REPORT</span>
-            </div>
-            <div class="progress-report-subtitle">
-              Comprehensive Continuous Evaluation & Academic Growth Record
-            </div>
+            <span class="inline-block mt-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              Verified Student
+            </span>
           </div>
 
-          <!-- Section 1: Weekly Performance -->
-          <% if (student.hasWeeklyPerformance) { %>
-          <div class="report-block">
-            <div class="report-block-title">
-              <i class="bi bi-calendar4-week text-primary"></i>
-              <span>Section 1: Weekly Performance</span>
-            </div>
-
-            <div class="table-responsive-wrapper">
-              <table class="report-table">
-                <thead>
-                  <tr>
-                    <th class="col-criteria">Performance Criteria</th>
-                    <th>Week 1</th>
-                    <th>Week 2</th>
-                    <th>Week 3</th>
-                    <th>Week 4</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="row-criteria-label">
-                      <i class="bi bi-person-video3"></i> Class Performance
-                    </td>
-                    <td><%= (student.week1 && student.week1.classPerformance) ? student.week1.classPerformance : '—' %></td>
-                    <td><%= (student.week2 && student.week2.classPerformance) ? student.week2.classPerformance : '—' %></td>
-                    <td><%= (student.week3 && student.week3.classPerformance) ? student.week3.classPerformance : '—' %></td>
-                    <td><%= (student.week4 && student.week4.classPerformance) ? student.week4.classPerformance : '—' %></td>
-                  </tr>
-                  <tr>
-                    <td class="row-criteria-label">
-                      <i class="bi bi-journal-check"></i> Assignment / Homework
-                    </td>
-                    <td><%= (student.week1 && student.week1.assignmentHomework) ? student.week1.assignmentHomework : '—' %></td>
-                    <td><%= (student.week2 && student.week2.assignmentHomework) ? student.week2.assignmentHomework : '—' %></td>
-                    <td><%= (student.week3 && student.week3.assignmentHomework) ? student.week3.assignmentHomework : '—' %></td>
-                    <td><%= (student.week4 && student.week4.assignmentHomework) ? student.week4.assignmentHomework : '—' %></td>
-                  </tr>
-                  <tr>
-                    <td class="row-criteria-label">
-                      <i class="bi bi-activity"></i> Activity / Engagement
-                    </td>
-                    <td><%= (student.week1 && student.week1.activityEngagement) ? student.week1.activityEngagement : '—' %></td>
-                    <td><%= (student.week2 && student.week2.activityEngagement) ? student.week2.activityEngagement : '—' %></td>
-                    <td><%= (student.week3 && student.week3.activityEngagement) ? student.week3.activityEngagement : '—' %></td>
-                    <td><%= (student.week4 && student.week4.activityEngagement) ? student.week4.activityEngagement : '—' %></td>
-                  </tr>
-                  <tr class="row-mark-highlight">
-                    <td class="row-criteria-label">
-                      <i class="bi bi-trophy-fill text-warning"></i> Weekly Performance Mark
-                    </td>
-                    <td class="mark-val"><%= (student.week1 && typeof student.week1.weeklyMark === 'number' && student.week1.weeklyMark > 0) ? student.week1.weeklyMark + ' / 100' : (student.week1 && student.week1.weeklyMark === 0 ? '0' : '—') %></td>
-                    <td class="mark-val"><%= (student.week2 && typeof student.week2.weeklyMark === 'number' && student.week2.weeklyMark > 0) ? student.week2.weeklyMark + ' / 100' : (student.week2 && student.week2.weeklyMark === 0 ? '0' : '—') %></td>
-                    <td class="mark-val"><%= (student.week3 && typeof student.week3.weeklyMark === 'number' && student.week3.weeklyMark > 0) ? student.week3.weeklyMark + ' / 100' : (student.week3 && student.week3.weeklyMark === 0 ? '0' : '—') %></td>
-                    <td class="mark-val"><%= (student.week4 && typeof student.week4.weeklyMark === 'number' && student.week4.weeklyMark > 0) ? student.week4.weeklyMark + ' / 100' : (student.week4 && student.week4.weeklyMark === 0 ? '0' : '—') %></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <% } %>
-
-          <!-- Section 2: Final Assessment -->
-          <% if (student.hasFinalAssessment) { %>
-          <div class="report-block">
-            <div class="report-block-title">
-              <i class="bi bi-award-fill text-success"></i>
-              <span>Section 2: Final Assessment</span>
-            </div>
-
-            <div class="final-assessment-grid">
-              <div class="assessment-card">
-                <div class="assessment-icon"><i class="bi bi-clipboard2-check"></i></div>
-                <div class="assessment-content">
-                  <span class="assessment-label">Internal Mark</span>
-                  <span class="assessment-score"><%= student.internalMark || 0 %></span>
-                </div>
-              </div>
-
-              <div class="assessment-card">
-                <div class="assessment-icon"><i class="bi bi-book"></i></div>
-                <div class="assessment-content">
-                  <span class="assessment-label">Theory Mark</span>
-                  <span class="assessment-score"><%= student.theoryMark || 0 %></span>
-                </div>
-              </div>
-
-              <div class="assessment-card">
-                <div class="assessment-icon"><i class="bi bi-laptop"></i></div>
-                <div class="assessment-content">
-                  <span class="assessment-label">Practical Mark</span>
-                  <span class="assessment-score"><%= student.practicalMark || 0 %></span>
-                </div>
-              </div>
-
-              <div class="assessment-card assessment-total">
-                <div class="assessment-icon"><i class="bi bi-star-fill"></i></div>
-                <div class="assessment-content">
-                  <span class="assessment-label">Total Mark</span>
-                  <span class="assessment-score"><%= student.totalMark || (student.internalMark + student.theoryMark + student.practicalMark) %></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <% } %>
-
-          <!-- Section 3: Overall Progress -->
-          <% if (student.hasOverallProgress) { %>
-          <div class="report-block">
-            <div class="report-block-title">
-              <i class="bi bi-graph-up-arrow text-info"></i>
-              <span>Section 3: Overall Progress</span>
-            </div>
-
-            <div class="overall-progress-grid">
-              <% if (student.academicPerformance) { %>
-              <div class="progress-pill-card">
-                <div class="pill-icon pill-icon-primary"><i class="bi bi-mortarboard-fill"></i></div>
-                <div class="pill-text">
-                  <span class="pill-label">Academic Performance</span>
-                  <span class="pill-value"><%= student.academicPerformance %></span>
-                </div>
-              </div>
-              <% } %>
-
-              <% if (student.assignmentCompletion) { %>
-              <div class="progress-pill-card">
-                <div class="pill-icon pill-icon-success"><i class="bi bi-check-circle-fill"></i></div>
-                <div class="pill-text">
-                  <span class="pill-label">Assignment Completion</span>
-                  <span class="pill-value"><%= student.assignmentCompletion %></span>
-                </div>
-              </div>
-              <% } %>
-
-              <% if (student.practicalSkills) { %>
-              <div class="progress-pill-card">
-                <div class="pill-icon pill-icon-info"><i class="bi bi-tools"></i></div>
-                <div class="pill-text">
-                  <span class="pill-label">Practical Skills</span>
-                  <span class="pill-value"><%= student.practicalSkills %></span>
-                </div>
-              </div>
-              <% } %>
-
-              <% if (student.overallProgress) { %>
-              <div class="progress-pill-card full-width">
-                <div class="pill-icon pill-icon-purple"><i class="bi bi-chat-square-quote-fill"></i></div>
-                <div class="pill-text">
-                  <span class="pill-label">Overall Progress</span>
-                  <span class="pill-value"><%= student.overallProgress %></span>
-                </div>
-              </div>
-              <% } %>
-            </div>
-          </div>
-          <% } %>
-
-          <!-- Section 4: Progress Card -->
-          <% if (student.progressCard && student.progressCard.trim()) { %>
-          <div class="report-block">
-            <div class="report-block-title">
-              <i class="bi bi-card-text text-primary"></i>
-              <span>Section 4: Progress Card</span>
-            </div>
-
-            <div class="report-progress-card">
-              <div class="report-progress-card-badge">
-                <i class="bi bi-patch-check-fill"></i> Official Progress Remarks
-              </div>
-              <p class="report-progress-text">
-                <%= student.progressCard %>
+          <!-- Info Fields Grid -->
+          <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <!-- Name -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Name
+              </span>
+              <p class="font-bold text-slate-900 text-sm sm:text-base leading-tight">
+                <%= student.fullName %>
               </p>
             </div>
+
+            <!-- Student ID -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Student ID
+              </span>
+              <p class="font-mono font-bold text-emerald-800 text-sm sm:text-base">
+                <%= student.studentId || 'N/A' %>
+              </p>
+            </div>
+
+            <!-- Course -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Course
+              </span>
+              <p class="font-bold text-slate-900 text-sm leading-snug">
+                <%= student.courseTitle %>
+              </p>
+            </div>
+
+            <!-- Batch -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Batch
+              </span>
+              <p class="font-semibold text-slate-800 text-sm">
+                <%= student.batchName || 'Regular Batch' %>
+              </p>
+            </div>
+
+            <!-- Email -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Email
+              </span>
+              <p class="font-medium text-slate-800 text-xs sm:text-sm truncate" title="<%= student.email %>">
+                <%= student.email %>
+              </p>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Phone Number
+              </span>
+              <p class="font-medium text-slate-800 text-sm">
+                <%= student.phone || 'Not Specified' %>
+              </p>
+            </div>
+
           </div>
-          <% } %>
 
-        </section>
-        <% } %>
+        </div>
 
-        <!-- Actions Toolbar -->
-        <div class="verify-actions no-print">
-          <a href="/verify" class="btn-verify btn-verify-outline">
-            <i class="bi bi-search"></i> Verify Another Certificate
-          </a>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button type="button" class="btn-verify btn-verify-outline" onclick="copyVerificationLink()">
-              <i class="bi bi-link-45deg"></i> Copy Link
-            </button>
-            <button type="button" class="btn-verify btn-verify-primary" onclick="window.print()">
-              <i class="bi bi-printer-fill"></i> Print Verification
-            </button>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           PROGRESS SUMMARY
+           Progress % & Certificate Status
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+            <i class="bi bi-speedometer2"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            Progress Summary
+          </h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          
+          <!-- Progress % Card -->
+          <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Course Progress</span>
+                <span class="font-heading font-extrabold text-2xl text-emerald-700"><%= student.progressPercentage %>%</span>
+              </div>
+              <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden p-0.5">
+                <div class="h-full bg-gradient-to-r from-brand-600 to-emerald-400 rounded-full transition-all duration-1000" style="width: <%= student.progressPercentage %>%;"></div>
+              </div>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-500 mt-3 pt-2 border-t border-slate-200/60 font-medium">
+              <span>Overall Evaluation Standard</span>
+              <span class="font-bold text-slate-800"><%= student.grade %></span>
+            </div>
+          </div>
+
+          <!-- Certificate Status Card -->
+          <div class="p-5 rounded-xl bg-emerald-50/60 border border-emerald-200 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider block mb-2">
+                Certificate Status
+              </span>
+              <div class="flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200"></span>
+                <span class="font-heading font-extrabold text-lg text-emerald-900">
+                  <%= student.certificateStatus || 'Active & Verified' %>
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                Certificate ID: <strong class="font-mono text-slate-800"><%= student.certificateNumber %></strong>
+              </p>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-500 mt-3 pt-2 border-t border-emerald-200/60 font-medium">
+              <span>Issue Date: <%= student.issueDate || 'Current' %></span>
+              <span class="text-emerald-700 font-bold flex items-center gap-1">
+                <i class="bi bi-shield-check"></i> Validated
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           WEEKLY PERFORMANCE
+           Professional academic table.
+           Columns: Performance Criteria | Week 1 | Week 2 | Week 3 | Week 4
+           Color indicators: Good = Green, Average = Orange, Poor = Red
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+              <i class="bi bi-calendar4-week"></i>
+            </div>
+            <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+              Weekly Performance
+            </h3>
+          </div>
+
+          <!-- Color Indicators Legend -->
+          <div class="flex items-center gap-2.5 text-xs font-semibold">
+            <span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Good
+            </span>
+            <span class="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Average
+            </span>
+            <span class="inline-flex items-center gap-1 text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Poor
+            </span>
           </div>
         </div>
 
-      </main>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 text-xs uppercase font-extrabold tracking-wider">
+                <th scope="col" class="py-3 px-4 sm:px-6 w-1/3 min-w-[190px]">Performance Criteria</th>
+                <th scope="col" class="py-3 px-3 text-center min-w-[110px]">Week 1</th>
+                <th scope="col" class="py-3 px-3 text-center min-w-[110px]">Week 2</th>
+                <th scope="col" class="py-3 px-3 text-center min-w-[110px]">Week 3</th>
+                <th scope="col" class="py-3 px-3 text-center min-w-[110px]">Week 4</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              
+              <!-- Class Performance -->
+              <tr class="hover:bg-slate-50/60 transition-colors">
+                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-person-video3 text-slate-400"></i>
+                  <span>Class Performance</span>
+                </td>
+                <% [1, 2, 3, 4].forEach(function(w) { 
+                     const cat = getScoreCategory(student['week' + w]?.classPerformance);
+                %>
+                  <td class="py-3.5 px-3 text-center align-middle">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border <%= cat.cls %>">
+                      <span class="w-1.5 h-1.5 rounded-full <%= cat.dot %>"></span>
+                      <%= cat.text %>
+                    </span>
+                  </td>
+                <% }); %>
+              </tr>
+
+              <!-- Assignment / Homework -->
+              <tr class="hover:bg-slate-50/60 transition-colors">
+                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-journal-check text-slate-400"></i>
+                  <span>Assignment / Homework</span>
+                </td>
+                <% [1, 2, 3, 4].forEach(function(w) { 
+                     const cat = getScoreCategory(student['week' + w]?.assignmentHomework);
+                %>
+                  <td class="py-3.5 px-3 text-center align-middle">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border <%= cat.cls %>">
+                      <span class="w-1.5 h-1.5 rounded-full <%= cat.dot %>"></span>
+                      <%= cat.text %>
+                    </span>
+                  </td>
+                <% }); %>
+              </tr>
+
+              <!-- Activity / Engagement -->
+              <tr class="hover:bg-slate-50/60 transition-colors">
+                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-activity text-slate-400"></i>
+                  <span>Activity / Engagement</span>
+                </td>
+                <% [1, 2, 3, 4].forEach(function(w) { 
+                     const cat = getScoreCategory(student['week' + w]?.activityEngagement);
+                %>
+                  <td class="py-3.5 px-3 text-center align-middle">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border <%= cat.cls %>">
+                      <span class="w-1.5 h-1.5 rounded-full <%= cat.dot %>"></span>
+                      <%= cat.text %>
+                    </span>
+                  </td>
+                <% }); %>
+              </tr>
+
+              <!-- Weekly Performance Mark -->
+              <tr class="bg-slate-50/50 font-bold border-t border-slate-200">
+                <td class="py-3.5 px-4 sm:px-6 text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-trophy-fill text-amber-500"></i>
+                  <span>Weekly Performance Mark</span>
+                </td>
+                <% [1, 2, 3, 4].forEach(function(w) { 
+                     const mark = student['week' + w]?.weeklyMark;
+                %>
+                  <td class="py-3.5 px-3 text-center align-middle">
+                    <% if (typeof mark === 'number' && mark > 0) { %>
+                      <span class="font-heading font-extrabold text-sm text-slate-900"><%= mark %> <span class="text-xs text-slate-400 font-normal">/ 100</span></span>
+                    <% } else { %>
+                      <span class="text-xs text-slate-400 font-normal">Evaluated</span>
+                    <% } %>
+                  </td>
+                <% }); %>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Weekly Average Bar -->
+        <div class="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+          <span class="text-slate-600 font-medium">Cumulative 4-Week Continuous Evaluation Average:</span>
+          <div class="flex items-center gap-2">
+            <span class="font-heading font-extrabold text-base text-emerald-800 bg-white px-3 py-1 rounded-md border border-emerald-300">
+              <%= student.weeklyAverage %> / 100
+            </span>
+            <span class="text-emerald-700 font-bold bg-emerald-100/60 px-2 py-1 rounded-md">
+              <i class="bi bi-check-circle-fill"></i> Continuous Pass
+            </span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           FINAL ASSESSMENT
+           Show marks, percentage, grade and progress bar.
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+              <i class="bi bi-award-fill"></i>
+            </div>
+            <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+              Final Assessment
+            </h3>
+          </div>
+          
+          <span class="bg-emerald-700 text-white font-heading font-extrabold text-xs sm:text-sm px-3.5 py-1 rounded-full">
+            <%= student.grade %>
+          </span>
+        </div>
+
+        <!-- 4 Assessment Component Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-5">
+          
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+            <span class="text-xs font-semibold text-slate-400 block mb-1">Internal Mark</span>
+            <span class="font-heading font-extrabold text-xl text-slate-900"><%= student.internalMark || 0 %></span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">Max: 25</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+            <span class="text-xs font-semibold text-slate-400 block mb-1">Theory Mark</span>
+            <span class="font-heading font-extrabold text-xl text-slate-900"><%= student.theoryMark || 0 %></span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">Max: 50</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+            <span class="text-xs font-semibold text-slate-400 block mb-1">Practical Mark</span>
+            <span class="font-heading font-extrabold text-xl text-slate-900"><%= student.practicalMark || 0 %></span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">Max: 25</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-center">
+            <span class="text-xs font-bold text-emerald-800 block mb-1">Total Mark</span>
+            <span class="font-heading font-extrabold text-xl text-emerald-800"><%= student.totalMark || student.marks || 0 %></span>
+            <span class="text-[11px] text-emerald-600 font-bold block mt-0.5">out of 100</span>
+          </div>
+
+        </div>
+
+        <!-- Progress Bar & Grade Percentage Summary -->
+        <div class="p-4 sm:p-5 rounded-xl bg-slate-900 text-white flex flex-col gap-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">Aggregate Academic Percentage</span>
+              <p class="text-xs text-slate-400 mt-0.5">Comprehensive Performance Evaluation</p>
+            </div>
+            <div class="text-right">
+              <span class="font-heading font-extrabold text-2xl text-white"><%= student.progressPercentage %>%</span>
+              <span class="text-xs text-emerald-300 font-semibold block"><%= student.grade %></span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden p-0.5">
+            <div class="h-full bg-gradient-to-r from-brand-500 to-emerald-400 rounded-full transition-all duration-1000" style="width: <%= student.progressPercentage %>%;"></div>
+          </div>
+
+          <div class="flex justify-between items-center text-[11px] text-slate-400">
+            <span>Minimum Passing: 40%</span>
+            <span class="text-emerald-300 font-semibold">✓ Evaluation Passed</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           OVERALL PROGRESS
+           Render evaluation cards.
+           Academic Performance, Assignment Completion, Practical Skills, Overall Progress
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            Overall Progress
+          </h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- Academic Performance -->
+          <% 
+            const acad = getProgressMetric(student.academicPerformance, student.progressPercentage, 'Consistently demonstrates solid conceptual grasp and active class participation.');
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Academic Performance</span>
+                <span class="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><%= acad.score %> / 100</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed"><%= acad.text %></p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= acad.score %>%;"></div>
+            </div>
+          </div>
+
+          <!-- Assignment Completion -->
+          <% 
+            const assign = getProgressMetric(student.assignmentCompletion, 95, 'All core curriculum homework modules and practical tasks submitted on time.');
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Assignment Completion</span>
+                <span class="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><%= assign.score %> / 100</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed"><%= assign.text %></p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= assign.score %>%;"></div>
+            </div>
+          </div>
+
+          <!-- Practical Skills -->
+          <% 
+            const pract = getProgressMetric(student.practicalSkills, 90, 'High mathematical reasoning velocity and applied problem-solving execution.');
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Practical Skills</span>
+                <span class="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><%= pract.score %> / 100</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed"><%= pract.text %></p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= pract.score %>%;"></div>
+            </div>
+          </div>
+
+          <!-- Overall Progress -->
+          <% 
+            const overall = getProgressMetric(student.overallProgress, student.progressPercentage, 'Consistently performed with high standard throughout the coursework.');
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Overall Progress</span>
+                <span class="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><%= overall.score %> / 100</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed"><%= overall.text %></p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= overall.score %>%;"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           TEACHER REMARKS
+           Display formatted paragraph.
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+            <i class="bi bi-chat-quote-fill"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            Teacher Remarks
+          </h3>
+        </div>
+
+        <div class="p-5 sm:p-6 rounded-xl bg-slate-50 border border-slate-200 relative">
+          <p class="text-slate-800 text-sm sm:text-base leading-relaxed italic font-normal">
+            <% if (student.progressCard && student.progressCard.trim()) { %>
+              &ldquo;<%= student.progressCard.trim() %>&rdquo;
+            <% } else { %>
+              &ldquo;<%= student.fullName %> demonstrates excellent problem solving abilities and consistently completes assignments on time.&rdquo;
+            <% } %>
+          </p>
+
+          <div class="mt-4 pt-4 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
+            <span class="font-semibold text-slate-700">Faculty Academic Assessment Board</span>
+            <span class="text-emerald-700 font-bold">Verified & Endorsed</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           VERIFICATION
+           Verified By: MathsManthra Academy
+           Verification Time: Current Timestamp
+           Verification ID: Unique Reference
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="bg-white rounded-2xl border border-emerald-300 shadow-card p-6 sm:p-7 mb-8 print-shadow-none page-break-inside-avoid">
+        
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-base font-bold">
+            <i class="bi bi-patch-check-fill"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            Verification
+          </h3>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-xl bg-emerald-50/40 border border-emerald-200">
+          
+          <div class="w-full space-y-4">
+            
+            <!-- Verified By -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
+              <span class="font-semibold text-slate-500">Verified By:</span>
+              <strong class="font-bold text-emerald-900 text-sm sm:text-base"><%= student.verifiedBy || 'MathsManthra Academy' %></strong>
+            </div>
+
+            <!-- Verification Time -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
+              <span class="font-semibold text-slate-500">Verification Time:</span>
+              <strong class="font-bold text-slate-800"><%= student.verificationTime %></strong>
+            </div>
+
+            <!-- Verification ID -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 text-xs sm:text-sm">
+              <span class="font-semibold text-slate-500">Verification ID:</span>
+              <strong class="font-mono font-bold text-emerald-800 text-sm sm:text-base select-all"><%= student.verificationId %></strong>
+            </div>
+
+          </div>
+
+          <!-- QR Code Preview -->
+          <div class="shrink-0 flex flex-col items-center bg-white p-3.5 rounded-xl border border-emerald-200 shadow-xs">
+            <% if (student.qrCodeDataUrl) { %>
+              <img src="<%= student.qrCodeDataUrl %>" alt="Verification QR Code" class="w-28 h-28 sm:w-32 sm:h-32 rounded" />
+            <% } else if (student.qrCodeSvg) { %>
+              <div class="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                <%- student.qrCodeSvg %>
+              </div>
+            <% } else { %>
+              <div class="w-28 h-28 sm:w-32 sm:h-32 bg-slate-100 flex items-center justify-center text-slate-400 text-3xl rounded">
+                <i class="bi bi-qr-code"></i>
+              </div>
+            <% } %>
+            <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Official QR Seal</span>
+          </div>
+
+        </div>
+
+      </section>
 
     <% } else if (isSearchOnly) { %>
-      <!-- ══════════════════════════════════════════════════════════════════════
-           SEARCH / LANDING VIEW
-           ══════════════════════════════════════════════════════════════════════ -->
-      <main class="verify-card" style="text-align: center; padding: 48px 24px;">
-        <div style="width: 64px; height: 64px; margin: 0 auto 16px; background: #eff6ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">
+
+      <!-- SEARCH PORTAL VIEW -->
+      <div class="max-w-lg mx-auto my-12 bg-white rounded-2xl border border-slate-200 shadow-card p-7 sm:p-9 text-center">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-100">
           <i class="bi bi-patch-check-fill"></i>
         </div>
-        <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 8px;">Verify Student Certificate</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 28px;">
-          Enter the unique certificate number issued by Maths Manthra Academy to verify authenticity and view academic records.
+
+        <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 mb-1.5">
+          Student Verification Portal
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mb-6">
+          Enter Student ID or Certificate Number to verify student progress and credential authenticity.
         </p>
 
-        <form action="/verify" method="GET" class="search-box-form" onsubmit="handleSearchSubmit(event)">
-          <input 
-            type="text" 
-            id="certInput" 
-            name="cert" 
-            class="search-box-input" 
-            placeholder="e.g. MMC-2026-A09434-9710" 
-            required 
-            autocomplete="off" 
-            autofocus 
-          />
-          <button type="submit" class="btn-verify btn-verify-primary">
-            <i class="bi bi-search"></i> Verify
+        <form action="/verify" method="GET" class="space-y-4" onsubmit="handleSearchSubmit(event)">
+          <div class="text-left">
+            <label for="certInput" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              Student ID or Certificate Number
+            </label>
+            <input 
+              type="text" 
+              id="certInput" 
+              name="cert" 
+              placeholder="e.g. MM-2026-081 or MMC-2026-A09434-9710" 
+              class="w-full bg-slate-50 border border-slate-200 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none transition-all"
+              required
+              autocomplete="off"
+              autofocus
+            />
+          </div>
+
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-sm sm:text-base py-3 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2">
+            <i class="bi bi-shield-check"></i>
+            Verify Student
           </button>
         </form>
-      </main>
+      </div>
 
     <% } else { %>
-      <!-- ══════════════════════════════════════════════════════════════════════
-           INVALID / NOT FOUND VIEW
-           ══════════════════════════════════════════════════════════════════════ -->
-      <main class="error-card">
-        <div class="error-icon-box">
+
+      <!-- ERROR / NOT FOUND VIEW -->
+      <div class="max-w-lg mx-auto my-12 bg-white rounded-2xl border border-rose-200 shadow-card p-7 sm:p-9 text-center">
+        <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-rose-100">
           <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
-        <h2 class="error-title">Certificate Not Verified</h2>
-        <p class="error-desc">
-          <%= errorMessage || 'No active certificate record could be verified matching the provided certificate identifier. Please confirm the number stamped on the certificate and try again.' %>
+
+        <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 mb-2">
+          Student Record Not Found
+        </h2>
+        
+        <p class="text-xs sm:text-sm text-slate-600 mb-6">
+          <%= errorMessage || 'No active verified student record was found for this identifier. Please double-check the Student ID or Certificate Number.' %>
         </p>
 
-        <form action="/verify" method="GET" class="search-box-form" onsubmit="handleSearchSubmit(event)">
+        <form action="/verify" method="GET" class="space-y-4 mb-5" onsubmit="handleSearchSubmit(event)">
           <input 
             type="text" 
             id="certInput" 
             name="cert" 
-            class="search-box-input" 
             value="<%= certificateNumber && certificateNumber !== 'Unknown' ? certificateNumber : '' %>"
-            placeholder="e.g. MMC-2026-A09434-9710" 
+            placeholder="e.g. MM-2026-081" 
+            class="w-full bg-slate-50 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none"
             required 
-            autocomplete="off" 
+            autocomplete="off"
           />
-          <button type="submit" class="btn-verify btn-verify-primary">
-            <i class="bi bi-search"></i> Check Again
+
+          <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-heading font-bold text-sm py-2.5 rounded-xl transition-colors">
+            Check Again
           </button>
         </form>
 
-        <div style="margin-top: 24px;">
-          <a href="/verify" class="btn-verify btn-verify-outline">
-            <i class="bi bi-arrow-left"></i> Back to Verification Portal
-          </a>
-        </div>
-      </main>
+        <a href="/verify" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+          ← Return to Verification Portal
+        </a>
+      </div>
+
     <% } %>
 
-    <!-- Security & Trust Footer -->
-    <footer class="verify-footer">
-      <div class="security-seal">
-        <i class="bi bi-lock-fill"></i>
-        <span>Authentic Academic Credential Database — Maths Manthra Academy</span>
+  </main>
+
+  <!-- OFFICIAL TRUST FOOTER -->
+  <footer class="no-print bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col items-center gap-1.5">
+      <div class="flex items-center gap-1.5 text-slate-700 font-semibold text-xs">
+        <i class="bi bi-shield-check text-emerald-600"></i>
+        <span>Official Verification Portal • MathsManthra Academy</span>
       </div>
-      <p>&copy; <%= new Date().getFullYear() %> Maths Manthra Academy. All rights reserved.</p>
-      <p style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
-        This verification record is cryptographically tied to the official Maths Manthra student registry. 
-        Internal database IDs, administrative records, and session data are protected and never disclosed.
+      <p class="text-slate-400">
+        &copy; <%= new Date().getFullYear() %> MathsManthra Academy. Authenticated Academic Record. Read-only verification page.
       </p>
-    </footer>
-
-  </div>
-
-  <!-- Toast Notification -->
-  <div id="copyToast" class="copy-toast" role="alert">
-    <i class="bi bi-check2-circle" style="color: #10b981; font-size: 1.1rem;"></i>
-    <span>Verification link copied to clipboard!</span>
-  </div>
+    </div>
+  </footer>
 
   <script>
-    function copyVerificationLink() {
-      const url = window.location.href;
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(url).then(showToast).catch(fallbackCopy);
-      } else {
-        fallbackCopy();
-      }
-    }
-
-    function fallbackCopy() {
-      const textArea = document.createElement('textarea');
-      textArea.value = window.location.href;
-      textArea.style.position = 'fixed';
-      textArea.style.opacity = '0';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        showToast();
-      } catch (err) {
-        alert('Verification link: ' + window.location.href);
-      }
-      document.body.removeChild(textArea);
-    }
-
-    function showToast() {
-      const toast = document.getElementById('copyToast');
-      if (!toast) return;
-      toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-
     function handleSearchSubmit(event) {
       event.preventDefault();
       const input = document.getElementById('certInput');

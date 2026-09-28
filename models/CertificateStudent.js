@@ -3,6 +3,7 @@
  * Student details associated with an issued course certificate.
  */
 const mongoose = require('mongoose');
+require('./Course'); // Ensure Course model is registered for populate('courseId')
 
 const certificateStudentSchema = new mongoose.Schema(
   {
@@ -126,22 +127,34 @@ certificateStudentSchema.index({ studentId: 1 }, { unique: true, sparse: true })
 certificateStudentSchema.index({ certificateNumber: 1, isActive: 1 });
 
 /**
- * Static method to find an active student record by certificate number
+ * Static method to find an active student record by studentId, certificateNumber, or _id
  * Supports trimmed exact and case-insensitive matching
  */
-certificateStudentSchema.statics.findActiveByCertificateNumber = function (certNumber) {
-  if (!certNumber || typeof certNumber !== 'string') return Promise.resolve(null);
-  const clean = certNumber.trim();
+certificateStudentSchema.statics.findActiveByIdentifier = function (identifier) {
+  if (!identifier || typeof identifier !== 'string') return Promise.resolve(null);
+  const clean = identifier.trim();
   if (!clean) return Promise.resolve(null);
 
+  const orQueries = [
+    { studentId: clean },
+    { studentId: clean.toUpperCase() },
+    { certificateNumber: clean },
+    { certificateNumber: clean.toUpperCase() },
+    { certificateNumber: clean.toLowerCase() },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(clean)) {
+    orQueries.push({ _id: clean });
+  }
+
   return this.findOne({
-    $or: [
-      { certificateNumber: clean },
-      { certificateNumber: clean.toUpperCase() },
-      { certificateNumber: clean.toLowerCase() },
-    ],
+    $or: orQueries,
     isActive: true,
   }).populate('courseId', 'title slug');
+};
+
+certificateStudentSchema.statics.findActiveByCertificateNumber = function (certNumber) {
+  return this.findActiveByIdentifier(certNumber);
 };
 
 module.exports = mongoose.model('CertificateStudent', certificateStudentSchema);

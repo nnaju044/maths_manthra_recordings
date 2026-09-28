@@ -15,9 +15,9 @@ router.get('/', (req, res) => {
   res.redirect('/auth/login');
 });
 
-// ── Public Certificate Verification ───────────────────────────────────────────
+// ── Public Certificate & Student Verification ─────────────────────────────────
 router.get('/verify', verifyCtrl.showVerifySearch);
-router.get('/verify/:certificateNumber', verifyCtrl.verifyCertificatePublic);
+router.get('/verify/:studentId', verifyCtrl.verifyCertificatePublic);
 
 // Certificate portal (public, no login required)
 router.get('/certificate', certPublicCtrl.showCertificatePage);
