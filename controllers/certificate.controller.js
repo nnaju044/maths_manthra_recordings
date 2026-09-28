@@ -21,14 +21,14 @@ function validateOTPGuard(req) {
   if (!req.session.certificateVerifiedEmail) {
     return false;
   }
-  
+
   if (req.session.certificateVerifiedAt && (Date.now() - req.session.certificateVerifiedAt > OTP_SESSION_TIMEOUT)) {
     // Expired
     delete req.session.certificateVerifiedEmail;
     delete req.session.certificateVerifiedAt;
     return false;
   }
-  
+
   return true;
 }
 
@@ -259,7 +259,7 @@ exports.verifyCertificate = async (req, res, next) => {
 
     // ── OTP Guard: ensure user has verified this email via OTP ──
     if (!validateOTPGuard(req) ||
-        req.session.certificateVerifiedEmail !== normalizedEmail) {
+      req.session.certificateVerifiedEmail !== normalizedEmail) {
       // Not yet verified — redirect to OTP flow
       req.flash('error', 'Please verify your email with OTP first (or your session may have expired).');
       return res.redirect('/certificate');
@@ -371,10 +371,10 @@ exports.downloadCertificate = async (req, res, next) => {
       : null;
     const completionDate = certDateLong
       ? certDateLong.toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
       : 'Date Not Assigned';
 
     // Verification URL for QR code
@@ -406,9 +406,14 @@ exports.downloadCertificate = async (req, res, next) => {
     console.log('GENERATING PDF...');
 
     // Generate PDF using Puppeteer
-    browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({
+      executablePath: '/usr/bin/chromium-browser',
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage'
+      ]
     });
 
     const page = await browser.newPage();
@@ -463,7 +468,7 @@ exports.downloadCertificate = async (req, res, next) => {
     return next(err);
   } finally {
     if (browser) {
-      await browser.close().catch(() => {});
+      await browser.close().catch(() => { });
     }
   }
 };

@@ -1,16 +1,24 @@
-# ── Build stage ───────────────────────────────────────────────
-FROM node:20-alpine AS base
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Install Chromium
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
 COPY package*.json ./
+
 RUN npm ci --only=production
 
 COPY . .
 
-# Create uploads directory
 RUN mkdir -p public/uploads
 
-EXPOSE 3000
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
-CMD ["node", "server.js"]
+CMD ["npm","start"]
