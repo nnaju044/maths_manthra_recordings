@@ -6,17 +6,22 @@
       <%= totalDocs %> <%= totalDocs === 1 ? 'Student' : 'Students' %>
     </span>
   </div>
-  <a href="/admin/certificates/upload" class="btn btn-primary-custom">
-    <i class="bi bi-cloud-arrow-up"></i> Upload Students
-  </a>
+  <div class="d-flex gap-2">
+    <a href="/admin/certificates/create" class="btn btn-primary-custom">
+      <i class="bi bi-person-plus"></i> Add Student
+    </a>
+    <a href="/admin/certificates/upload" class="btn btn-outline-primary">
+      <i class="bi bi-cloud-arrow-up"></i> Upload Excel
+    </a>
+  </div>
 </div>
 
-<!-- Search Bar (search by email, name, certificate number) -->
+<!-- Search Bar (search by email, name, certificate number, student ID) -->
 <form class="search-bar mb-4" method="GET" action="/admin/certificates">
   <div class="input-group">
     <span class="input-group-text"><i class="bi bi-search"></i></span>
     <input type="text" name="search" class="form-control"
-      placeholder="Search by name, email, or certificate number..." value="<%= search %>" />
+      placeholder="Search by name, email, certificate number, or student ID..." value="<%= search %>" />
     <button type="submit" class="btn btn-outline-primary">Search</button>
     <% if (search) { %>
       <a href="/admin/certificates" class="btn btn-outline-secondary">Clear</a>
@@ -28,8 +33,11 @@
   <div class="empty-state">
     <i class="bi bi-award"></i>
     <h4>No students found</h4>
-    <p><%= search ? 'No students match your search criteria.' : 'Upload your first student Excel sheet to get started.' %></p>
-    <a href="/admin/certificates/upload" class="btn btn-primary-custom">Upload Students</a>
+    <p><%= search ? 'No students match your search criteria.' : 'Add your first student or upload an Excel sheet to get started.' %></p>
+    <div class="d-flex gap-2 justify-content-center">
+      <a href="/admin/certificates/create" class="btn btn-primary-custom">Add Student</a>
+      <a href="/admin/certificates/upload" class="btn btn-outline-primary">Upload Excel</a>
+    </div>
   </div>
 <% } else { %>
   <!-- Desktop Table (visible >= 768px) -->
@@ -39,11 +47,12 @@
         <tr>
           <th>Name</th>
           <th>Email</th>
-          <th>Phone</th>
+          <th>Student ID</th>
           <th>Course</th>
-          <th>Certificate Number</th>
+          <th>Marks</th>
+          <th>Certificate No.</th>
+          <th>Verification</th>
           <th>Status</th>
-          <th>Created Date</th>
           <th class="text-end">Actions</th>
         </tr>
       </thead>
@@ -78,9 +87,13 @@
               <span class="text-dark"><%= student.email %></span>
             </td>
 
-            <!-- Phone -->
+            <!-- Student ID -->
             <td>
-              <span class="text-muted"><%= student.phone || '—' %></span>
+              <% if (student.studentId) { %>
+                <code class="slug-display"><%= student.studentId %></code>
+              <% } else { %>
+                <span class="text-muted">—</span>
+              <% } %>
             </td>
 
             <!-- Course -->
@@ -90,9 +103,27 @@
               </span>
             </td>
 
+            <!-- Marks -->
+            <td>
+              <span class="badge bg-light text-dark border px-2 py-1"><%= student.marks || 0 %></span>
+            </td>
+
             <!-- Certificate Number -->
             <td>
               <code class="slug-display"><%= student.certificateNumber || '—' %></code>
+            </td>
+
+            <!-- Verification Status -->
+            <td>
+              <% if (student.verificationStatus !== false) { %>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                  <i class="bi bi-check-circle-fill"></i> Verified
+                </span>
+              <% } else { %>
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                  <i class="bi bi-exclamation-circle-fill"></i> Unverified
+                </span>
+              <% } %>
             </td>
 
             <!-- Status -->
@@ -103,16 +134,12 @@
               </button>
             </td>
 
-            <!-- Created Date -->
-            <td>
-              <span class="text-muted small">
-                <%= formatDate(student.createdAt) %>
-              </span>
-            </td>
-
             <!-- Actions -->
             <td class="text-end">
               <div class="action-btns justify-content-end">
+                <a href="/admin/certificates/<%= student._id %>/edit" class="btn-action edit" title="Edit Student" aria-label="Edit Student">
+                  <i class="bi bi-pencil"></i>
+                </a>
                 <form action="/admin/certificates/<%= student._id %>/delete" method="POST" class="d-inline"
                   onsubmit="return confirm('Delete this student certificate record? This cannot be undone.')">
                   <button type="submit" class="btn-action delete" title="Delete Student" aria-label="Delete Student">
@@ -162,25 +189,51 @@
               <span class="small"><%= student.phone || '—' %></span>
             </div>
             <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Student ID</span>
+              <code class="slug-display small"><%= student.studentId || '—' %></code>
+            </div>
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
               <span class="text-muted small">Course</span>
               <span class="small fw-medium text-end text-truncate" style="max-width: 60%;"><%= student.courseId ? student.courseId.title : '—' %></span>
+            </div>
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Marks</span>
+              <span class="small fw-medium"><%= student.marks || 0 %></span>
             </div>
             <div class="info-item d-flex justify-content-between py-1 border-bottom">
               <span class="text-muted small">Certificate No.</span>
               <code class="slug-display small"><%= student.certificateNumber || '—' %></code>
             </div>
+            <div class="info-item d-flex justify-content-between py-1 border-bottom">
+              <span class="text-muted small">Verification</span>
+              <% if (student.verificationStatus !== false) { %>
+                <span class="badge bg-success-subtle text-success small px-2 py-1">Verified</span>
+              <% } else { %>
+                <span class="badge bg-warning-subtle text-warning small px-2 py-1">Unverified</span>
+              <% } %>
+            </div>
+            <% if (student.progressCard) { %>
+              <div class="info-item py-1 border-bottom">
+                <span class="text-muted small d-block mb-1">Progress Card</span>
+                <span class="small text-secondary" style="white-space: pre-line;"><%= student.progressCard.length > 120 ? student.progressCard.substring(0, 120) + '...' : student.progressCard %></span>
+              </div>
+            <% } %>
             <div class="info-item d-flex justify-content-between py-1">
               <span class="text-muted small">Created Date</span>
               <span class="small text-muted"><%= formatDate(student.createdAt) %></span>
             </div>
           </div>
 
-          <div class="student-card-actions">
-            <form action="/admin/certificates/<%= student._id %>/delete" method="POST" class="w-100"
+          <div class="student-card-actions d-flex gap-2">
+            <a href="/admin/certificates/<%= student._id %>/edit" class="btn-card-action btn-card-edit flex-grow-1" title="Edit Student" aria-label="Edit Student">
+              <i class="bi bi-pencil"></i>
+              <span>Edit</span>
+            </a>
+            <form action="/admin/certificates/<%= student._id %>/delete" method="POST" class="flex-grow-1"
               onsubmit="return confirm('Delete this student certificate record? This cannot be undone.')">
               <button type="submit" class="btn-card-action btn-card-delete w-100" title="Delete Student" aria-label="Delete Student">
                 <i class="bi bi-trash"></i>
-                <span>Delete Student</span>
+                <span>Delete</span>
               </button>
             </form>
           </div>

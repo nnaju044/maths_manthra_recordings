@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= locals.pageTitle || 'Verified Certificate | Maths Manthra Academy' %></title>
+  <meta name="description" content="<%= locals.metaDescription || 'Verify student certificates issued by Maths Manthra Academy.' %>" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- OpenGraph Metadata -->
+  <meta property="og:title" content="<%= locals.pageTitle || 'Verified Certificate | Maths Manthra Academy' %>" />
+  <meta property="og:description" content="<%= locals.metaDescription || 'Verify student certificates issued by Maths Manthra Academy.' %>" />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/css/verify.css" />
+</head>
+<body class="verify-body">
+
+  <div class="verify-wrapper">
+
+    <!-- Top Branding Header -->
+    <header class="verify-header">
+      <a href="/" class="brand-link">
+        <div class="brand-logo-icon">M</div>
+        <div class="brand-text">
+          <h1>Maths Manthra Academy</h1>
+          <p>Official Verification Portal</p>
+        </div>
+      </a>
+      <div class="secure-badge">
+        <i class="bi bi-shield-check"></i>
+        <span>256-Bit SSL Encrypted Verification</span>
+      </div>
+    </header>
+
+    <% if (isValid && student) { %>
+      <!-- ══════════════════════════════════════════════════════════════════════
+           TOP SECTION: ✅ Certificate Verified (Green Verification Badge)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="verification-banner" aria-label="Verification Status">
+        <div class="banner-left">
+          <div class="banner-icon-box" aria-hidden="true">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <div>
+            <h2 class="banner-title">
+              ✅ Certificate Verified
+            </h2>
+            <p class="banner-subtitle">
+              This credential is valid, authentic, and officially issued by Maths Manthra Academy.
+            </p>
+          </div>
+        </div>
+        <div class="banner-pill">
+          <i class="bi bi-patch-check-fill"></i> Active Record
+        </div>
+      </section>
+
+      <!-- Main Verification Card -->
+      <main class="verify-card">
+
+        <!-- Student Hero Section: Avatar, Name & Large Verified Student Badge -->
+        <div class="student-hero">
+          <div class="student-hero-info">
+            <!-- Profile Image (Circular Avatar) -->
+            <div class="avatar-container">
+              <% 
+                const names = (student.fullName || 'Student').trim().split(/\s+/);
+                const initials = ((names[0] ? names[0][0] : '') + (names[1] ? names[1][0] : '')).toUpperCase() || 'S';
+              %>
+              <% if (student.profileImage && student.profileImage.trim() !== '') { %>
+                <img 
+                  src="<%= student.profileImage %>" 
+                  alt="" 
+                  class="avatar-img" 
+                  referrerpolicy="no-referrer"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
+                />
+                <div class="avatar-placeholder" style="display: none;" aria-label="Avatar placeholder">
+                  <%= initials %>
+                </div>
+              <% } else { %>
+                <div class="avatar-placeholder" aria-label="Avatar placeholder">
+                  <%= initials %>
+                </div>
+              <% } %>
+              <div class="avatar-shield-badge" title="Identity Verified">
+                <i class="bi bi-shield-fill-check"></i>
+              </div>
+            </div>
+
+            <!-- Student Name & Course -->
+            <div class="hero-meta">
+              <h2><%= student.fullName %></h2>
+              <% if (student.courseTitle) { %>
+                <div class="course-badge">
+                  <i class="bi bi-mortarboard-fill"></i>
+                  <span><%= student.courseTitle %></span>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- Large Verification Badge: VERIFIED STUDENT with Green Shield Icon -->
+          <div class="large-verified-badge" role="status">
+            <i class="bi bi-shield-fill-check" aria-hidden="true"></i>
+            <div class="badge-text">
+              <span class="badge-title">VERIFIED STUDENT</span>
+              <span class="badge-sub">Maths Manthra Academy</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student & Certificate Details Grid -->
+        <div class="section-title">
+          <i class="bi bi-person-lines-fill"></i> Credential Details
+        </div>
+        <div class="info-grid">
+          <!-- Student Name -->
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-person-fill"></i> Student Name</div>
+            <div class="info-value"><%= student.fullName %></div>
+          </div>
+
+          <!-- Email -->
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-envelope-fill"></i> Email</div>
+            <div class="info-value"><%= student.email %></div>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-telephone-fill"></i> Phone Number</div>
+            <div class="info-value"><%= student.phone || 'Not Specified' %></div>
+          </div>
+
+          <!-- Student ID -->
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-card-heading"></i> Student ID</div>
+            <div class="info-value monospace"><%= student.studentId || 'N/A' %></div>
+          </div>
+
+          <!-- Certificate Number -->
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-award-fill"></i> Certificate Number</div>
+            <div class="info-value monospace"><%= student.certificateNumber %></div>
+          </div>
+
+          <!-- Issue Date -->
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-calendar-check-fill"></i> Issue Date</div>
+            <div class="info-value"><%= student.issueDate %></div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════════
+             ACADEMIC DETAILS: Marks & Progress Card
+             ══════════════════════════════════════════════════════════════════════ -->
+        <section class="academic-section" aria-label="Academic Details">
+          <div class="section-title">
+            <i class="bi bi-bar-chart-fill"></i> Academic Details
+          </div>
+
+          <div class="academic-grid">
+            <!-- Marks Card -->
+            <div class="marks-card">
+              <div class="marks-header">
+                <i class="bi bi-speedometer2"></i> Marks Obtained
+              </div>
+              <% if (student.marks !== null && student.marks !== undefined) { %>
+                <div class="marks-score">
+                  <%= student.marks %> <span>/ 100</span>
+                </div>
+                <div class="marks-progress-track">
+                  <% const percentage = Math.min(100, Math.max(0, student.marks)); %>
+                  <div class="marks-progress-bar" style="width: <%= percentage %>%;"></div>
+                </div>
+                <div class="marks-status">
+                  <i class="bi bi-check2-circle"></i>
+                  <%= student.marks >= 75 ? 'Distinction Achievement' : (student.marks >= 60 ? 'First Class Performance' : 'Course Completed') %>
+                </div>
+              <% } else { %>
+                <div class="marks-score">
+                  Evaluated <span>/ Pass</span>
+                </div>
+                <div class="marks-status">
+                  <i class="bi bi-check2-circle"></i> Requirements Satisfied
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Progress Card -->
+            <div class="progress-card">
+              <div class="progress-card-header">
+                <div class="progress-card-title">
+                  <i class="bi bi-journal-text"></i> Progress Card
+                </div>
+                <span class="progress-card-badge">Official Evaluation</span>
+              </div>
+              <p class="progress-card-body"><%= student.progressCard && student.progressCard.trim() ? student.progressCard : 'The student has successfully completed all coursework, demonstrated conceptual mastery, and fulfilled academic evaluation requirements set forth by Maths Manthra Academy.' %></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Actions Toolbar -->
+        <div class="verify-actions no-print">
+          <a href="/verify" class="btn-verify btn-verify-outline">
+            <i class="bi bi-search"></i> Verify Another Certificate
+          </a>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn-verify btn-verify-outline" onclick="copyVerificationLink()">
+              <i class="bi bi-link-45deg"></i> Copy Link
+            </button>
+            <button type="button" class="btn-verify btn-verify-primary" onclick="window.print()">
+              <i class="bi bi-printer-fill"></i> Print Verification
+            </button>
+          </div>
+        </div>
+
+      </main>
+
+    <% } else if (isSearchOnly) { %>
+      <!-- ══════════════════════════════════════════════════════════════════════
+           SEARCH / LANDING VIEW
+           ══════════════════════════════════════════════════════════════════════ -->
+      <main class="verify-card" style="text-align: center; padding: 48px 24px;">
+        <div style="width: 64px; height: 64px; margin: 0 auto 16px; background: #eff6ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 8px;">Verify Student Certificate</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 28px;">
+          Enter the unique certificate number issued by Maths Manthra Academy to verify authenticity and view academic records.
+        </p>
+
+        <form action="/verify" method="GET" class="search-box-form" onsubmit="handleSearchSubmit(event)">
+          <input 
+            type="text" 
+            id="certInput" 
+            name="cert" 
+            class="search-box-input" 
+            placeholder="e.g. MMC-2026-A09434-9710" 
+            required 
+            autocomplete="off" 
+            autofocus 
+          />
+          <button type="submit" class="btn-verify btn-verify-primary">
+            <i class="bi bi-search"></i> Verify
+          </button>
+        </form>
+      </main>
+
+    <% } else { %>
+      <!-- ══════════════════════════════════════════════════════════════════════
+           INVALID / NOT FOUND VIEW
+           ══════════════════════════════════════════════════════════════════════ -->
+      <main class="error-card">
+        <div class="error-icon-box">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h2 class="error-title">Certificate Not Verified</h2>
+        <p class="error-desc">
+          <%= errorMessage || 'No active certificate record could be verified matching the provided certificate identifier. Please confirm the number stamped on the certificate and try again.' %>
+        </p>
+
+        <form action="/verify" method="GET" class="search-box-form" onsubmit="handleSearchSubmit(event)">
+          <input 
+            type="text" 
+            id="certInput" 
+            name="cert" 
+            class="search-box-input" 
+            value="<%= certificateNumber && certificateNumber !== 'Unknown' ? certificateNumber : '' %>"
+            placeholder="e.g. MMC-2026-A09434-9710" 
+            required 
+            autocomplete="off" 
+          />
+          <button type="submit" class="btn-verify btn-verify-primary">
+            <i class="bi bi-search"></i> Check Again
+          </button>
+        </form>
+
+        <div style="margin-top: 24px;">
+          <a href="/verify" class="btn-verify btn-verify-outline">
+            <i class="bi bi-arrow-left"></i> Back to Verification Portal
+          </a>
+        </div>
+      </main>
+    <% } %>
+
+    <!-- Security & Trust Footer -->
+    <footer class="verify-footer">
+      <div class="security-seal">
+        <i class="bi bi-lock-fill"></i>
+        <span>Authentic Academic Credential Database — Maths Manthra Academy</span>
+      </div>
+      <p>&copy; <%= new Date().getFullYear() %> Maths Manthra Academy. All rights reserved.</p>
+      <p style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+        This verification record is cryptographically tied to the official Maths Manthra student registry. 
+        Internal database IDs, administrative records, and session data are protected and never disclosed.
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="copyToast" class="copy-toast" role="alert">
+    <i class="bi bi-check2-circle" style="color: #10b981; font-size: 1.1rem;"></i>
+    <span>Verification link copied to clipboard!</span>
+  </div>
+
+  <script>
+    function copyVerificationLink() {
+      const url = window.location.href;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(showToast).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    }
+
+    function fallbackCopy() {
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast();
+      } catch (err) {
+        alert('Verification link: ' + window.location.href);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function showToast() {
+      const toast = document.getElementById('copyToast');
+      if (!toast) return;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function handleSearchSubmit(event) {
+      event.preventDefault();
+      const input = document.getElementById('certInput');
+      if (input && input.value) {
+        const clean = input.value.trim();
+        if (clean) {
+          window.location.href = '/verify/' + encodeURIComponent(clean);
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!-- views/admin/certificates/edit.ejs -->
+<div class="content-header">
+  <div>
+    <h2><i class="bi bi-pencil-square text-primary"></i> Edit Student</h2>
+    <p class="text-muted mb-0">
+      Editing: <strong><%= student.fullName || student.name %></strong>
+      <% if (student.studentId) { %>
+        <span class="badge bg-light text-primary border font-monospace ms-2"><%= student.studentId %></span>
+      <% } %>
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/admin/certificates" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Students
+    </a>
+  </div>
+</div>
+
+<div class="form-card">
+  <form action="/admin/certificates/<%= student._id %>/update" method="POST" class="admin-form" id="editStudentForm">
+
+    <!-- Row 1: Name + Email -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="fullName" class="form-label fw-semibold">
+          Student Name <span class="text-danger">*</span>
+        </label>
+        <input type="text" id="fullName" name="fullName" class="form-control form-control-lg"
+               value="<%= student.fullName || student.name %>" required />
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="email" class="form-label fw-semibold">
+          Email <span class="text-danger">*</span>
+        </label>
+        <input type="email" id="email" name="email" class="form-control form-control-lg"
+               value="<%= student.email %>" required />
+      </div>
+    </div>
+
+    <!-- Row 2: Phone + Qualification -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="phone" class="form-label fw-semibold">Phone Number</label>
+        <input type="text" id="phone" name="phone" class="form-control"
+               value="<%= student.phone || '' %>" />
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="qualification" class="form-label fw-semibold">Qualification</label>
+        <input type="text" id="qualification" name="qualification" class="form-control"
+               value="<%= student.qualification || '' %>" />
+      </div>
+    </div>
+
+    <!-- Row 3: Course + Student ID -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="courseId" class="form-label fw-semibold">
+          Course <span class="text-danger">*</span>
+        </label>
+        <select name="courseId" id="courseId" class="form-select form-select-lg" required>
+          <option value="">-- Select Course --</option>
+          <% courses.forEach(course => { %>
+            <option value="<%= course._id %>" <%= student.courseId && student.courseId._id.toString() === course._id.toString() ? 'selected' : '' %>>
+              <%= course.title %> <%= !course.isActive ? '(Inactive)' : '' %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="studentId" class="form-label fw-semibold">Student ID</label>
+        <input type="text" id="studentId" name="studentId" class="form-control"
+               value="<%= student.studentId || '' %>" />
+      </div>
+    </div>
+
+    <!-- Row 4: Certificate Number + Issued Date (read-only reference) -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="certificateNumber" class="form-label fw-semibold">Certificate Number</label>
+        <input type="text" id="certificateNumber" name="certificateNumber" class="form-control font-monospace"
+               value="<%= student.certificateNumber || '' %>" />
+        <div class="form-text">Auto-generated. Edit only if you need to change it.</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label fw-semibold">Issued Date</label>
+        <input type="text" class="form-control" disabled
+               value="<%= student.issuedDate ? new Date(student.issuedDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set' %>" />
+      </div>
+    </div>
+
+    <!-- Row 5: Marks + Verification Status -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="marks" class="form-label fw-semibold">Marks</label>
+        <input type="number" id="marks" name="marks" class="form-control"
+               min="0" value="<%= student.marks || 0 %>" />
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="verificationStatus" class="form-label fw-semibold">Verification Status</label>
+        <select name="verificationStatus" id="verificationStatus" class="form-select">
+          <option value="true" <%= student.verificationStatus !== false ? 'selected' : '' %>>Verified</option>
+          <option value="false" <%= student.verificationStatus === false ? 'selected' : '' %>>Not Verified</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 6: Profile Image URL -->
+    <div class="mb-3">
+      <label for="profileImage" class="form-label fw-semibold">Profile Image URL</label>
+      <div class="d-flex align-items-start gap-3">
+        <div class="flex-grow-1">
+          <input type="url" id="profileImage" name="profileImage" class="form-control"
+                 value="<%= student.profileImage || '' %>" />
+        </div>
+        <% if (student.profileImage && (student.profileImage.startsWith('http://') || student.profileImage.startsWith('https://'))) { %>
+          <img src="<%= student.profileImage %>" alt="Profile" class="rounded-circle"
+               style="width: 48px; height: 48px; object-fit: cover; border: 2px solid #e5e7eb;"
+               onerror="this.style.display='none'" />
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Row 7: Progress Card (textarea) -->
+    <div class="mb-4">
+      <label for="progressCard" class="form-label fw-semibold">Progress Card</label>
+      <textarea id="progressCard" name="progressCard" class="form-control" rows="6"
+                placeholder="Detailed student progress report, performance summary, or remarks..."><%= student.progressCard || '' %></textarea>
+      <div class="form-text">
+        Supports long paragraphs — e.g. course completion summary, achievements, areas of strength.
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex align-items-center gap-3">
+      <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
+        <i class="bi bi-check-circle-fill"></i> Update Student
+      </button>
+      <a href="/admin/certificates" class="btn btn-outline-secondary btn-lg">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('editStudentForm');
+  const submitBtn = document.getElementById('submitBtn');
+  if (form && submitBtn) {
+    form.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
+    });
+  }
+</script>

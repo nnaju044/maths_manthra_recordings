@@ -1,0 +1,124 @@
+<!-- views/admin/certificates/create.ejs -->
+<div class="content-header">
+  <div>
+    <h2><i class="bi bi-person-plus text-primary"></i> Add New Student</h2>
+    <p class="text-muted mb-0">Create a new certificate student record with all details.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/admin/certificates" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Students
+    </a>
+  </div>
+</div>
+
+<div class="form-card">
+  <form action="/admin/certificates/create" method="POST" class="admin-form" id="createStudentForm">
+
+    <!-- Row 1: Name + Email -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="fullName" class="form-label fw-semibold">
+          Student Name <span class="text-danger">*</span>
+        </label>
+        <input type="text" id="fullName" name="fullName" class="form-control form-control-lg"
+               placeholder="Enter student full name" required />
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="email" class="form-label fw-semibold">
+          Email <span class="text-danger">*</span>
+        </label>
+        <input type="email" id="email" name="email" class="form-control form-control-lg"
+               placeholder="student@example.com" required />
+      </div>
+    </div>
+
+    <!-- Row 2: Phone + Qualification -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="phone" class="form-label fw-semibold">Phone Number</label>
+        <input type="text" id="phone" name="phone" class="form-control"
+               placeholder="+91 9876543210" />
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="qualification" class="form-label fw-semibold">Qualification</label>
+        <input type="text" id="qualification" name="qualification" class="form-control"
+               placeholder="B.Sc Mathematics, MBA, etc." />
+      </div>
+    </div>
+
+    <!-- Row 3: Course + Student ID -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="courseId" class="form-label fw-semibold">
+          Course <span class="text-danger">*</span>
+        </label>
+        <select name="courseId" id="courseId" class="form-select form-select-lg" required>
+          <option value="">-- Select Course --</option>
+          <% courses.forEach(course => { %>
+            <option value="<%= course._id %>">
+              <%= course.title %> <%= !course.isActive ? '(Inactive)' : '' %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="studentId" class="form-label fw-semibold">Student ID</label>
+        <input type="text" id="studentId" name="studentId" class="form-control"
+               placeholder="Auto-generated if left empty" />
+        <div class="form-text">Leave blank to auto-generate (e.g. MMS-2026-482917)</div>
+      </div>
+    </div>
+
+    <!-- Row 4: Marks + Verification Status -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6">
+        <label for="marks" class="form-label fw-semibold">Marks</label>
+        <input type="number" id="marks" name="marks" class="form-control"
+               placeholder="0" min="0" value="0" />
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="verificationStatus" class="form-label fw-semibold">Verification Status</label>
+        <select name="verificationStatus" id="verificationStatus" class="form-select">
+          <option value="true" selected>Verified</option>
+          <option value="false">Not Verified</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 5: Profile Image URL -->
+    <div class="mb-3">
+      <label for="profileImage" class="form-label fw-semibold">Profile Image URL</label>
+      <input type="url" id="profileImage" name="profileImage" class="form-control"
+             placeholder="https://example.com/photo.jpg" />
+      <div class="form-text">Paste a direct link to the student's profile photo (Google Drive, etc.)</div>
+    </div>
+
+    <!-- Row 6: Progress Card (textarea) -->
+    <div class="mb-4">
+      <label for="progressCard" class="form-label fw-semibold">Progress Card</label>
+      <textarea id="progressCard" name="progressCard" class="form-control" rows="6"
+                placeholder="Detailed student progress report, performance summary, or remarks..."></textarea>
+      <div class="form-text">Supports long paragraphs — e.g. course completion summary, achievements, areas of strength.</div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex align-items-center gap-3">
+      <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
+        <i class="bi bi-person-plus-fill"></i> Create Student
+      </button>
+      <a href="/admin/certificates" class="btn btn-outline-secondary btn-lg">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('createStudentForm');
+  const submitBtn = document.getElementById('submitBtn');
+  if (form && submitBtn) {
+    form.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Creating...';
+    });
+  }
+</script>

@@ -7,12 +7,17 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const courseCtrl = require('../controllers/course.controller');
 const certPublicCtrl = require('../controllers/certificate.controller');
+const verifyCtrl = require('../controllers/verify.controller');
 const { requireCourseAccess } = require('../middleware/auth.middleware');
 
 // Root → redirect to admin login
 router.get('/', (req, res) => {
   res.redirect('/auth/login');
 });
+
+// ── Public Certificate Verification ───────────────────────────────────────────
+router.get('/verify', verifyCtrl.showVerifySearch);
+router.get('/verify/:certificateNumber', verifyCtrl.verifyCertificatePublic);
 
 // Certificate portal (public, no login required)
 router.get('/certificate', certPublicCtrl.showCertificatePage);

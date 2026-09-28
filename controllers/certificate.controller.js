@@ -112,9 +112,9 @@ exports.showCertificatePage = async (req, res, next) => {
       if (student && student.courseId && !student.courseId.certificateEnabled) {
         student = null;
         req.flash('error', 'Certificate generation is currently disabled for this course.');
-      } else if (student) {
         try {
-          const verifyUrl = `${req.protocol}://${req.get('host')}/certificate?cert=${encodeURIComponent(student.certificateNumber)}`;
+          const baseUrl = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+          const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(student.certificateNumber)}`;
           student.qrCode = await QRCode.toString(verifyUrl, {
             type: 'svg',
             margin: 1,
@@ -378,7 +378,8 @@ exports.downloadCertificate = async (req, res, next) => {
       : 'Date Not Assigned';
 
     // Verification URL for QR code
-    const verifyUrl = `${req.protocol}://${req.get('host')}/certificate?cert=${encodeURIComponent(student.certificateNumber)}`;
+    const baseUrl = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+    const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(student.certificateNumber)}`;
     const qrCodeSvg = await QRCode.toString(verifyUrl, {
       type: 'svg',
       margin: 1,

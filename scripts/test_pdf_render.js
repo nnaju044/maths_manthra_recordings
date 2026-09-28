@@ -19,7 +19,7 @@ async function testRender() {
   const bgDataUri = 'data:image/jpeg;base64,' + fs.readFileSync(bgPath).toString('base64');
   const sigDataUri = 'data:image/png;base64,' + fs.readFileSync(sigPath).toString('base64');
 
-  const verifyUrl = 'http://localhost:3000/certificate?cert=MMC-2026-A09434-9710';
+  const verifyUrl = 'http://localhost:3000/verify/MMC-2026-A09434-9710';
   const qrSvg = await QRCode.toString(verifyUrl, {
     type: 'svg',
     margin: 1,

@@ -750,11 +750,14 @@
                     <i class="bi bi-download"></i> Download PDF
                   </a>
                   <div class="d-flex gap-2">
+                    <a href="/verify/<%= encodeURIComponent(s.certificateNumber) %>" target="_blank" class="btn btn-sm btn-outline-success rounded-pill" title="Public Certificate Verification">
+                      <i class="bi bi-shield-check"></i> Verify
+                    </a>
                     <a href="/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>" class="btn btn-sm btn-outline-primary rounded-pill">
                       <i class="bi bi-eye"></i> View
                     </a>
                     <button class="btn btn-sm btn-outline-secondary rounded-pill"
-                      onclick="navigator.clipboard.writeText(window.location.origin + '/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
+                      onclick="navigator.clipboard.writeText(window.location.origin + '/verify/<%= encodeURIComponent(s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
                       <i class="bi bi-share"></i> Share Link
                     </button>
                   </div>
@@ -851,8 +854,11 @@
                 <i class="bi bi-search"></i> Search Another Certificate
               </a>
               <div class="d-flex gap-2">
+                <a href="/verify/<%= encodeURIComponent(student.certificateNumber) %>" target="_blank" class="btn btn-outline-success">
+                  <i class="bi bi-shield-check me-1"></i> Verify Record
+                </a>
                 <button class="btn btn-outline-primary"
-                  onclick="navigator.clipboard.writeText(window.location.href); alert('Certificate link copied to clipboard!');">
+                  onclick="navigator.clipboard.writeText(window.location.origin + '/verify/<%= encodeURIComponent(student.certificateNumber) %>'); alert('Public verification link copied to clipboard!');">
                   <i class="bi bi-share-fill"></i> Share Link
                 </button>
                 <a href="/certificate/download/<%= student.certificateNumber %>" class="btn btn-primary">

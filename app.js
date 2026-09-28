@@ -32,11 +32,16 @@ app.use(helmet({
       imgSrc: [
         "'self'",
         'data:',
+        'blob:',
         'img.youtube.com',
         'i.ytimg.com',
         '*.ytimg.com',
         'res.cloudinary.com',
-        '*.cloudinary.com'
+        '*.cloudinary.com',
+        'drive.google.com',
+        '*.googleusercontent.com',
+        '*.google.com',
+        'https:',
       ],
       frameSrc: ["'self'", 'www.youtube-nocookie.com', 'www.youtube.com'],
       connectSrc: ["'self'"],
