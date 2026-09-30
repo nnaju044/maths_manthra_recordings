@@ -5,3 +5,4 @@ public/uploads/
 .DS_Store
 dist/
 coverage/
+tests/
