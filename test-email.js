@@ -1,7 +1,8 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-
+console.log('SMTP_USER:', process.env.SMTP_USER);
+console.log('SMTP_PASS length:', process.env.SMTP_PASS?.length);
 
 async function test() {
     const transporter = nodemailer.createTransport({

@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const xlsx = require('xlsx');
 const CertificateStudent = require('../../models/CertificateStudent');
 const Course = require('../../models/Course');
+const Counter = require('../../models/Counter');
 const { paginate } = require('../../utils/pagination');
 
 /**
@@ -33,24 +34,29 @@ function getRowValue(row, candidates) {
 }
 
 /**
- * Generate a collision-resistant unique certificate number
- * Format: MMC-YYYY-HEX6-RAND4 (e.g. MMC-2026-F4C91A-4819)
+ * Generate an auto-increment sequential certificate number
+ * Format: MMC-YYYY-SEQ (e.g. MMC-2026-20001)
  */
 async function generateUniqueCertificateNumber() {
   const year = new Date().getFullYear();
-  let certNumber = '';
-  let exists = true;
-  let attempts = 0;
 
-  while (exists && attempts < 10) {
-    attempts++;
-    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const randomSeq = Math.floor(1000 + Math.random() * 9000);
-    certNumber = `MMC-${year}-${randomHex}-${randomSeq}`;
-    exists = await CertificateStudent.exists({ certificateNumber: certNumber });
+  try {
+    await Counter.updateOne(
+      { year },
+      { $setOnInsert: { year, lastNumber: 20000 } },
+      { upsert: true }
+    );
+  } catch (err) {
+    if (err.code !== 11000) throw err;
   }
 
-  return certNumber;
+  const counter = await Counter.findOneAndUpdate(
+    { year },
+    { $inc: { lastNumber: 1 } },
+    { new: true, upsert: true }
+  );
+
+  return `MMC-${year}-${counter.lastNumber}`;
 }
 
 /**
@@ -77,19 +83,60 @@ async function generateUniqueStudentId() {
  * Helper to extract nested progress fields from req.body
  */
 function extractProgressFields(body) {
-  const getNested = (week, field) => {
+  const getWeeklyMark = (week, field) => {
+    // 1. Check body.weeklyPerformance[week][field]
+    if (body.weeklyPerformance && typeof body.weeklyPerformance === 'object' && body.weeklyPerformance[week]) {
+      const v = body.weeklyPerformance[week][field];
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        const n = Number(v);
+        return isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
+      }
+    }
+    // 2. Check body[week][field]
     if (body[week] && typeof body[week] === 'object' && body[week][field] !== undefined) {
-      return String(body[week][field]).trim();
+      const v = body[week][field];
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        const n = Number(v);
+        return isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
+      }
     }
-    if (body[`${week}_${field}`] !== undefined) {
-      return String(body[`${week}_${field}`]).trim();
+    // 3. Check flat names e.g. week1_assignmentHomework or weeklyPerformance_week1_assignmentHomework
+    const flat1 = body[`${week}_${field}`];
+    if (flat1 !== undefined && flat1 !== null && String(flat1).trim() !== '') {
+      const n = Number(flat1);
+      return isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
     }
-    return '';
+    const flat2 = body[`weeklyPerformance_${week}_${field}`];
+    if (flat2 !== undefined && flat2 !== null && String(flat2).trim() !== '') {
+      const n = Number(flat2);
+      return isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
+    }
+    return 0;
   };
+
   const getNum = (val) => {
     if (val === undefined || val === null || String(val).trim() === '') return 0;
     const n = Number(val);
     return isNaN(n) ? 0 : Math.max(0, n);
+  };
+
+  const weeklyPerformance = {
+    week1: {
+      assignmentHomework: getWeeklyMark('week1', 'assignmentHomework'),
+      activityEngagement: getWeeklyMark('week1', 'activityEngagement'),
+    },
+    week2: {
+      assignmentHomework: getWeeklyMark('week2', 'assignmentHomework'),
+      activityEngagement: getWeeklyMark('week2', 'activityEngagement'),
+    },
+    week3: {
+      assignmentHomework: getWeeklyMark('week3', 'assignmentHomework'),
+      activityEngagement: getWeeklyMark('week3', 'activityEngagement'),
+    },
+    week4: {
+      assignmentHomework: getWeeklyMark('week4', 'assignmentHomework'),
+      activityEngagement: getWeeklyMark('week4', 'activityEngagement'),
+    },
   };
 
   const internalMark = getNum(body.internalMark);
@@ -100,29 +147,27 @@ function extractProgressFields(body) {
     : (internalMark + theoryMark + practicalMark);
 
   return {
+    weeklyPerformance,
+    // Sync legacy week fields for backward compatibility
     week1: {
-      classPerformance: getNested('week1', 'classPerformance'),
-      assignmentHomework: getNested('week1', 'assignmentHomework'),
-      activityEngagement: getNested('week1', 'activityEngagement'),
-      weeklyMark: getNum(getNested('week1', 'weeklyMark')),
+      assignmentHomework: String(weeklyPerformance.week1.assignmentHomework),
+      activityEngagement: String(weeklyPerformance.week1.activityEngagement),
+      weeklyMark: weeklyPerformance.week1.assignmentHomework + weeklyPerformance.week1.activityEngagement,
     },
     week2: {
-      classPerformance: getNested('week2', 'classPerformance'),
-      assignmentHomework: getNested('week2', 'assignmentHomework'),
-      activityEngagement: getNested('week2', 'activityEngagement'),
-      weeklyMark: getNum(getNested('week2', 'weeklyMark')),
+      assignmentHomework: String(weeklyPerformance.week2.assignmentHomework),
+      activityEngagement: String(weeklyPerformance.week2.activityEngagement),
+      weeklyMark: weeklyPerformance.week2.assignmentHomework + weeklyPerformance.week2.activityEngagement,
     },
     week3: {
-      classPerformance: getNested('week3', 'classPerformance'),
-      assignmentHomework: getNested('week3', 'assignmentHomework'),
-      activityEngagement: getNested('week3', 'activityEngagement'),
-      weeklyMark: getNum(getNested('week3', 'weeklyMark')),
+      assignmentHomework: String(weeklyPerformance.week3.assignmentHomework),
+      activityEngagement: String(weeklyPerformance.week3.activityEngagement),
+      weeklyMark: weeklyPerformance.week3.assignmentHomework + weeklyPerformance.week3.activityEngagement,
     },
     week4: {
-      classPerformance: getNested('week4', 'classPerformance'),
-      assignmentHomework: getNested('week4', 'assignmentHomework'),
-      activityEngagement: getNested('week4', 'activityEngagement'),
-      weeklyMark: getNum(getNested('week4', 'weeklyMark')),
+      assignmentHomework: String(weeklyPerformance.week4.assignmentHomework),
+      activityEngagement: String(weeklyPerformance.week4.activityEngagement),
+      weeklyMark: weeklyPerformance.week4.assignmentHomework + weeklyPerformance.week4.activityEngagement,
     },
     internalMark,
     theoryMark,
@@ -280,10 +325,60 @@ exports.getEdit = async (req, res, next) => {
 
     const courses = await Course.find().sort({ title: 1 });
 
+    // Prepare migration-safe weekly performance numbers (0-5)
+    const wp = student.weeklyPerformance || {};
+    const parseWeeklyVal = (val, legacy) => {
+      if (typeof val === 'number' && !isNaN(val)) return Math.min(5, Math.max(0, val));
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        const n = parseFloat(val);
+        if (!isNaN(n)) return Math.min(5, Math.max(0, n));
+      }
+      if (typeof legacy === 'number' && !isNaN(legacy)) return Math.min(5, Math.max(0, legacy));
+      if (legacy && typeof legacy === 'string') {
+        const match = legacy.match(/(\d+(\.\d+)?)/);
+        if (match) {
+          const n = parseFloat(match[1]);
+          if (!isNaN(n)) return Math.min(5, Math.max(0, n));
+        }
+      }
+      return 0;
+    };
+
+    const weeklyPerformance = {
+      week1: {
+        assignmentHomework: parseWeeklyVal(wp.week1?.assignmentHomework, student.week1?.assignmentHomework),
+        activityEngagement: parseWeeklyVal(wp.week1?.activityEngagement, student.week1?.activityEngagement),
+      },
+      week2: {
+        assignmentHomework: parseWeeklyVal(wp.week2?.assignmentHomework, student.week2?.assignmentHomework),
+        activityEngagement: parseWeeklyVal(wp.week2?.activityEngagement, student.week2?.activityEngagement),
+      },
+      week3: {
+        assignmentHomework: parseWeeklyVal(wp.week3?.assignmentHomework, student.week3?.assignmentHomework),
+        activityEngagement: parseWeeklyVal(wp.week3?.activityEngagement, student.week3?.activityEngagement),
+      },
+      week4: {
+        assignmentHomework: parseWeeklyVal(wp.week4?.assignmentHomework, student.week4?.assignmentHomework),
+        activityEngagement: parseWeeklyVal(wp.week4?.activityEngagement, student.week4?.activityEngagement),
+      },
+    };
+
+    const week1Total = weeklyPerformance.week1.assignmentHomework + weeklyPerformance.week1.activityEngagement;
+    const week2Total = weeklyPerformance.week2.assignmentHomework + weeklyPerformance.week2.activityEngagement;
+    const week3Total = weeklyPerformance.week3.assignmentHomework + weeklyPerformance.week3.activityEngagement;
+    const week4Total = weeklyPerformance.week4.assignmentHomework + weeklyPerformance.week4.activityEngagement;
+    const weeklyPerformanceTotal = week1Total + week2Total + week3Total + week4Total;
+
     res.render('admin/certificates/edit', {
       title: `Edit ${student.fullName || student.name} — Admin`,
       layout: 'layouts/admin',
       student,
+      weeklyPerformance,
+      week1Total,
+      week2Total,
+      week3Total,
+      week4Total,
+      weeklyPerformanceTotal,
       courses,
       currentPage: 'certificates',
     });
@@ -345,13 +440,33 @@ exports.postUpdate = async (req, res, next) => {
       }
     }
 
-    // Validation for marks
+    // Validation for weekly performance marks (0 - 5 each)
+    const wpPayload = req.body.weeklyPerformance || {};
+    for (let w = 1; w <= 4; w++) {
+      const weekKey = `week${w}`;
+      const weekObj = wpPayload[weekKey] || req.body[weekKey] || {};
+      const ahRaw = weekObj.assignmentHomework !== undefined ? weekObj.assignmentHomework : req.body[`${weekKey}_assignmentHomework`];
+      const aeRaw = weekObj.activityEngagement !== undefined ? weekObj.activityEngagement : req.body[`${weekKey}_activityEngagement`];
+
+      if (ahRaw !== undefined && ahRaw !== null && String(ahRaw).trim() !== '') {
+        const ah = Number(ahRaw);
+        if (isNaN(ah) || ah < 0 || ah > 5) {
+          req.flash('error', `Week ${w} Assignment / Homework must be a number between 0 and 5.`);
+          return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+        }
+      }
+      if (aeRaw !== undefined && aeRaw !== null && String(aeRaw).trim() !== '') {
+        const ae = Number(aeRaw);
+        if (isNaN(ae) || ae < 0 || ae > 5) {
+          req.flash('error', `Week ${w} Activity / Engagement must be a number between 0 and 5.`);
+          return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+        }
+      }
+    }
+
+    // Validation for final assessment and overall marks
     const markValidations = [
       { label: 'Marks', val: marks },
-      { label: 'Week 1 Mark', val: req.body.week1?.weeklyMark || req.body.week1_weeklyMark },
-      { label: 'Week 2 Mark', val: req.body.week2?.weeklyMark || req.body.week2_weeklyMark },
-      { label: 'Week 3 Mark', val: req.body.week3?.weeklyMark || req.body.week3_weeklyMark },
-      { label: 'Week 4 Mark', val: req.body.week4?.weeklyMark || req.body.week4_weeklyMark },
       { label: 'Internal Mark', val: req.body.internalMark },
       { label: 'Theory Mark', val: req.body.theoryMark },
       { label: 'Practical Mark', val: req.body.practicalMark },
@@ -385,7 +500,7 @@ exports.postUpdate = async (req, res, next) => {
     student.progressCard = progressCard ? progressCard.trim() : '';
     student.studentId = newStudentId || student.studentId;
     student.verificationStatus = verificationStatus === 'true' || verificationStatus === true;
-    
+
     // Assign progress fields
     Object.assign(student, progressFields);
 

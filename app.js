@@ -17,8 +17,12 @@ const cookieParser = require('cookie-parser');
 const flash = require('connect-flash');
 const { formatDate, timeAgo, truncate } = require('./utils/helpers');
 const { notFound, errorHandler } = require('./middleware/error.middleware');
+const compression = require('compression');
 
 const app = express();
+app.use(compression());
+
+
 
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet({

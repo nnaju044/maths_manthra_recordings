@@ -176,9 +176,56 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       console.warn('QR Code generation error:', qrErr.message);
     }
 
+    // Calculate weekly performance numbers (0-5 scale, max total 40) with migration safety
+    const wp = student.weeklyPerformance || {};
+    const parseWeeklyScore = (val, legacy) => {
+      if (typeof val === 'number' && !isNaN(val)) return Math.min(5, Math.max(0, val));
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        const n = parseFloat(val);
+        if (!isNaN(n)) return Math.min(5, Math.max(0, n));
+      }
+      if (typeof legacy === 'number' && !isNaN(legacy)) return Math.min(5, Math.max(0, legacy));
+      if (legacy && typeof legacy === 'string') {
+        const match = legacy.match(/(\d+(\.\d+)?)/);
+        if (match) {
+          const n = parseFloat(match[1]);
+          if (!isNaN(n)) return Math.min(5, Math.max(0, n));
+        }
+      }
+      return 0;
+    };
+
+    const verifiedWeeklyPerformance = {
+      week1: {
+        assignmentHomework: parseWeeklyScore(wp.week1?.assignmentHomework, student.week1?.assignmentHomework),
+        activityEngagement: parseWeeklyScore(wp.week1?.activityEngagement, student.week1?.activityEngagement),
+      },
+      week2: {
+        assignmentHomework: parseWeeklyScore(wp.week2?.assignmentHomework, student.week2?.assignmentHomework),
+        activityEngagement: parseWeeklyScore(wp.week2?.activityEngagement, student.week2?.activityEngagement),
+      },
+      week3: {
+        assignmentHomework: parseWeeklyScore(wp.week3?.assignmentHomework, student.week3?.assignmentHomework),
+        activityEngagement: parseWeeklyScore(wp.week3?.activityEngagement, student.week3?.activityEngagement),
+      },
+      week4: {
+        assignmentHomework: parseWeeklyScore(wp.week4?.assignmentHomework, student.week4?.assignmentHomework),
+        activityEngagement: parseWeeklyScore(wp.week4?.activityEngagement, student.week4?.activityEngagement),
+      },
+    };
+
+    const week1Total = verifiedWeeklyPerformance.week1.assignmentHomework + verifiedWeeklyPerformance.week1.activityEngagement;
+    const week2Total = verifiedWeeklyPerformance.week2.assignmentHomework + verifiedWeeklyPerformance.week2.activityEngagement;
+    const week3Total = verifiedWeeklyPerformance.week3.assignmentHomework + verifiedWeeklyPerformance.week3.activityEngagement;
+    const week4Total = verifiedWeeklyPerformance.week4.assignmentHomework + verifiedWeeklyPerformance.week4.activityEngagement;
+    const weeklyPerformanceTotal = week1Total + week2Total + week3Total + week4Total;
+
     // Check if progress report data exists
-    const hasWeeklyPerformance = [student.week1, student.week2, student.week3, student.week4].some(
-      (w) => w && (w.classPerformance || w.assignmentHomework || w.activityEngagement || (typeof w.weeklyMark === 'number' && w.weeklyMark > 0))
+    const hasWeeklyPerformance = Boolean(
+      weeklyPerformanceTotal > 0 ||
+      [student.week1, student.week2, student.week3, student.week4].some(
+        (w) => w && (w.assignmentHomework || w.activityEngagement || (typeof w.weeklyMark === 'number' && w.weeklyMark > 0))
+      )
     );
     const hasFinalAssessment = Boolean(
       (typeof student.internalMark === 'number' && student.internalMark > 0) ||
@@ -220,14 +267,24 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       certificateStatus: student.verificationStatus !== false ? 'Active & Verified' : 'Pending Verification',
       courseTitle: (student.courseId && student.courseId.title) ? student.courseId.title : 'Maths Manthra Academy Program',
       // Progress Report Fields
+      weeklyPerformance: verifiedWeeklyPerformance,
+      week1Total,
+      week2Total,
+      week3Total,
+      week4Total,
+      weeklyPerformanceTotal,
       week1: student.week1 || {},
       week2: student.week2 || {},
       week3: student.week3 || {},
       week4: student.week4 || {},
-      internalMark: typeof student.internalMark === 'number' ? student.internalMark : 0,
+      internalMark: (typeof student.internalMark === 'number' && student.internalMark > 0)
+        ? student.internalMark
+        : (weeklyPerformanceTotal || 0),
       theoryMark: typeof student.theoryMark === 'number' ? student.theoryMark : 0,
       practicalMark: typeof student.practicalMark === 'number' ? student.practicalMark : 0,
-      totalMark: typeof student.totalMark === 'number' ? student.totalMark : (student.marks || progressPercentage),
+      totalMark: (typeof student.totalMark === 'number' && student.totalMark > 0)
+        ? student.totalMark
+        : (((typeof student.internalMark === 'number' && student.internalMark > 0 ? student.internalMark : weeklyPerformanceTotal) + (typeof student.theoryMark === 'number' ? student.theoryMark : 0) + (typeof student.practicalMark === 'number' ? student.practicalMark : 0)) || student.marks || progressPercentage),
       academicPerformance: student.academicPerformance || '',
       assignmentCompletion: student.assignmentCompletion || '',
       practicalSkills: student.practicalSkills || '',

@@ -70,7 +70,27 @@ const certificateStudentSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    // --- WEEKLY PERFORMANCE ---
+    // --- WEEKLY PERFORMANCE (Academic 0-5 system, Max Total: 40) ---
+    weeklyPerformance: {
+      week1: {
+        assignmentHomework: { type: Number, default: 0, min: 0, max: 5 },
+        activityEngagement: { type: Number, default: 0, min: 0, max: 5 },
+      },
+      week2: {
+        assignmentHomework: { type: Number, default: 0, min: 0, max: 5 },
+        activityEngagement: { type: Number, default: 0, min: 0, max: 5 },
+      },
+      week3: {
+        assignmentHomework: { type: Number, default: 0, min: 0, max: 5 },
+        activityEngagement: { type: Number, default: 0, min: 0, max: 5 },
+      },
+      week4: {
+        assignmentHomework: { type: Number, default: 0, min: 0, max: 5 },
+        activityEngagement: { type: Number, default: 0, min: 0, max: 5 },
+      },
+    },
+
+    // Legacy fields kept for backward compatibility:
     week1: {
       classPerformance: { type: String, default: '', trim: true },
       assignmentHomework: { type: String, default: '', trim: true },
@@ -108,8 +128,61 @@ const certificateStudentSchema = new mongoose.Schema(
     practicalSkills: { type: String, default: '', trim: true },
     overallProgress: { type: String, default: '', trim: true },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtuals for weekly performance calculation (0-10 per week, 0-40 total)
+certificateStudentSchema.virtual('week1Total').get(function () {
+  const wp = this.weeklyPerformance?.week1;
+  const ah = typeof wp?.assignmentHomework === 'number' ? wp.assignmentHomework : 0;
+  const ae = typeof wp?.activityEngagement === 'number' ? wp.activityEngagement : 0;
+  if (ah > 0 || ae > 0) return Math.min(10, Math.max(0, ah + ae));
+
+  const legAh = parseFloat(this.week1?.assignmentHomework) || 0;
+  const legAe = parseFloat(this.week1?.activityEngagement) || 0;
+  return Math.min(10, Math.max(0, legAh + legAe));
+});
+
+certificateStudentSchema.virtual('week2Total').get(function () {
+  const wp = this.weeklyPerformance?.week2;
+  const ah = typeof wp?.assignmentHomework === 'number' ? wp.assignmentHomework : 0;
+  const ae = typeof wp?.activityEngagement === 'number' ? wp.activityEngagement : 0;
+  if (ah > 0 || ae > 0) return Math.min(10, Math.max(0, ah + ae));
+
+  const legAh = parseFloat(this.week2?.assignmentHomework) || 0;
+  const legAe = parseFloat(this.week2?.activityEngagement) || 0;
+  return Math.min(10, Math.max(0, legAh + legAe));
+});
+
+certificateStudentSchema.virtual('week3Total').get(function () {
+  const wp = this.weeklyPerformance?.week3;
+  const ah = typeof wp?.assignmentHomework === 'number' ? wp.assignmentHomework : 0;
+  const ae = typeof wp?.activityEngagement === 'number' ? wp.activityEngagement : 0;
+  if (ah > 0 || ae > 0) return Math.min(10, Math.max(0, ah + ae));
+
+  const legAh = parseFloat(this.week3?.assignmentHomework) || 0;
+  const legAe = parseFloat(this.week3?.activityEngagement) || 0;
+  return Math.min(10, Math.max(0, legAh + legAe));
+});
+
+certificateStudentSchema.virtual('week4Total').get(function () {
+  const wp = this.weeklyPerformance?.week4;
+  const ah = typeof wp?.assignmentHomework === 'number' ? wp.assignmentHomework : 0;
+  const ae = typeof wp?.activityEngagement === 'number' ? wp.activityEngagement : 0;
+  if (ah > 0 || ae > 0) return Math.min(10, Math.max(0, ah + ae));
+
+  const legAh = parseFloat(this.week4?.assignmentHomework) || 0;
+  const legAe = parseFloat(this.week4?.activityEngagement) || 0;
+  return Math.min(10, Math.max(0, legAh + legAe));
+});
+
+certificateStudentSchema.virtual('weeklyPerformanceTotal').get(function () {
+  return Math.min(40, this.week1Total + this.week2Total + this.week3Total + this.week4Total);
+});
 
 // Synchronize fullName and name
 certificateStudentSchema.pre('save', function (next) {

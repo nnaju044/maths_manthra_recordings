@@ -70,6 +70,7 @@ async function generateUniqueCertificateNumber() {
   }
 
   return certNumber;
+
 }
 
 /**
