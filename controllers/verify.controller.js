@@ -99,15 +99,6 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       }
     }
 
-    // Determine batch name
-    let batchName = 'Academic Batch 2026';
-    if (student.courseId && student.courseId.slug) {
-      batchName = student.courseId.slug
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-    } else if (student.qualification) {
-      batchName = `${student.qualification} Batch`;
-    }
 
     // Format profile image URL if hosted on Google Drive
     let formattedProfileImage = '';
@@ -250,7 +241,6 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       certificateNumber: student.certificateNumber || safeCertNumber,
       issueDate: formattedIssueDate,
       enrollmentDate: formattedEnrollmentDate,
-      batchName,
       progressPercentage,
       grade,
       weeklyAverage,

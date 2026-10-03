@@ -7,7 +7,7 @@ const crypto = require('crypto');
 
 /**
  * Generate a URL-friendly slug from a title with a random suffix.
- * Example: "Night Batch" → "night-batch-a8k2x"
+ * Example: "Class 10 Maths" → "class-10-maths-a8k2x"
  */
 const generateSlug = (title) => {
   const base = title

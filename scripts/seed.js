@@ -37,14 +37,14 @@ const seed = async () => {
   const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
 
   const course1 = await Course.create({
-    title: 'Class 10 Mathematics - Night Batch',
-    description: 'Complete NCERT-based mathematics course for Class 10 students. Night batch covering all chapters with detailed explanations.',
+    title: 'Class 10 Mathematics - Night Session',
+    description: 'Complete NCERT-based mathematics course for Class 10 students. Night session covering all chapters with detailed explanations.',
     passwordHash: await bcrypt.hash('4587', rounds),
     isActive: true,
   });
 
   const course2 = await Course.create({
-    title: 'Class 12 Mathematics - Day Batch',
+    title: 'Class 12 Mathematics - Day Session',
     description: 'Advanced mathematics for Class 12 covering Calculus, Vectors, 3D Geometry, and more. Board exam focused.',
     passwordHash: await bcrypt.hash('1234', rounds),
     isActive: true,
@@ -112,8 +112,8 @@ const seed = async () => {
   console.log('  Password : Admin@123');
   console.log('─────────────────────────────────────────');
   console.log('  Sample Course Passwords:');
-  console.log('  Night Batch : 4587');
-  console.log('  Day Batch   : 1234');
+  console.log('  Night Session : 4587');
+  console.log('  Day Session   : 1234');
   console.log('  Abacus      : 9999 (inactive)');
   console.log('─────────────────────────────────────────\n');
 
