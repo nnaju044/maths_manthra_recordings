@@ -132,7 +132,7 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       totalScore = student.marks;
     } else {
       const subTotal = (student.internalMark || 0) + (student.theoryMark || 0) + (student.practicalMark || 0);
-      totalScore = subTotal > 0 ? subTotal : (student.marks || 90);
+      totalScore = subTotal > 0 ? subTotal : (student.totalMark || student.marks || 90);
     }
     const progressPercentage = Math.min(100, Math.max(0, Math.round(totalScore)));
 
@@ -284,7 +284,7 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       practicalMark: typeof student.practicalMark === 'number' ? student.practicalMark : 0,
       totalMark: (typeof student.totalMark === 'number' && student.totalMark > 0)
         ? student.totalMark
-        : (((typeof student.internalMark === 'number' && student.internalMark > 0 ? student.internalMark : weeklyPerformanceTotal) + (typeof student.theoryMark === 'number' ? student.theoryMark : 0) + (typeof student.practicalMark === 'number' ? student.practicalMark : 0)) || student.marks || progressPercentage),
+        : (((typeof student.internalMark === 'number' && student.internalMark > 0 ? student.internalMark : weeklyPerformanceTotal) + (typeof student.theoryMark === 'number' ? student.theoryMark : 0) + (typeof student.practicalMark === 'number' ? student.practicalMark : 0)) || student.totalMark || student.marks || progressPercentage),
       academicPerformance: student.academicPerformance || '',
       assignmentCompletion: student.assignmentCompletion || '',
       practicalSkills: student.practicalSkills || '',

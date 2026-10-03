@@ -93,13 +93,8 @@
       </div>
     </div>
 
-    <!-- Row 5: Marks + Verification Status -->
+    <!-- Row 5: Verification Status -->
     <div class="row g-3 mb-3">
-      <div class="col-12 col-md-6">
-        <label for="marks" class="form-label fw-semibold">Marks</label>
-        <input type="number" id="marks" name="marks" class="form-control mark-input" min="0"
-          value="<%= student.marks || 0 %>" />
-      </div>
       <div class="col-12 col-md-6">
         <label for="verificationStatus" class="form-label fw-semibold">Verification Status</label>
         <select name="verificationStatus" id="verificationStatus" class="form-select">
@@ -384,7 +379,7 @@
     const practicalInput = document.getElementById('practicalMark');
     const totalInput = document.getElementById('totalMark');
     const calcBtn = document.getElementById('calcTotalBtn');
-    const mainMarksInput = document.getElementById('marks');
+
 
     function calculateAssessmentTotal() {
       if (!internalInput || !theoryInput || !practicalInput || !totalInput) return;
@@ -396,10 +391,7 @@
       const total = Math.round((Math.max(0, internal + theory + practical)) * 10) / 10;
       totalInput.value = total;
 
-      // Also update the main marks field if it exists
-      if (mainMarksInput) {
-        mainMarksInput.value = total;
-      }
+
     }
 
     // ── Weekly Performance Evaluation Auto-Calculator ──

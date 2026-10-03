@@ -60,19 +60,53 @@ async function generateUniqueCertificateNumber() {
 }
 
 /**
- * Generate a unique student ID
- * Format: MMS-YYYY-RAND6 (e.g. MMS-2026-482917)
+ * Generate a unique sequential student ID
+ * Format: MM-YYYY-XXXX (e.g. MM-2026-0028, MM-2026-0029, MM-2026-0030)
  */
 async function generateUniqueStudentId() {
   const year = new Date().getFullYear();
+
+  // For 2026, default base is 27 so the next new student starts at 0028.
+  // For other years, default base is 0 so the first student starts at 0001.
+  const defaultBase = year === 2026 ? 27 : 0;
+
+  try {
+    await Counter.updateOne(
+      { year },
+      { $setOnInsert: { year, lastNumber: 20000, lastStudentNumber: defaultBase } },
+      { upsert: true }
+    );
+  } catch (err) {
+    if (err.code !== 11000) throw err;
+  }
+
+  // Ensure lastStudentNumber is initialized on existing counter records
+  const existingCounter = await Counter.findOne({ year }).lean();
+  if (existingCounter && (existingCounter.lastStudentNumber === undefined || existingCounter.lastStudentNumber === null)) {
+    const regex = new RegExp(`^MM-${year}-(\\d+)$`, 'i');
+    const existingStudents = await CertificateStudent.find({ studentId: { $regex: regex } }, 'studentId').lean();
+    let maxFound = defaultBase;
+    for (const s of existingStudents) {
+      const match = s.studentId && s.studentId.match(regex);
+      if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        if (num > maxFound) maxFound = num;
+      }
+    }
+    await Counter.updateOne({ year }, { $set: { lastStudentNumber: maxFound } });
+  }
+
   let sid = '';
   let exists = true;
-  let attempts = 0;
+  while (exists) {
+    const counter = await Counter.findOneAndUpdate(
+      { year },
+      { $inc: { lastStudentNumber: 1 } },
+      { new: true, upsert: true }
+    );
 
-  while (exists && attempts < 10) {
-    attempts++;
-    const randomSeq = Math.floor(100000 + Math.random() * 900000);
-    sid = `MMS-${year}-${randomSeq}`;
+    const seqPadded = String(counter.lastStudentNumber).padStart(4, '0');
+    sid = `MM-${year}-${seqPadded}`;
     exists = await CertificateStudent.exists({ studentId: sid });
   }
 
@@ -237,7 +271,7 @@ exports.postCreate = async (req, res, next) => {
   try {
     const {
       fullName, email, phone, qualification, profileImage,
-      courseId, marks, progressCard, studentId, verificationStatus,
+      courseId, progressCard, studentId, verificationStatus,
     } = req.body;
 
     // Validate required fields
@@ -300,7 +334,8 @@ exports.postCreate = async (req, res, next) => {
       certificateNumber,
       issuedDate: new Date(),
       isActive: true,
-      marks: marks ? parseInt(marks, 10) || 0 : 0,
+      marks: progressFields.totalMark || 0,
+      totalMark: progressFields.totalMark || 0,
       progressCard: progressCard ? progressCard.trim() : '',
       studentId: finalStudentId,
       verificationStatus: verificationStatus === 'true' || verificationStatus === true,
@@ -398,7 +433,7 @@ exports.postUpdate = async (req, res, next) => {
 
     const {
       fullName, email, phone, qualification, profileImage,
-      courseId, marks, progressCard, studentId, verificationStatus,
+      courseId, progressCard, studentId, verificationStatus,
       certificateNumber,
     } = req.body;
 
@@ -466,7 +501,7 @@ exports.postUpdate = async (req, res, next) => {
 
     // Validation for final assessment and overall marks
     const markValidations = [
-      { label: 'Marks', val: marks },
+      { label: 'Total Mark', val: req.body.totalMark },
       { label: 'Internal Mark', val: req.body.internalMark },
       { label: 'Theory Mark', val: req.body.theoryMark },
       { label: 'Practical Mark', val: req.body.practicalMark },
@@ -496,7 +531,7 @@ exports.postUpdate = async (req, res, next) => {
     if (certificateNumber && certificateNumber.trim()) {
       student.certificateNumber = certificateNumber.trim();
     }
-    student.marks = marks ? parseInt(marks, 10) || 0 : 0;
+    student.marks = progressFields.totalMark || 0;
     student.progressCard = progressCard ? progressCard.trim() : '';
     student.studentId = newStudentId || student.studentId;
     student.verificationStatus = verificationStatus === 'true' || verificationStatus === true;
@@ -636,6 +671,7 @@ exports.postUpload = async (req, res, next) => {
         issuedDate: new Date(),
         isActive: true,
         marks: marksStr ? parseInt(marksStr, 10) || 0 : 0,
+        totalMark: marksStr ? parseInt(marksStr, 10) || 0 : 0,
         progressCard: progressCardStr || '',
         studentId: finalStudentId,
         verificationStatus: true,

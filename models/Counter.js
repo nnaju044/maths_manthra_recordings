@@ -17,6 +17,10 @@ const counterSchema = new mongoose.Schema(
       required: true,
       default: 20000,
     },
+    lastStudentNumber: {
+      type: Number,
+      default: 27,
+    },
   },
   {
     timestamps: true,

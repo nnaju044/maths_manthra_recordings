@@ -699,7 +699,7 @@
             <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-center">
               <span class="text-xs font-bold text-emerald-800 block mb-1">Total Mark</span>
               <span class="font-heading font-extrabold text-xl text-emerald-800">
-                <%= student.totalMark || student.marks || 0 %>
+                <%= student.totalMark || 0 %>
               </span>
               <span class="text-[11px] text-emerald-600 font-bold block mt-0.5">out of 100</span>
             </div>
@@ -955,7 +955,7 @@
                 <label for="certInput" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                   Student ID or Certificate Number
                 </label>
-                <input type="text" id="certInput" name="cert" placeholder="e.g. MM-2026-081 or MMC-2026-A09434-9710"
+                <input type="text" id="certInput" name="cert" placeholder="e.g. MM-2026-0028 or MMC-2026-20028"
                   class="w-full bg-slate-50 border border-slate-200 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none transition-all"
                   required autocomplete="off" autofocus />
               </div>
@@ -991,7 +991,7 @@
               <form action="/verify" method="GET" class="space-y-4 mb-5" onsubmit="handleSearchSubmit(event)">
                 <input type="text" id="certInput" name="cert"
                   value="<%= certificateNumber && certificateNumber !== 'Unknown' ? certificateNumber : '' %>"
-                  placeholder="e.g. MM-2026-081"
+                  placeholder="e.g. MM-2026-0028"
                   class="w-full bg-slate-50 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none"
                   required autocomplete="off" />
 

@@ -301,18 +301,17 @@ exports.verifyCertificate = async (req, res, next) => {
 
 /**
  * GET /certificate/download/:certificateId
- * Generate and download official PDF certificate securely using Puppeteer.
- * Fetches verified certificate, student, and course data directly from MongoDB.
+ * Generate and download official PDF certificate using Puppeteer.
  * REQUIRES OTP session — user must have verified their email via OTP first.
+ *
+ * Returns the PDF with proper headers so all browsers (mobile + desktop)
+ * handle the download natively — no client-side JS required.
  */
 exports.downloadCertificate = async (req, res, next) => {
   let browser = null;
   try {
     const { certificateId } = req.params;
     const certParam = (certificateId || '').trim();
-
-    console.log('DOWNLOAD REQUEST RECEIVED');
-    console.log('CERTIFICATE ID:', certificateId);
 
     if (!certParam) {
       req.flash('error', 'Certificate ID is required.');
@@ -338,9 +337,6 @@ exports.downloadCertificate = async (req, res, next) => {
       $or: query,
       isActive: true,
     }).populate('courseId');
-
-    const certificate = student;
-    console.log('CERTIFICATE FOUND:', certificate ? true : false);
 
     if (!student) {
       return res.status(404).render('404', {
@@ -405,72 +401,67 @@ exports.downloadCertificate = async (req, res, next) => {
       completionDate,
     });
 
-    console.log('GENERATING PDF...');
-
-    // Generate PDF using Puppeteer
-    const browser = await puppeteer.launch({
-      executablePath: '/usr/bin/chromium-browser',
+    // ── Launch Puppeteer ──
+    // Auto-detect Chromium: use system binary in production (Docker Alpine),
+    // fall back to Puppeteer's bundled Chromium in development.
+    const launchOptions = {
       headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage'
-      ]
-    });
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+      timeout: 30000,
+    };
+
+    // Check for system Chromium (production Docker container)
+    const systemChromium = '/usr/bin/chromium-browser';
+    if (fs.existsSync(systemChromium)) {
+      launchOptions.executablePath = systemChromium;
+    }
+    // Otherwise Puppeteer uses its own bundled Chromium (dev machines)
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     await page.setContent(html, {
       waitUntil: 'networkidle0',
+      timeout: 15000,
     });
 
-    const rawPdf = await page.pdf({
+    const pdfBuffer = Buffer.from(await page.pdf({
       format: 'A4',
       landscape: true,
       printBackground: true,
       preferCSSPageSize: true,
-      margin: {
-        top: '0',
-        right: '0',
-        bottom: '0',
-        left: '0',
-      },
-    });
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+    }));
 
-    // Convert Puppeteer Uint8Array to a Node.js Buffer
-    // This prevents Express res.send() from serializing Uint8Array as a JSON object
-    const pdfBuffer = Buffer.from(rawPdf);
+    // Close browser immediately after PDF generation
+    await browser.close().catch(() => {});
+    browser = null;
 
-    console.log('PDF BUFFER EXISTS:', !!pdfBuffer);
-    console.log('PDF BUFFER SIZE:', pdfBuffer?.length);
+    // ── Send PDF with maximum browser compatibility headers ──
+    const filename = `MathsManthra-Certificate-${student.certificateNumber}.pdf`;
 
-    if (pdfBuffer) {
-      console.log('FIRST 20 BYTES:', pdfBuffer.slice(0, 20).toString());
-    }
-
-    // Save temporary copy to disk for manual inspection and verification
-    try {
-      fs.writeFileSync('debug-certificate.pdf', pdfBuffer);
-    } catch (fsErr) {
-      console.warn('Could not save debug-certificate.pdf:', fsErr.message);
-    }
-
-    const filename = `MathsManthra-Certificate-${student.certificateNumber}`;
-
-    console.log('SETTING PDF HEADERS');
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}.pdf"`,
+      'Content-Disposition': `attachment; filename="${filename}"`,
       'Content-Length': pdfBuffer.length,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'X-Content-Type-Options': 'nosniff',
     });
 
-    console.log('SENDING PDF RESPONSE');
-    return res.end(pdfBuffer);
+    return res.send(pdfBuffer);
   } catch (err) {
-    console.error('Error generating certificate PDF:', err);
-    return next(err);
+    console.error('[PDF Download] Error generating certificate:', err.message);
+    req.flash('error', 'Failed to generate certificate PDF. Please try again.');
+    return res.redirect('/certificate');
   } finally {
     if (browser) {
-      await browser.close().catch(() => { });
+      await browser.close().catch(() => {});
     }
   }
 };
