@@ -1107,19 +1107,19 @@ body.course-page * {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: var(--primary);
+  border: 1px solid var(--primary-light);
   color: white;
   text-decoration: none;
   transition: all var(--transition);
 }
 
 .btn-note-view:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--primary-dark);
   color: white;
 }
 

@@ -100,26 +100,6 @@
         <p class="player-description"><%= video.description %></p>
       <% } %>
 
-      <!-- Course Certificate Section -->
-      <section class="app-certificate-card mb-4" aria-label="Course Certificate">
-        <div class="certificate-card-inner">
-          <div class="certificate-card-content">
-            <div class="certificate-badge">
-              <i class="bi bi-patch-check-fill text-warning"></i>
-              <span>Official Certification</span>
-            </div>
-            <h4 class="certificate-card-title mb-1">Get Your Course Certificate</h4>
-            <p class="certificate-card-subtext mb-0">
-              Finished studying all lessons? Verify your completion and download your certificate.
-            </p>
-          </div>
-          <div class="certificate-card-action">
-            <a href="/certificate?course=<%= course.slug %>" class="btn-get-certificate" id="btnGetPlayerCertificate">
-              🎓 Get Certificate
-            </a>
-          </div>
-        </div>
-      </section>
 
       <!-- PDF Notes Section -->
       <section id="notesSection" class="app-notes-section mb-4">
@@ -139,10 +119,6 @@
               <a href="<%= video.pdfUrl %>" target="_blank" rel="noopener noreferrer"
                  class="btn-note-view">
                 <i class="bi bi-eye-fill"></i> View Notes
-              </a>
-              <a href="<%= getDriveDownloadUrl(video.pdfUrl) %>" target="_blank" rel="noopener noreferrer"
-                 class="btn-note-download">
-                <i class="bi bi-cloud-arrow-down-fill"></i> Download Notes
               </a>
             </div>
           </div>
@@ -195,7 +171,8 @@
   <!-- Course Footer -->
   <footer class="course-footer">
     <div class="container">
-      <p>📐 Maths Manthra — Private Recorded Classes</p>
+      <p class="mb-1">📐 Maths Manthra — Private Recorded Classes</p>
+      <p class="mb-0 small" style="opacity: 0.65;">&copy; <%= new Date().getFullYear() %> Maths Manthra. All rights reserved.</p>
     </div>
   </footer>
 
