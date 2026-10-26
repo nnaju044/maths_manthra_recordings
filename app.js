@@ -76,17 +76,27 @@ const cookieSecret = process.env.COOKIE_SECRET || process.env.SESSION_SECRET || 
 app.use(cookieParser(cookieSecret));
 
 // ─── Session (for connect-flash) ──────────────────────────────────────────────
-app.use(session({
+const rawUri = (process.env.MONGO_URI || process.env.MONGODB_URI || process.env.MONGO_URL || '').trim();
+const mongoUri = (rawUri.startsWith('mongodb://') || rawUri.startsWith('mongodb+srv://')) ? rawUri : null;
+
+const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'maths-manthra-session-secret',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24 * 60 * 60 }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     maxAge: parseInt(process.env.SESSION_EXPIRES_IN) || 86400000,
   },
-}));
+};
+
+if (mongoUri) {
+  sessionConfig.store = MongoStore.create({ mongoUrl: mongoUri, ttl: 24 * 60 * 60 });
+} else {
+  console.warn('⚠️  [Session] MONGO_URI / MONGODB_URI is not defined or invalid. Falling back to in-memory session store.');
+}
+
+app.use(session(sessionConfig));
 
 // Debug session logging for certificate verification audit
 app.use('/certificate', (req, res, next) => {

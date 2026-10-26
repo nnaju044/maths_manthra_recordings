@@ -8,12 +8,25 @@ const fs = require('fs');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const ejs = require('ejs');
-const puppeteer = require('puppeteer');
 const QRCode = require('qrcode');
 const CertificateStudent = require('../models/CertificateStudent');
 const Course = require('../models/Course');
 const EmailOTP = require('../models/EmailOTP');
 const { sendOTPEmail } = require('../services/email.service');
+
+let puppeteerInstance = null;
+
+/**
+ * Dynamically import Puppeteer to support ES module packaging across all Node runtimes
+ * (e.g. Vercel Node 18/20) without breaking CommonJS module systems.
+ */
+async function getPuppeteer() {
+  if (!puppeteerInstance) {
+    const puppeteerModule = await import('puppeteer');
+    puppeteerInstance = puppeteerModule.default || puppeteerModule;
+  }
+  return puppeteerInstance;
+}
 
 const OTP_SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
@@ -402,7 +415,10 @@ exports.downloadCertificate = async (req, res, next) => {
     });
 
     // ── Launch Puppeteer ──
+    const puppeteer = await getPuppeteer();
+
     // Auto-detect Chromium: use system binary in production (Docker Alpine),
+    // or @sparticuz/chromium on Vercel/Lambda if available,
     // fall back to Puppeteer's bundled Chromium in development.
     const launchOptions = {
       headless: true,
@@ -415,12 +431,23 @@ exports.downloadCertificate = async (req, res, next) => {
       timeout: 30000,
     };
 
-    // Check for system Chromium (production Docker container)
+    // 1. Check for system Chromium (production Docker container)
     const systemChromium = '/usr/bin/chromium-browser';
     if (fs.existsSync(systemChromium)) {
       launchOptions.executablePath = systemChromium;
+    } else {
+      // 2. Check for @sparticuz/chromium if running in AWS Lambda / Vercel Serverless
+      try {
+        const chromium = require('@sparticuz/chromium');
+        if (chromium && (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)) {
+          launchOptions.executablePath = await chromium.executablePath();
+          launchOptions.args = chromium.args || launchOptions.args;
+          launchOptions.headless = chromium.headless !== undefined ? chromium.headless : true;
+        }
+      } catch (_) {
+        // Fall back to Puppeteer's default bundled Chromium
+      }
     }
-    // Otherwise Puppeteer uses its own bundled Chromium (dev machines)
 
     browser = await puppeteer.launch(launchOptions);
 
