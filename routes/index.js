@@ -64,8 +64,16 @@ router.get('/course/:slug', courseCtrl.showPasswordGate);
 router.post('/course/:slug/verify', coursePasswordLimiter, courseCtrl.verifyPassword);
 
 // Course content (requires valid course cookie)
-router.get('/course/:slug/watch', requireCourseAccess, courseCtrl.showCourseVideos);
-router.get('/course/:slug/watch/:videoId', requireCourseAccess, courseCtrl.showVideoPlayer);
-router.get('/course/:slug/thumbnail/:videoId', requireCourseAccess, courseCtrl.getVideoThumbnail);
+router.route('/course/:slug/watch')
+  .get(requireCourseAccess, courseCtrl.showCourseVideos)
+  .post(requireCourseAccess, courseCtrl.showCourseVideos);
+
+router.route('/course/:slug/watch/:videoId')
+  .get(requireCourseAccess, courseCtrl.showVideoPlayer)
+  .post(requireCourseAccess, courseCtrl.showVideoPlayer);
+
+router.route('/course/:slug/thumbnail/:videoId')
+  .get(requireCourseAccess, courseCtrl.getVideoThumbnail)
+  .post(requireCourseAccess, courseCtrl.getVideoThumbnail);
 
 module.exports = router;

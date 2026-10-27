@@ -16,7 +16,7 @@ const { getDriveDownloadUrl } = require('../utils/helpers');
  */
 exports.showPasswordGate = async (req, res, next) => {
   try {
-    const { slug } = req.params;
+    const slug = (req.params.slug || '').trim().toLowerCase();
     const course = await Course.findOne({ slug, isActive: true });
 
     if (!course) {
@@ -30,7 +30,7 @@ exports.showPasswordGate = async (req, res, next) => {
     // Already authenticated? Redirect to videos
     const cookieName = `mm_course_${slug}`;
     if (req.signedCookies?.[cookieName] === 'granted') {
-      return res.redirect(`/course/${slug}/watch`);
+      return res.redirect(303, `/course/${slug}/watch`);
     }
 
     res.render('course/password', {
@@ -48,7 +48,7 @@ exports.showPasswordGate = async (req, res, next) => {
  */
 exports.verifyPassword = async (req, res, next) => {
   try {
-    const { slug } = req.params;
+    const slug = (req.params.slug || '').trim().toLowerCase();
     const { password } = req.body;
     const course = await Course.findOne({ slug, isActive: true });
 
@@ -81,7 +81,7 @@ exports.verifyPassword = async (req, res, next) => {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
-    res.redirect(`/course/${slug}/watch`);
+    res.redirect(303, `/course/${slug}/watch`);
   } catch (err) { next(err); }
 };
 
@@ -91,7 +91,7 @@ exports.verifyPassword = async (req, res, next) => {
  */
 exports.showCourseVideos = async (req, res, next) => {
   try {
-    const { slug } = req.params;
+    const slug = (req.params.slug || '').trim().toLowerCase();
     const course = await Course.findOne({ slug, isActive: true });
 
     if (!course) {
@@ -119,7 +119,8 @@ exports.showCourseVideos = async (req, res, next) => {
  */
 exports.showVideoPlayer = async (req, res, next) => {
   try {
-    const { slug, videoId } = req.params;
+    const slug = (req.params.slug || '').trim().toLowerCase();
+    const { videoId } = req.params;
     const course = await Course.findOne({ slug, isActive: true });
 
     if (!course) {
@@ -171,7 +172,8 @@ exports.showVideoPlayer = async (req, res, next) => {
  */
 exports.getVideoThumbnail = async (req, res, next) => {
   try {
-    const { slug, videoId } = req.params;
+    const slug = (req.params.slug || '').trim().toLowerCase();
+    const { videoId } = req.params;
     const course = await Course.findOne({ slug, isActive: true });
     if (!course) return res.status(404).end();
 

@@ -83,30 +83,32 @@ app.use((req, res, next) => {
   next();
 });
 
-// Resolve cookie signing secret:
-// 1. COOKIE_SECRET (primary)
-// 2. SESSION_SECRET (secure fallback if configured)
-// 3. In development/test: development secret
-// 4. In production: if missing, warn and generate secure runtime secret to prevent crashes,
-//    while instructing configuration in Vercel Project Settings.
-let cookieSecret = (process.env.COOKIE_SECRET || process.env.SESSION_SECRET || '').trim();
-
-if (!cookieSecret) {
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('⚠️  [Security] COOKIE_SECRET is not configured in environment variables. Please set COOKIE_SECRET under Project Settings → Environment Variables in Vercel.');
-    const crypto = require('crypto');
-    cookieSecret = crypto.randomBytes(32).toString('hex');
-  } else {
-    cookieSecret = 'maths-manthra-dev-cookie-secret';
-  }
+// Resolve cookie signing secrets:
+// 1. COOKIE_SECRET (primary dedicated secret)
+// 2. SESSION_SECRET (secure fallback)
+// 3. 'maths-manthra-cookie-secret' (legacy fallback so existing signed cookies remain valid)
+const cookieSecrets = [];
+if (process.env.COOKIE_SECRET && process.env.COOKIE_SECRET.trim()) {
+  cookieSecrets.push(process.env.COOKIE_SECRET.trim());
+}
+if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim() && !cookieSecrets.includes(process.env.SESSION_SECRET.trim())) {
+  cookieSecrets.push(process.env.SESSION_SECRET.trim());
+}
+if (!cookieSecrets.includes('maths-manthra-cookie-secret')) {
+  cookieSecrets.push('maths-manthra-cookie-secret');
 }
 
-app.use(cookieParser(cookieSecret));
+if (!process.env.COOKIE_SECRET && !process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  [Security] COOKIE_SECRET is not configured in environment variables. Please set COOKIE_SECRET under Project Settings → Environment Variables in Vercel.');
+}
+
+const primarySecret = cookieSecrets[0];
+app.use(cookieParser(cookieSecrets));
 
 // Guarantee req.secret is always populated on the request object for res.cookie({ signed: true })
 app.use((req, res, next) => {
   if (!req.secret) {
-    req.secret = cookieSecret;
+    req.secret = primarySecret;
   }
   next();
 });

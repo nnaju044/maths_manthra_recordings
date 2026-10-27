@@ -46,7 +46,7 @@ const requireAuth = async (req, res, next) => {
  * Cookie value: "granted" (set after correct password verification)
  */
 const requireCourseAccess = (req, res, next) => {
-  const { slug } = req.params;
+  const slug = (req.params.slug || '').trim().toLowerCase();
   const cookieName = `mm_course_${slug}`;
   const cookieValue = req.signedCookies?.[cookieName];
 
@@ -55,7 +55,7 @@ const requireCourseAccess = (req, res, next) => {
   }
 
   // Not authenticated for this course — redirect to password gate
-  return res.redirect(`/course/${slug}`);
+  return res.redirect(303, `/course/${slug}`);
 };
 
 module.exports = { requireAuth, requireCourseAccess };
