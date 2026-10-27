@@ -12,5 +12,10 @@ module.exports = async (req, res) => {
   } catch (err) {
     console.error('Failed to connect to MongoDB in serverless handler:', err.message);
   }
+  // Vercel serverless helper (@vercel/node) attaches pre-parsed req.cookies
+  // which prevents Express cookie-parser from initializing req.secret and parsing signed cookies.
+  if (req.cookies && !req.secret) {
+    delete req.cookies;
+  }
   return app(req, res);
 };

@@ -71,9 +71,45 @@ app.use('/auth', rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Cookie parser with signing secret (for course access cookies)
-const cookieSecret = process.env.COOKIE_SECRET || process.env.SESSION_SECRET || 'maths-manthra-cookie-secret';
+// ─── Cookie Parser ────────────────────────────────────────────────────────────
+// In serverless environments (e.g. Vercel via @vercel/node), req.cookies is pre-populated
+// before reaching Express. This causes cookie-parser to exit early without setting req.secret
+// or populating req.signedCookies. Deleting req.cookies beforehand allows cookie-parser to
+// parse cookies from headers, verify signatures, populate req.signedCookies, and set req.secret.
+app.use((req, res, next) => {
+  if (req.cookies && !req.secret) {
+    delete req.cookies;
+  }
+  next();
+});
+
+// Resolve cookie signing secret:
+// 1. COOKIE_SECRET (primary)
+// 2. SESSION_SECRET (secure fallback if configured)
+// 3. In development/test: development secret
+// 4. In production: if missing, warn and generate secure runtime secret to prevent crashes,
+//    while instructing configuration in Vercel Project Settings.
+let cookieSecret = (process.env.COOKIE_SECRET || process.env.SESSION_SECRET || '').trim();
+
+if (!cookieSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️  [Security] COOKIE_SECRET is not configured in environment variables. Please set COOKIE_SECRET under Project Settings → Environment Variables in Vercel.');
+    const crypto = require('crypto');
+    cookieSecret = crypto.randomBytes(32).toString('hex');
+  } else {
+    cookieSecret = 'maths-manthra-dev-cookie-secret';
+  }
+}
+
 app.use(cookieParser(cookieSecret));
+
+// Guarantee req.secret is always populated on the request object for res.cookie({ signed: true })
+app.use((req, res, next) => {
+  if (!req.secret) {
+    req.secret = cookieSecret;
+  }
+  next();
+});
 
 // ─── Session (for connect-flash) ──────────────────────────────────────────────
 const rawUri = (process.env.MONGO_URI || process.env.MONGODB_URI || process.env.MONGO_URL || '').trim();
