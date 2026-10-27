@@ -35,6 +35,7 @@
             <th>Videos</th>
             <th>Certificate Date</th>
             <th>Cert Status</th>
+            <th>Scores Status</th>
             <th>Status</th>
             <th>Shareable Link</th>
             <th>Actions</th>
@@ -78,6 +79,13 @@
                   <span class="text-success" title="Certificate Enabled">🟢 Enabled</span>
                   <% } else { %>
                     <span class="text-danger" title="Certificate Disabled">🔴 Disabled</span>
+                    <% } %>
+              </td>
+              <td class="text-nowrap small text-center">
+                <% if (course.scoresEnabled) { %>
+                  <span class="text-success" title="Check Scores Enabled">🟢 Enabled</span>
+                  <% } else { %>
+                    <span class="text-danger" title="Check Scores Disabled">🔴 Disabled</span>
                     <% } %>
               </td>
               <td>
@@ -151,6 +159,13 @@
                 <% } else { %>
                   <span class="badge bg-danger-subtle text-danger border border-danger-subtle"
                     title="Certificate Disabled">🔴 Cert Disabled</span>
+                  <% } %>
+              <% if (course.scoresEnabled) { %>
+                <span class="badge bg-success-subtle text-success border border-success-subtle"
+                  title="Scores Enabled">🟢 Scores Enabled</span>
+                <% } else { %>
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle"
+                    title="Scores Disabled">🔴 Scores Disabled</span>
                   <% } %>
             </div>
 

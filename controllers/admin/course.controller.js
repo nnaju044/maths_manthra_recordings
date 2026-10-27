@@ -91,6 +91,7 @@ exports.store = async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, rounds);
 
     const isCertEnabled = req.body.certificateEnabled === 'on' || req.body.certificateEnabled === 'true' || req.body.certificateEnabled === true;
+    const isScoresEnabled = req.body.scoresEnabled === 'on' || req.body.scoresEnabled === 'true' || req.body.scoresEnabled === true;
 
     const course = await Course.create({
       title,
@@ -101,10 +102,12 @@ exports.store = async (req, res, next) => {
       isActive: isActive === 'on' || isActive === 'true' || isActive === true,
       certificateCompletionDate: certificateCompletionDate ? new Date(certificateCompletionDate) : null,
       certificateEnabled: isCertEnabled,
+      scoresEnabled: isScoresEnabled,
     });
 
     console.log('certificateEnabled from form (create):', req.body.certificateEnabled);
     console.log('certificateEnabled after create:', course.certificateEnabled);
+    console.log('scoresEnabled after create:', course.scoresEnabled);
 
     req.flash('success', 'Course created successfully.');
     res.redirect('/admin/courses');
@@ -181,10 +184,16 @@ exports.update = async (req, res, next) => {
     course.certificateEnabled = isCertEnabled;
     console.log('certificateEnabled before save:', course.certificateEnabled);
 
+    // Handle scoresEnabled toggle
+    const isScoresEnabled = req.body.scoresEnabled === 'on' || req.body.scoresEnabled === 'true' || req.body.scoresEnabled === true;
+    course.scoresEnabled = isScoresEnabled;
+    console.log('scoresEnabled before save:', course.scoresEnabled);
+
     await course.save();
 
     const verifyCourse = await Course.findById(course._id);
     console.log('certificateEnabled after save:', verifyCourse.certificateEnabled);
+    console.log('scoresEnabled after save:', verifyCourse.scoresEnabled);
 
     req.flash('success', 'Course updated successfully.');
     res.redirect('/admin/courses');

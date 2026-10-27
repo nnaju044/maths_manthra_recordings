@@ -1634,11 +1634,87 @@ body.course-page * {
     align-items: stretch;
     gap: 14px;
   }
-  .btn-get-certificate {
+  .btn-get-certificate,
+  .btn-get-scores {
     width: 100%;
     padding: 12px 18px;
     font-size: 0.95rem;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCORES & PERFORMANCE EVALUATION CARD STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.app-scores-card {
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 50%, #F0FDF4 100%);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  border: 1px solid #A7F3D0;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-scores-card::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.scores-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  color: #065F46;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(167, 243, 208, 0.8);
+}
+
+.scores-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #064E3B;
+  margin-bottom: 4px;
+}
+
+.btn-get-scores {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #FFFFFF !important;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 11px 24px;
+  border-radius: 30px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.btn-get-scores:hover {
+  background: linear-gradient(135deg, #047857 0%, #065F46 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.38);
+  color: #FFFFFF !important;
+}
+
+.btn-get-scores:active {
+  transform: translateY(0);
 }
 
 /* Certificate Preview Display */

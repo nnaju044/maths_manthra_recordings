@@ -62,6 +62,10 @@ const courseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    scoresEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <meta name="description"
+    content="Official Student Score and Academic Performance Portal — Maths Manthra Academy." />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/images/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- Bootstrap 5.3 & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/main.css" />
+
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #065F46;
+      --primary-light: #ECFDF5;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #F8FAFC;
+      color: #1E293B;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scores-hero {
+      background: linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%);
+      color: #FFFFFF;
+      padding: 44px 0 64px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scores-hero::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .scores-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .scores-hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .scores-card-wrap {
+      max-width: 820px;
+      margin: -36px auto 48px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+      flex: 1;
+    }
+
+    .verify-email-card {
+      background: linear-gradient(135deg, #065F46 0%, #047857 100%);
+      border-radius: 16px;
+      padding: 32px 28px;
+      color: #FFFFFF;
+      box-shadow: 0 8px 30px rgba(5, 150, 105, 0.22);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .verify-icon {
+      width: 58px;
+      height: 58px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 1.6rem;
+    }
+
+    .btn-verify {
+      background: #FFFFFF;
+      color: #065F46;
+      font-weight: 700;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 0 8px 8px 0;
+      transition: all 0.2s;
+    }
+
+    .btn-verify:hover {
+      background: #E6F4EA;
+      color: #047857;
+    }
+
+    .score-result-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+      margin-bottom: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .score-result-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      border-color: #A7F3D0;
+    }
+
+    .stat-pill {
+      background: #ECFDF5;
+      color: #065F46;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: 1px solid #A7F3D0;
+    }
+
+    .btn-view-scorecard {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: #FFFFFF !important;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 24px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25);
+    }
+
+    .btn-view-scorecard:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(5, 150, 105, 0.35);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Top App Navigation -->
+  <header class="bg-white border-bottom py-2 sticky-top shadow-sm">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a href="/" class="d-flex align-items-center gap-2 text-dark text-decoration-none">
+        <img src="/images/MM_Logo.jpg" alt="Maths Manthra Logo"
+          style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover;">
+        <span class="fw-bold fs-5">Maths Manthra</span>
+      </a>
+      <div>
+        <% if (selectedCourseSlug) { %>
+          <a href="/course/<%= selectedCourseSlug %>/watch" class="btn btn-sm btn-outline-success rounded-pill">
+            <i class="bi bi-arrow-left"></i> Back to Lessons
+          </a>
+        <% } else { %>
+          <a href="/auth/login" class="btn btn-sm btn-outline-secondary rounded-pill">
+            Admin Login
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Banner -->
+  <section class="scores-hero">
+    <div class="container">
+      <div class="scores-hero-badge">
+        <i class="bi bi-award-fill"></i> Official Academic Evaluation
+      </div>
+      <h1 class="scores-hero-title">Student Scores & Performance Portal</h1>
+      <p class="text-white-50 mb-0 small">
+        <% if (selectedCourse) { %>
+          Showing evaluations for <strong><%= selectedCourse.title %></strong>
+        <% } else { %>
+          Verify your identity to view your marks, evaluation, and verified scorecard.
+        <% } %>
+      </p>
+    </div>
+  </section>
+
+  <!-- Alerts -->
+  <div class="container mt-3" style="max-width: 820px;">
+    <%- include('../partials/alerts') %>
+  </div>
+
+  <!-- Main Card Wrapper -->
+  <main class="scores-card-wrap">
+    <!-- EMAIL OTP VERIFICATION SECTION -->
+    <div class="verify-email-card" id="otpSection">
+      <div class="verify-icon">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <h2 class="h4 fw-bold mb-1">Verify Your Identity</h2>
+      <p class="text-white-50 small mb-3">Enter your registered student email to access your scores & evaluation report.</p>
+
+      <!-- STEP 1: Enter Email -->
+      <div id="otpStep1" style="<%= otpVerified ? 'display:none;' : '' %>">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-success"></i></span>
+          <input type="email" id="otpEmail" class="form-control border-start-0" placeholder="Enter your registered email address"
+            value="<%= verifiedEmail %>" required aria-label="Email address" />
+          <button type="button" class="btn-verify" id="btnSendOTP" onclick="handleSendOTP()">
+            <i class="bi bi-send me-1"></i> Send OTP
+          </button>
+        </div>
+        <div class="form-text mt-2 text-center text-white-50">
+          <i class="bi bi-info-circle me-1"></i> A 6-digit verification code will be sent to your email.
+        </div>
+      </div>
+
+      <!-- STEP 2: Enter OTP -->
+      <div id="otpStep2" style="display:none;">
+        <div class="mb-3 text-center">
+          <span class="badge bg-light text-dark px-3 py-2 rounded-pill">
+            <i class="bi bi-envelope-check me-1"></i> OTP sent to <strong id="otpSentEmail"></strong>
+          </span>
+        </div>
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-key text-warning"></i></span>
+          <input type="text" id="otpCode" class="form-control border-start-0 text-center fw-bold"
+            placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}"
+            style="letter-spacing:8px; font-size:1.4rem;" autocomplete="one-time-code" aria-label="OTP Code" />
+          <button type="button" class="btn-verify" id="btnVerifyOTP" onclick="handleVerifyOTP()">
+            <i class="bi bi-shield-check me-1"></i> Verify
+          </button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none"
+            onclick="handleBackToEmail()">
+            <i class="bi bi-arrow-left me-1"></i> Change Email
+          </button>
+          <div>
+            <span id="otpTimer" class="text-white-50 small me-2"></span>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill" id="btnResendOTP"
+              onclick="handleResendOTP()" disabled>
+              <i class="bi bi-arrow-clockwise me-1"></i> Resend OTP
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Verified -->
+      <div id="otpStep3" style="<%= otpVerified ? '' : 'display:none;' %>">
+        <div class="text-center">
+          <div class="mb-2">
+            <span class="badge bg-success px-4 py-2 fs-6 rounded-pill border border-white">
+              <i class="bi bi-patch-check-fill me-1"></i> Verified: <%= verifiedEmail %>
+            </span>
+          </div>
+          <p class="text-white-50 small mb-2">
+            Your identity has been verified. Your academic records are loaded below.
+          </p>
+          <a href="/scores?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>"
+            class="btn btn-sm btn-outline-light rounded-pill px-3">
+            <i class="bi bi-arrow-repeat me-1"></i> Verify Different Email
+          </a>
+        </div>
+      </div>
+
+      <!-- OTP Status Message -->
+      <div id="otpMessage" class="mt-3" style="display:none;"></div>
+    </div>
+
+    <!-- STUDENT SCORES & EVALUATION CARDS -->
+    <% if (otpVerified) { %>
+      <div class="scores-results-section">
+        <% if (students && students.length > 0) { %>
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h5 fw-bold mb-0 text-dark">
+              <i class="bi bi-file-earmark-check text-success me-1"></i> Academic Records (<%= students.length %>)
+            </h3>
+            <% if (selectedCourseSlug) { %>
+              <a href="/course/<%= selectedCourseSlug %>/watch" class="btn btn-sm btn-outline-secondary rounded-pill">
+                <i class="bi bi-play-circle me-1"></i> Course Lessons
+              </a>
+            <% } %>
+          </div>
+
+          <% students.forEach(student => { %>
+            <div class="score-result-card">
+              <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div>
+                  <h4 class="h5 fw-bold text-dark mb-1">
+                    <%= student.fullName || student.name || 'Student' %>
+                  </h4>
+                  <div class="text-muted small mb-2">
+                    <i class="bi bi-mortarboard me-1"></i> Course: <strong><%= student.courseId ? student.courseId.title : 'Course' %></strong>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <% if (student.studentId) { %>
+                      <span class="badge bg-secondary-subtle text-secondary border">
+                        ID: <%= student.studentId %>
+                      </span>
+                    <% } %>
+                    <% if (student.certificateNumber) { %>
+                      <span class="badge bg-light text-dark border">
+                        Cert: <%= student.certificateNumber %>
+                      </span>
+                    <% } %>
+                    <% if (typeof student.totalMark === 'number' && student.totalMark > 0) { %>
+                      <span class="stat-pill">
+                        Score: <%= student.totalMark %>/100
+                      </span>
+                    <% } else if (typeof student.marks === 'number' && student.marks > 0) { %>
+                      <span class="stat-pill">
+                        Score: <%= student.marks %> Marks
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+
+                <div class="text-end">
+                  <% const targetId = student.studentId || student.certificateNumber; %>
+                  <a href="/verify/<%= encodeURIComponent(targetId) %>" target="_blank" class="btn-view-scorecard">
+                    <i class="bi bi-qr-code-scan"></i> View Full Scorecard
+                  </a>
+                  <div class="text-muted small mt-1">Same official page as Certificate QR</div>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+
+        <% } else { %>
+          <div class="card p-5 text-center bg-white border rounded-4 shadow-sm">
+            <i class="bi bi-clipboard-x display-4 text-muted mb-3"></i>
+            <h4 class="fw-bold">No Score Records Found</h4>
+            <p class="text-muted mb-3">
+              We couldn't locate any active evaluation records for <strong><%= verifiedEmail %></strong>
+              <% if (selectedCourse) { %> in <strong><%= selectedCourse.title %></strong><% } %>.
+            </p>
+            <div>
+              <a href="/scores?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>" class="btn btn-outline-success rounded-pill px-4">
+                Try Another Email
+              </a>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  </main>
+
+  <footer class="bg-white border-top py-3 mt-auto text-center text-muted small">
+    <div class="container">
+      © <%= new Date().getFullYear() %> Maths Manthra Academy. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- Script for OTP verification -->
+  <script>
+    let currentOTPEmail = '<%= verifiedEmail %>';
+    let otpTimerInterval = null;
+
+    function showOTPStep(step) {
+      document.getElementById('otpStep1').style.display = step === 1 ? 'block' : 'none';
+      document.getElementById('otpStep2').style.display = step === 2 ? 'block' : 'none';
+      document.getElementById('otpStep3').style.display = step === 3 ? 'block' : 'none';
+    }
+
+    function showOTPMessage(html, type) {
+      const el = document.getElementById('otpMessage');
+      el.className = 'alert alert-' + type + ' py-2 px-3 small rounded-3';
+      el.innerHTML = html;
+      el.style.display = 'block';
+    }
+
+    function hideOTPMessage() {
+      document.getElementById('otpMessage').style.display = 'none';
+    }
+
+    function setButtonLoading(btn, loading, originalHTML) {
+      if (loading) {
+        btn.disabled = true;
+        btn.dataset.originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Please wait...';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML || btn.dataset.originalHtml || btn.innerHTML;
+      }
+    }
+
+    async function handleSendOTP() {
+      const emailInput = document.getElementById('otpEmail');
+      const email = emailInput.value.trim();
+      const btn = document.getElementById('btnSendOTP');
+
+      if (!email) {
+        showOTPMessage('<i class="bi bi-exclamation-circle me-1"></i> Please enter your email address.', 'warning');
+        emailInput.focus();
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showOTPMessage('<i class="bi bi-exclamation-circle me-1"></i> Please enter a valid email address.', 'warning');
+        emailInput.focus();
+        return;
+      }
+
+      hideOTPMessage();
+      setButtonLoading(btn, true);
+
+      try {
+        const resp = await fetch('/scores/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+          currentOTPEmail = email;
+          document.getElementById('otpSentEmail').textContent = email;
+          showOTPStep(2);
+          startResendTimer();
+          document.getElementById('otpCode').value = '';
+          document.getElementById('otpCode').focus();
+          showOTPMessage('<i class="bi bi-check-circle me-1"></i> ' + data.message, 'success');
+        } else {
+          showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> ' + data.message, 'danger');
+        }
+      } catch (err) {
+        showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> Network error. Please try again.', 'danger');
+      } finally {
+        setButtonLoading(btn, false, '<i class="bi bi-send me-1"></i> Send OTP');
+      }
+    }
+
+    async function handleVerifyOTP() {
+      const otpInput = document.getElementById('otpCode');
+      const otp = otpInput.value.trim();
+      const btn = document.getElementById('btnVerifyOTP');
+
+      if (!otp || otp.length !== 6) {
+        showOTPMessage('<i class="bi bi-exclamation-circle me-1"></i> Please enter the 6-digit OTP code.', 'warning');
+        otpInput.focus();
+        return;
+      }
+
+      hideOTPMessage();
+      setButtonLoading(btn, true);
+
+      try {
+        const resp = await fetch('/scores/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentOTPEmail, otp }),
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+          showOTPMessage('<i class="bi bi-check-circle me-1"></i> ' + data.message, 'success');
+          // Reload page to display student scores
+          setTimeout(() => {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.delete('reverify');
+            window.location.href = currentUrl.toString();
+          }, 800);
+        } else {
+          showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> ' + data.message, 'danger');
+          otpInput.value = '';
+          otpInput.focus();
+        }
+      } catch (err) {
+        showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> Network error. Please try again.', 'danger');
+      } finally {
+        setButtonLoading(btn, false, '<i class="bi bi-shield-check me-1"></i> Verify');
+      }
+    }
+
+    async function handleResendOTP() {
+      const btn = document.getElementById('btnResendOTP');
+      hideOTPMessage();
+      setButtonLoading(btn, true);
+
+      try {
+        const resp = await fetch('/scores/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentOTPEmail }),
+        });
+
+        const data = await resp.json();
+
+        if (data.success) {
+          startResendTimer();
+          showOTPMessage('<i class="bi bi-check-circle me-1"></i> New OTP sent!', 'success');
+        } else {
+          showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> ' + data.message, 'danger');
+        }
+      } catch (err) {
+        showOTPMessage('<i class="bi bi-exclamation-triangle me-1"></i> Network error. Please try again.', 'danger');
+      } finally {
+        setButtonLoading(btn, false, '<i class="bi bi-arrow-clockwise me-1"></i> Resend OTP');
+      }
+    }
+
+    function handleBackToEmail() {
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+      hideOTPMessage();
+      showOTPStep(1);
+    }
+
+    function startResendTimer() {
+      const timerEl = document.getElementById('otpTimer');
+      const resendBtn = document.getElementById('btnResendOTP');
+      let seconds = 60;
+
+      resendBtn.disabled = true;
+      timerEl.textContent = 'Resend in ' + seconds + 's';
+
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+
+      otpTimerInterval = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(otpTimerInterval);
+          timerEl.textContent = '';
+          resendBtn.disabled = false;
+        } else {
+          timerEl.textContent = 'Resend in ' + seconds + 's';
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+
+</html>

@@ -115,6 +115,29 @@
     </section>
     <% } %>
 
+    <!-- Course Scores & Performance Evaluation Section -->
+    <% if (course.scoresEnabled) { %>
+    <section class="app-scores-card mb-4" aria-label="Course Scores">
+      <div class="certificate-card-inner">
+        <div class="certificate-card-content">
+          <div class="scores-badge">
+            <i class="bi bi-graph-up-arrow text-emerald-500"></i>
+            <span>Academic Evaluation</span>
+          </div>
+          <h3 class="scores-card-title">Check Your Scores & Performance</h3>
+          <p class="certificate-card-subtext mb-0">
+            View your official marks, weekly performance evaluations, and academic report for <%= course.title %>.
+          </p>
+        </div>
+        <div class="certificate-card-action">
+          <a href="/scores?course=<%= course.slug %>" class="btn-get-scores" id="btnCheckScores">
+            📊 Check Scores
+          </a>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
     <!-- Day-wise Lessons Section -->
     <section id="lessonsSection" class="video-list-section pt-1">
       <div class="section-header-row mb-3 d-flex align-items-center justify-content-between">

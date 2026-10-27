@@ -7,6 +7,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const courseCtrl = require('../controllers/course.controller');
 const certPublicCtrl = require('../controllers/certificate.controller');
+const scoresCtrl = require('../controllers/scores.controller');
 const verifyCtrl = require('../controllers/verify.controller');
 const { requireCourseAccess } = require('../middleware/auth.middleware');
 
@@ -23,6 +24,10 @@ router.get('/verify/:studentId', verifyCtrl.verifyCertificatePublic);
 router.get('/certificate', certPublicCtrl.showCertificatePage);
 router.post('/certificate', certPublicCtrl.handleCertificateAction);
 router.post('/certificate/verify', certPublicCtrl.verifyCertificate);
+
+// Student Scores & Performance Evaluation portal (public, no login required)
+router.get('/scores', scoresCtrl.showScoresPage);
+router.post('/scores/verify', scoresCtrl.verifyScoresEmail);
 
 // ── OTP Rate Limiters ────────────────────────────────────────────────────────
 const sendOTPLimiter = rateLimit({
@@ -47,6 +52,9 @@ const verifyOTPLimiter = rateLimit({
 router.post('/certificate/send-otp', sendOTPLimiter, certPublicCtrl.sendOTP);
 router.post('/certificate/verify-otp', verifyOTPLimiter, certPublicCtrl.verifyOTP);
 router.post('/certificate/resend-otp', sendOTPLimiter, certPublicCtrl.resendOTP);
+
+router.post('/scores/send-otp', sendOTPLimiter, scoresCtrl.sendOTP);
+router.post('/scores/verify-otp', verifyOTPLimiter, scoresCtrl.verifyOTP);
 
 router.get('/certificate/download/:certificateId', certPublicCtrl.downloadCertificate);
 
