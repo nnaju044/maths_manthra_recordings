@@ -112,9 +112,13 @@ exports.store = async (req, res, next) => {
     req.flash('success', 'Course created successfully.');
     res.redirect('/admin/courses');
   } catch (err) {
-    console.error('COURSE CREATE ERROR');
-    console.error(err);
-    next(err);
+    console.error('COURSE CREATE ERROR:', err);
+    if (err.code === 11000) {
+      req.flash('error', 'A course with this title or link already exists.');
+    } else {
+      req.flash('error', err.message || 'Failed to create course. Please check the entered details.');
+    }
+    return res.redirect('/admin/courses/create');
   }
 
 };
@@ -198,9 +202,13 @@ exports.update = async (req, res, next) => {
     req.flash('success', 'Course updated successfully.');
     res.redirect('/admin/courses');
   } catch (err) {
-    console.error('COURSE CREATE ERROR');
-    console.error(err);
-    next(err);
+    console.error('COURSE UPDATE ERROR:', err);
+    if (err.code === 11000) {
+      req.flash('error', 'A course with this title or link already exists.');
+    } else {
+      req.flash('error', err.message || 'Failed to update course.');
+    }
+    return res.redirect(`/admin/courses/${req.params.id}/edit`);
   }
 };
 

@@ -510,7 +510,7 @@
       setButtonLoading(btn, true);
 
       try {
-        const resp = await fetch('/scores/send-otp', {
+        const resp = await fetch('/scores/resend-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: currentOTPEmail }),

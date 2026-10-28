@@ -21,29 +21,29 @@ const notFound = (req, res) => {
 const errorHandler = (err, req, res, next) => {
   console.error('❌ Error:', err.stack || err.message);
 
-  // Multer errors
+  // Multer & Cloudinary upload errors
   if (err.code === 'LIMIT_FILE_SIZE') {
     req.flash('error', 'File too large. Maximum size is 5MB.');
-    return res.redirect('back');
+    return res.redirect(req.get('Referrer') || '/admin/courses');
   }
 
-  if (err.message && err.message.includes('Only image files')) {
-    req.flash('error', err.message);
-    return res.redirect('back');
+  if (err.message && (err.message.includes('Only image files') || err.message.includes('Image file format') || err.message.includes('not allowed'))) {
+    req.flash('error', err.message || 'Invalid image file format. Allowed formats: JPG, JPEG, PNG, WebP.');
+    return res.redirect(req.get('Referrer') || '/admin/courses');
   }
 
   // Mongoose validation errors
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map(e => e.message).join(', ');
     req.flash('error', messages);
-    return res.redirect('back');
+    return res.redirect(req.get('Referrer') || '/admin/courses');
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
     req.flash('error', `A record with this ${field} already exists.`);
-    return res.redirect('back');
+    return res.redirect(req.get('Referrer') || '/admin/courses');
   }
 
   const status = err.status || 500;

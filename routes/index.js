@@ -36,6 +36,7 @@ const sendOTPLimiter = rateLimit({
   message: { success: false, message: 'Too many OTP requests. Please try again in an hour.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   keyGenerator: (req) => req.ip,
 });
 
@@ -45,6 +46,7 @@ const verifyOTPLimiter = rateLimit({
   message: { success: false, message: 'Too many verification attempts. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   keyGenerator: (req) => req.ip,
 });
 
@@ -55,6 +57,7 @@ router.post('/certificate/resend-otp', sendOTPLimiter, certPublicCtrl.resendOTP)
 
 router.post('/scores/send-otp', sendOTPLimiter, scoresCtrl.sendOTP);
 router.post('/scores/verify-otp', verifyOTPLimiter, scoresCtrl.verifyOTP);
+router.post('/scores/resend-otp', sendOTPLimiter, scoresCtrl.resendOTP);
 
 router.get('/certificate/download/:certificateId', certPublicCtrl.downloadCertificate);
 

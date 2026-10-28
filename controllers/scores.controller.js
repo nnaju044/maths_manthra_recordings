@@ -7,7 +7,7 @@
 const CertificateStudent = require('../models/CertificateStudent');
 const Course = require('../models/Course');
 const EmailOTP = require('../models/EmailOTP');
-const { sendOTPEmail } = require('../services/email.service');
+const emailService = require('../services/email.service');
 const crypto = require('crypto');
 
 const OTP_SESSION_TIMEOUT = 10 * 60 * 1000; // 10 minutes session for score checking
@@ -121,69 +121,125 @@ exports.verifyScoresEmail = async (req, res, next) => {
 };
 
 /**
+ * Shared helper: Validate email format, student existence, and course scoresEnabled status.
+ */
+async function validateScoresStudent(email) {
+  const normalizedEmail = (email || '').toLowerCase().trim();
+
+  if (!normalizedEmail) {
+    return { error: { status: 400, message: 'Email address is required.' } };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    return { error: { status: 400, message: 'Please enter a valid email address.' } };
+  }
+
+  const studentExists = await CertificateStudent.findOne({
+    email: normalizedEmail,
+    isActive: true,
+  }).populate('courseId');
+
+  if (!studentExists) {
+    return {
+      error: {
+        status: 404,
+        message: 'No student record found with this email. Please check your registered email address.',
+      },
+    };
+  }
+
+  if (studentExists.courseId && !studentExists.courseId.scoresEnabled) {
+    return {
+      error: {
+        status: 403,
+        message: 'Score checking is currently disabled for your enrolled course.',
+      },
+    };
+  }
+
+  return { email: normalizedEmail, student: studentExists };
+}
+
+/**
+ * Shared helper: Check cooldown, generate OTP, send email, and create DB record only on successful send.
+ */
+async function processScoresOTPIssuance(normalizedEmail, req, isResend = false) {
+  // Check cooldown: only recent unverified OTPs within last 60s
+  const existingOTP = await EmailOTP.findOne({
+    email: normalizedEmail,
+    verified: false,
+    createdAt: { $gte: new Date(Date.now() - 60 * 1000) },
+  });
+
+  if (existingOTP) {
+    return {
+      status: 429,
+      body: {
+        success: false,
+        message: isResend
+          ? 'Please wait 60 seconds before requesting a new OTP.'
+          : 'An OTP was sent recently. Please wait 60 seconds before requesting again.',
+      },
+    };
+  }
+
+  const otp = generateOTP();
+
+  // 1. Create the new OTP record first to ensure DB write succeeds before contacting SMTP.
+  // We keep previous unverified OTP records intact for now in case email delivery fails.
+  const newOtpRecord = await EmailOTP.create({ email: normalizedEmail, otp });
+
+  try {
+    // 2. Deliver email with the persisted OTP
+    await emailService.sendOTPEmail(normalizedEmail, otp);
+  } catch (deliveryErr) {
+    // If email delivery fails, roll back the newly created OTP record so the user's
+    // previous valid OTP remains their most recent unverified OTP.
+    try {
+      await EmailOTP.deleteOne({ _id: newOtpRecord._id });
+    } catch (cleanupErr) {
+      console.error('[Scores OTP] Cleanup error on delivery failure:', cleanupErr);
+    }
+    throw deliveryErr;
+  }
+
+  // 3. Email sent successfully: clean up older unverified OTPs
+  await EmailOTP.deleteMany({
+    email: normalizedEmail,
+    verified: false,
+    _id: { $ne: newOtpRecord._id },
+  });
+
+  req.session.scoresOtpPendingEmail = normalizedEmail;
+
+  return {
+    status: 200,
+    body: {
+      success: true,
+      message: isResend
+        ? 'New OTP sent successfully!'
+        : 'OTP sent successfully! Please check your email inbox (and spam folder).',
+    },
+  };
+}
+
+/**
  * POST /scores/send-otp
  * Send a 6-digit OTP to the student's email for scores access.
  */
 exports.sendOTP = async (req, res, next) => {
   try {
-    const { email = '' } = req.body;
-    const normalizedEmail = (email || '').toLowerCase().trim();
-
-    if (!normalizedEmail) {
-      return res.status(400).json({ success: false, message: 'Email address is required.' });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalizedEmail)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
-    }
-
-    // Check if any student record exists for this email with scoresEnabled course
-    const studentExists = await CertificateStudent.findOne({
-      email: normalizedEmail,
-      isActive: true,
-    }).populate('courseId');
-
-    if (!studentExists) {
-      return res.status(404).json({
+    const validation = await validateScoresStudent(req.body.email);
+    if (validation.error) {
+      return res.status(validation.error.status).json({
         success: false,
-        message: 'No student record found with this email. Please check your registered email address.',
+        message: validation.error.message,
       });
     }
 
-    if (studentExists.courseId && !studentExists.courseId.scoresEnabled) {
-      return res.status(403).json({
-        success: false,
-        message: 'Score checking is currently disabled for your enrolled course.',
-      });
-    }
-
-    // Cooldown 60s
-    const existingOTP = await EmailOTP.findOne({
-      email: normalizedEmail,
-      verified: false,
-      createdAt: { $gte: new Date(Date.now() - 60 * 1000) },
-    });
-
-    if (existingOTP) {
-      return res.status(429).json({
-        success: false,
-        message: 'An OTP was sent recently. Please wait 60 seconds before requesting again.',
-      });
-    }
-
-    await EmailOTP.deleteMany({ email: normalizedEmail, verified: false });
-
-    const otp = generateOTP();
-    await EmailOTP.create({ email: normalizedEmail, otp });
-
-    await sendOTPEmail(normalizedEmail, otp);
-    req.session.scoresOtpPendingEmail = normalizedEmail;
-
-    return res.status(200).json({
-      success: true,
-      message: 'OTP sent successfully! Please check your email inbox (and spam folder).',
-    });
+    const result = await processScoresOTPIssuance(validation.email, req, false);
+    return res.status(result.status).json(result.body);
   } catch (err) {
     console.error('[Scores OTP] Send error:', err);
     return res.status(500).json({
@@ -269,6 +325,31 @@ exports.verifyOTP = async (req, res, next) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to verify OTP. Please try again.',
+    });
+  }
+};
+
+/**
+ * POST /scores/resend-otp
+ * Resend a 6-digit OTP to the student's email for scores access.
+ */
+exports.resendOTP = async (req, res, next) => {
+  try {
+    const validation = await validateScoresStudent(req.body.email);
+    if (validation.error) {
+      return res.status(validation.error.status).json({
+        success: false,
+        message: validation.error.message,
+      });
+    }
+
+    const result = await processScoresOTPIssuance(validation.email, req, true);
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error('[Scores OTP] Resend error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to resend OTP. Please try again.',
     });
   }
 };
