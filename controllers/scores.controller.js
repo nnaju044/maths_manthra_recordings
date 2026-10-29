@@ -241,7 +241,10 @@ exports.sendOTP = async (req, res, next) => {
     const result = await processScoresOTPIssuance(validation.email, req, false);
     return res.status(result.status).json(result.body);
   } catch (err) {
-    console.error('[Scores OTP] Send error:', err);
+    const errorDiag = typeof emailService.categorizeSmtpError === 'function'
+      ? emailService.categorizeSmtpError(err)
+      : { category: 'UNKNOWN', description: err.message || 'Unknown error' };
+    console.error(`[Scores OTP] Send failed [STAGE: smtp_send, CATEGORY: ${errorDiag.category}]: ${errorDiag.description}`);
     return res.status(500).json({
       success: false,
       message: 'Failed to send OTP. Please try again later.',
@@ -346,7 +349,10 @@ exports.resendOTP = async (req, res, next) => {
     const result = await processScoresOTPIssuance(validation.email, req, true);
     return res.status(result.status).json(result.body);
   } catch (err) {
-    console.error('[Scores OTP] Resend error:', err);
+    const errorDiag = typeof emailService.categorizeSmtpError === 'function'
+      ? emailService.categorizeSmtpError(err)
+      : { category: 'UNKNOWN', description: err.message || 'Unknown error' };
+    console.error(`[Scores OTP] Resend failed [STAGE: smtp_resend, CATEGORY: ${errorDiag.category}]: ${errorDiag.description}`);
     return res.status(500).json({
       success: false,
       message: 'Failed to resend OTP. Please try again.',

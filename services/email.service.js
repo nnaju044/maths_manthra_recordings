@@ -6,48 +6,217 @@
 const nodemailer = require('nodemailer');
 
 /**
+ * Mask an email address for safe logging without exposing student PII.
+ * Example: student@mathsmanthra.com -> s***t@mathsmanthra.com
+ */
+function maskEmail(email) {
+  if (!email || typeof email !== 'string') return '';
+  const parts = email.trim().split('@');
+  if (parts.length !== 2) return '***';
+  const name = parts[0];
+  const domain = parts[1];
+  if (name.length <= 2) return `${name[0]}***@${domain}`;
+  return `${name[0]}***${name[name.length - 1]}@${domain}`;
+}
+
+/**
+ * Resolve SMTP transport configuration from environment variables.
+ * Automatically aligns port and secure TLS mode when SMTP_SECURE is omitted:
+ * - Port 465 uses direct implicit TLS (secure: true)
+ * - Port 587 uses opportunistic STARTTLS (secure: false)
+ * Preserves explicit SMTP_SECURE setting when provided.
+ */
+function resolveSmtpConfig() {
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const port = parseInt(process.env.SMTP_PORT, 10) || 587;
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = (process.env.SMTP_PASS || '').trim();
+
+  let secure;
+  if (process.env.SMTP_SECURE !== undefined && process.env.SMTP_SECURE !== '') {
+    secure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === true;
+  } else {
+    secure = (port === 465);
+  }
+
+  const isConfigured = Boolean(user && pass);
+
+  return {
+    host,
+    port,
+    secure,
+    user,
+    pass,
+    isConfigured,
+  };
+}
+
+/**
+ * Resolve the sender "From" address with safe fallbacks:
+ * 1. SMTP_FROM (primary)
+ * 2. EMAIL_FROM (documented .env.example fallback)
+ * 3. "${APP_NAME}" <${SMTP_USER}> (standard sender fallback)
+ * 4. Default no-reply address
+ */
+function resolveSender(smtpUser) {
+  const fromVar = (process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
+  if (fromVar) {
+    return fromVar;
+  }
+  const appName = (process.env.APP_NAME || 'Maths Manthra').trim();
+  if (smtpUser) {
+    return `"${appName}" <${smtpUser}>`;
+  }
+  return `"${appName}" <noreply@mathsmanthra.com>`;
+}
+
+/**
+ * Categorize SMTP errors into clear diagnostic categories without leaking credentials or OTPs.
+ */
+function categorizeSmtpError(err) {
+  if (!err) {
+    return { category: 'UNKNOWN_ERROR', description: 'An unknown email error occurred.' };
+  }
+
+  const msg = (err.message || '').toLowerCase();
+  const code = (err.code || '').toUpperCase();
+  const responseCode = err.responseCode || (err.response ? parseInt(err.response.slice(0, 3), 10) : null);
+
+  if (err.diagnostic === 'MISSING_CONFIG' || err.code === 'MISSING_CONFIG') {
+    return {
+      category: 'MISSING_CONFIG',
+      description: 'SMTP credentials (SMTP_USER / SMTP_PASS) are not configured in environment variables.',
+    };
+  }
+
+  if (
+    code === 'EAUTH' ||
+    responseCode === 535 ||
+    msg.includes('username and password not accepted') ||
+    msg.includes('invalid credentials') ||
+    msg.includes('authentication failed') ||
+    msg.includes('badcredentials')
+  ) {
+    return {
+      category: 'AUTH_FAILED',
+      description: 'SMTP authentication rejected. For Gmail, verify 2FA and ensure an App Password is used as SMTP_PASS.',
+    };
+  }
+
+  if (
+    code === 'ETIMEDOUT' ||
+    code === 'ESOCKETTIMEDOUT' ||
+    code === 'ECONNTIMEOUT' ||
+    msg.includes('timeout') ||
+    msg.includes('timed out')
+  ) {
+    return {
+      category: 'CONNECTION_TIMEOUT',
+      description: 'SMTP connection or handshake timed out. Check SMTP_HOST and SMTP_PORT.',
+    };
+  }
+
+  if (
+    code === 'ECONNREFUSED' ||
+    code === 'ENOTFOUND' ||
+    code === 'EAI_AGAIN' ||
+    msg.includes('connection refused')
+  ) {
+    return {
+      category: 'CONNECTION_REFUSED',
+      description: 'Could not connect to SMTP server. Verify SMTP_HOST and port accessibility.',
+    };
+  }
+
+  if (
+    code === 'ESOCKET' ||
+    msg.includes('tls') ||
+    msg.includes('ssl') ||
+    msg.includes('handshake') ||
+    msg.includes('wrong version number') ||
+    msg.includes('starttls')
+  ) {
+    return {
+      category: 'TLS_ERROR',
+      description: 'SSL/TLS handshake error. Ensure port 465 uses secure: true or port 587 uses secure: false.',
+    };
+  }
+
+  if (
+    responseCode === 550 ||
+    responseCode === 553 ||
+    responseCode === 554 ||
+    msg.includes('sender address rejected') ||
+    msg.includes('recipient rejected') ||
+    msg.includes('mailbox unavailable')
+  ) {
+    return {
+      category: 'PROVIDER_REJECTED',
+      description: 'The email provider rejected the sender or recipient address.',
+    };
+  }
+
+  if (
+    responseCode === 421 ||
+    responseCode === 450 ||
+    responseCode === 451 ||
+    responseCode === 452 ||
+    msg.includes('rate limit') ||
+    msg.includes('exceeded') ||
+    msg.includes('too many')
+  ) {
+    return {
+      category: 'RATE_LIMITED',
+      description: 'SMTP provider rate limit or quota exceeded.',
+    };
+  }
+
+  return {
+    category: 'PROVIDER_ERROR',
+    description: err.message ? err.message.slice(0, 150) : 'Unexpected SMTP transport failure.',
+  };
+}
+
+/**
  * Create reusable transporter using environment variables.
- *
- * Required env vars:
- *   SMTP_HOST     — e.g. smtp.gmail.com
- *   SMTP_PORT     — e.g. 587
- *   SMTP_USER     — e.g. yourapp@gmail.com
- *   SMTP_PASS     — app password (NOT your Gmail login password)
- *   SMTP_FROM     — e.g. "Maths Manthra" <noreply@mathsmanthra.com>
- *
- * For Gmail:
- *   1. Enable 2FA on Google account
- *   2. Generate an "App Password" at https://myaccount.google.com/apppasswords
- *   3. Use that as SMTP_PASS
+ * Fails fast with code MISSING_CONFIG if credentials are not configured.
  */
 function createTransporter() {
-
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT, 10) || 587;
-  const secure = process.env.SMTP_SECURE === 'true';
+  const config = resolveSmtpConfig();
 
   console.log('[SMTP CONFIG]', {
-    host,
-    port,
-    secure,
-    user: process.env.SMTP_USER,
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    userConfigured: Boolean(config.user),
+    passConfigured: Boolean(config.pass),
+    sender: resolveSender(config.user),
   });
 
+  if (!config.isConfigured) {
+    const err = new Error('SMTP credentials are not configured in environment variables (SMTP_USER / SMTP_PASS).');
+    err.code = 'MISSING_CONFIG';
+    err.diagnostic = 'MISSING_CONFIG';
+    throw err;
+  }
+
   return nodemailer.createTransport({
-    host,
-    port,
-    secure,
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: config.user,
+      pass: config.pass,
     },
-    pool: true,
+    // Pool only when explicitly requested; ephemeral connections prevent stale frozen sockets in serverless
+    pool: process.env.SMTP_POOL === 'true',
     maxConnections: 3,
     maxMessages: 50,
 
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    // Bounded timeouts calibrated for serverless function execution limits
+    connectionTimeout: 6000,
+    greetingTimeout: 6000,
+    socketTimeout: 10000,
   });
 }
 
@@ -64,6 +233,13 @@ function getTransporter() {
 }
 
 /**
+ * Reset transporter singleton (useful for configuration updates or test environments).
+ */
+function resetTransporter() {
+  transporter = null;
+}
+
+/**
  * Send OTP email to a student.
  *
  * @param {string} to      — Recipient email
@@ -71,7 +247,7 @@ function getTransporter() {
  * @returns {Promise<object>} Nodemailer send result
  */
 async function sendOTPEmail(to, otp) {
-  const from = process.env.SMTP_FROM || `"Maths Manthra" <${process.env.SMTP_USER}>`;
+  const from = resolveSender(process.env.SMTP_USER);
   const appName = process.env.APP_NAME || 'Maths Manthra';
 
   const mailOptions = {
@@ -135,7 +311,7 @@ async function sendOTPEmail(to, otp) {
 
   const transport = getTransporter();
   const result = await transport.sendMail(mailOptions);
-  console.log(`[EMAIL] OTP sent to ${to} — MessageId: ${result.messageId}`);
+  console.log(`[EMAIL] OTP sent to ${maskEmail(to)} — MessageId: ${result.messageId}`);
   return result;
 }
 
@@ -157,4 +333,9 @@ async function verifyConnection() {
 module.exports = {
   sendOTPEmail,
   verifyConnection,
+  resolveSmtpConfig,
+  resolveSender,
+  categorizeSmtpError,
+  resetTransporter,
+  maskEmail,
 };

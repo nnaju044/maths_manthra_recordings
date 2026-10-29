@@ -286,6 +286,101 @@ async function runScoresFeatureTests() {
         emailService.sendOTPEmail = originalSendOTPEmail;
       }
 
+      // ── Test 6: SMTP Configuration, Error Categorization & Fail-Fast Delivery ──
+      console.log('\nTest 6: Testing SMTP Configuration, Error Categorization & Fail-Fast Delivery...');
+
+      // 6a. Configuration & Credential Validation
+      const origSmtpUser = process.env.SMTP_USER;
+      const origSmtpPass = process.env.SMTP_PASS;
+      const origSmtpPort = process.env.SMTP_PORT;
+      const origSmtpSecure = process.env.SMTP_SECURE;
+      const origSmtpFrom = process.env.SMTP_FROM;
+      const origEmailFrom = process.env.EMAIL_FROM;
+
+      try {
+        // Missing credentials check
+        delete process.env.SMTP_USER;
+        delete process.env.SMTP_PASS;
+        emailService.resetTransporter();
+        const unconfigured = emailService.resolveSmtpConfig();
+        assert.strictEqual(unconfigured.isConfigured, false, 'Should detect unconfigured credentials');
+
+        // Port 465 auto-TLS
+        process.env.SMTP_PORT = '465';
+        delete process.env.SMTP_SECURE;
+        const port465Config = emailService.resolveSmtpConfig();
+        assert.strictEqual(port465Config.secure, true, 'Port 465 must default to secure: true');
+
+        // Port 587 auto-STARTTLS
+        process.env.SMTP_PORT = '587';
+        delete process.env.SMTP_SECURE;
+        const port587Config = emailService.resolveSmtpConfig();
+        assert.strictEqual(port587Config.secure, false, 'Port 587 must default to secure: false');
+
+        // Explicit override preservation
+        process.env.SMTP_PORT = '465';
+        process.env.SMTP_SECURE = 'false';
+        const explicitOverride = emailService.resolveSmtpConfig();
+        assert.strictEqual(explicitOverride.secure, false, 'Explicit SMTP_SECURE must be preserved');
+        console.log('  ✔ Port and TLS combinations resolve correctly with explicit override support');
+
+        // 6b. Sender fallback resolution
+        delete process.env.SMTP_FROM;
+        process.env.EMAIL_FROM = 'support@mathsmanthra.com';
+        assert.strictEqual(emailService.resolveSender('admin@gmail.com'), 'support@mathsmanthra.com', 'EMAIL_FROM should be used when SMTP_FROM is unset');
+
+        process.env.SMTP_FROM = 'noreply@mathsmanthra.com';
+        assert.strictEqual(emailService.resolveSender('admin@gmail.com'), 'noreply@mathsmanthra.com', 'SMTP_FROM should take precedence when present');
+
+        delete process.env.SMTP_FROM;
+        delete process.env.EMAIL_FROM;
+        assert.strictEqual(emailService.resolveSender('admin@gmail.com'), '"Maths Manthra" <admin@gmail.com>', 'Should fallback to appName and SMTP_USER');
+        console.log('  ✔ Sender address resolution supports SMTP_FROM, EMAIL_FROM, and sensible fallback');
+
+        // 6c. Error categorization tests
+        assert.strictEqual(emailService.categorizeSmtpError({ code: 'MISSING_CONFIG' }).category, 'MISSING_CONFIG');
+        assert.strictEqual(emailService.categorizeSmtpError({ code: 'EAUTH', message: 'Invalid login' }).category, 'AUTH_FAILED');
+        assert.strictEqual(emailService.categorizeSmtpError({ responseCode: 535, message: '5.7.8 Bad credentials' }).category, 'AUTH_FAILED');
+        assert.strictEqual(emailService.categorizeSmtpError({ code: 'ETIMEDOUT' }).category, 'CONNECTION_TIMEOUT');
+        assert.strictEqual(emailService.categorizeSmtpError({ code: 'ECONNREFUSED' }).category, 'CONNECTION_REFUSED');
+        assert.strictEqual(emailService.categorizeSmtpError({ code: 'ESOCKET', message: 'wrong version number' }).category, 'TLS_ERROR');
+        assert.strictEqual(emailService.categorizeSmtpError({ responseCode: 550, message: 'Mailbox unavailable' }).category, 'PROVIDER_REJECTED');
+        assert.strictEqual(emailService.categorizeSmtpError({ responseCode: 421, message: 'Too many concurrent connections' }).category, 'RATE_LIMITED');
+        console.log('  ✔ SMTP errors safely categorized into diagnostic categories without secret leakage');
+
+        // 6d. Real flow with unconfigured SMTP credentials fails fast and rolls back DB record
+        delete process.env.SMTP_USER;
+        delete process.env.SMTP_PASS;
+        emailService.resetTransporter();
+
+        await EmailOTP.deleteMany({ email: 'test-scores-enabled@example.com' });
+
+        const resMissingConfig = await fetch(`${baseUrl}/scores/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test-scores-enabled@example.com' }),
+        });
+
+        assert.strictEqual(resMissingConfig.status, 500);
+        const missingJson = await resMissingConfig.json();
+        assert.strictEqual(missingJson.success, false);
+        assert.strictEqual(missingJson.message, 'Failed to send OTP. Please try again later.');
+
+        // Verify OTP was rolled back in DB
+        const rolledBackOtp = await EmailOTP.findOne({ email: 'test-scores-enabled@example.com' });
+        assert.strictEqual(rolledBackOtp, null, 'Unsent OTP must be rolled back on missing config failure');
+        console.log('  ✔ Missing SMTP credentials fail fast with clean rollback and user-friendly response');
+
+      } finally {
+        if (origSmtpUser !== undefined) process.env.SMTP_USER = origSmtpUser; else delete process.env.SMTP_USER;
+        if (origSmtpPass !== undefined) process.env.SMTP_PASS = origSmtpPass; else delete process.env.SMTP_PASS;
+        if (origSmtpPort !== undefined) process.env.SMTP_PORT = origSmtpPort; else delete process.env.SMTP_PORT;
+        if (origSmtpSecure !== undefined) process.env.SMTP_SECURE = origSmtpSecure; else delete process.env.SMTP_SECURE;
+        if (origSmtpFrom !== undefined) process.env.SMTP_FROM = origSmtpFrom; else delete process.env.SMTP_FROM;
+        if (origEmailFrom !== undefined) process.env.EMAIL_FROM = origEmailFrom; else delete process.env.EMAIL_FROM;
+        emailService.resetTransporter();
+      }
+
     } finally {
       // Clean up test data
       await EmailOTP.deleteMany({
