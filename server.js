@@ -2,6 +2,7 @@
  * server.js
  * Entry point — connects to MongoDB then starts Express server.
  */
+process.noDeprecation = true;
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }

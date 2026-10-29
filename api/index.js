@@ -3,6 +3,10 @@
  * Vercel Serverless Function entry point.
  * Ensures MongoDB connection is established before routing requests to Express app.
  */
+// Silence Node.js runtime deprecation warnings (e.g. url.parse / util.isArray from dependencies)
+// so Vercel's logging engine does not treat standard stderr warnings as red Error events.
+process.noDeprecation = true;
+
 const app = require('../app');
 const connectDB = require('../config/db');
 

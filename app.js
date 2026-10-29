@@ -3,6 +3,7 @@
  * Express application setup — middleware, view engine, routes.
  * Simplified for private recorded-class sharing (no student accounts).
  */
+process.noDeprecation = true;
 require('dotenv').config();
 const path = require('path');
 const ejsLayouts = require('express-ejs-layouts');
