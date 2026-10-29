@@ -13,7 +13,15 @@
         <% } %>
     </p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="/verify/<%= encodeURIComponent(student.studentId || student.certificateNumber || student._id) %>"
+      class="btn btn-outline-primary"
+      target="_blank"
+      rel="noopener noreferrer"
+      title="View Verification Page"
+      aria-label="View Verification Page">
+      <i class="bi bi-box-arrow-up-right me-1"></i> View Verification Page
+    </a>
     <a href="/admin/certificates" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Back to Students
     </a>

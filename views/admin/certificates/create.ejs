@@ -55,7 +55,7 @@
         <select name="courseId" id="courseId" class="form-select form-select-lg" required>
           <option value="">-- Select Course --</option>
           <% courses.forEach(course => { %>
-            <option value="<%= course._id %>">
+            <option value="<%= course._id %>" <%= (typeof selectedCourseId !== 'undefined' && selectedCourseId === course._id.toString()) ? 'selected' : '' %>>
               <%= course.title %> <%= !course.isActive ? '(Inactive)' : '' %>
             </option>
           <% }) %>

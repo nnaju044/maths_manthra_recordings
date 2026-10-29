@@ -115,6 +115,14 @@
               </small>
             </td>
             <td class="text-end">
+              <a href="/verify/<%= encodeURIComponent(student.studentId || student.certificateNumber || student._id) %>"
+                 class="btn btn-sm btn-outline-primary me-1"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="View Verification Page"
+                 aria-label="View Verification Page">
+                <i class="bi bi-box-arrow-up-right"></i>
+              </a>
               <form action="/admin/certificates/students/<%= student._id %>/delete" method="POST"
                     onsubmit="return confirm('Are you sure you want to delete certificate for <%= (student.fullName || student.name).replace(/'/g, &quot;\\'&quot;) %>?');"
                     class="d-inline">

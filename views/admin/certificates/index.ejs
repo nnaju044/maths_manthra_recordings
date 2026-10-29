@@ -5,38 +5,88 @@
     <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
       <%= totalDocs %> <%= totalDocs === 1 ? 'Student' : 'Students' %>
     </span>
+    <% if (typeof selectedCourse !== 'undefined' && selectedCourse) { %>
+      <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2 rounded-pill">
+        <i class="bi bi-book me-1"></i> <%= selectedCourse.title %>
+      </span>
+    <% } %>
   </div>
   <div class="d-flex gap-2">
-    <a href="/admin/certificates/create" class="btn btn-primary-custom">
+    <a href="/admin/certificates/create<%= (typeof selectedCourseId !== 'undefined' && selectedCourseId) ? '?courseId=' + selectedCourseId : '' %>" class="btn btn-primary-custom">
       <i class="bi bi-person-plus"></i> Add Student
     </a>
-    <a href="/admin/certificates/upload" class="btn btn-outline-primary">
+    <a href="/admin/certificates/upload<%= (typeof selectedCourseId !== 'undefined' && selectedCourseId) ? '?courseId=' + selectedCourseId : '' %>" class="btn btn-outline-primary">
       <i class="bi bi-cloud-arrow-up"></i> Upload Excel
     </a>
   </div>
 </div>
 
-<!-- Search Bar (search by email, name, certificate number, student ID) -->
+<!-- Search & Course Filter Bar -->
 <form class="search-bar mb-4" method="GET" action="/admin/certificates">
-  <div class="input-group">
-    <span class="input-group-text"><i class="bi bi-search"></i></span>
-    <input type="text" name="search" class="form-control"
-      placeholder="Search by name, email, certificate number, or student ID..." value="<%= search %>" />
-    <button type="submit" class="btn btn-outline-primary">Search</button>
-    <% if (search) { %>
-      <a href="/admin/certificates" class="btn btn-outline-secondary">Clear</a>
-    <% } %>
+  <div class="row g-2 align-items-center">
+    <!-- Course Filter Dropdown -->
+    <div class="col-12 col-md-4 col-lg-3">
+      <div class="input-group">
+        <label class="input-group-text bg-light text-muted" for="courseFilterSelect" title="Filter by Course">
+          <i class="bi bi-book"></i>
+        </label>
+        <select name="courseId" id="courseFilterSelect" class="form-select" onchange="this.form.submit()" aria-label="Filter by Course">
+          <option value="">All Courses</option>
+          <% if (typeof courses !== 'undefined' && courses && courses.length > 0) { %>
+            <% courses.forEach(c => { %>
+              <option value="<%= c._id %>" <%= (typeof selectedCourseId !== 'undefined' && selectedCourseId === c._id.toString()) ? 'selected' : '' %>>
+                <%= c.title %>
+              </option>
+            <% }) %>
+          <% } %>
+        </select>
+      </div>
+    </div>
+
+    <!-- Student Search Input -->
+    <div class="col-12 col-md-5 col-lg-6">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" name="search" class="form-control"
+          placeholder="Search by name, email, certificate number, or student ID..." value="<%= search %>" aria-label="Search students" />
+      </div>
+    </div>
+
+    <!-- Submit & Clear Buttons -->
+    <div class="col-12 col-md-3 col-lg-3 d-flex gap-2">
+      <button type="submit" class="btn btn-outline-primary flex-grow-1">
+        <i class="bi bi-filter"></i> Search
+      </button>
+      <% if (search || (typeof selectedCourseId !== 'undefined' && selectedCourseId)) { %>
+        <a href="/admin/certificates" class="btn btn-outline-secondary" title="Reset all filters">
+          Clear
+        </a>
+      <% } %>
+    </div>
   </div>
 </form>
 
 <% if (docs.length === 0) { %>
   <div class="empty-state">
     <i class="bi bi-award"></i>
-    <h4>No students found</h4>
-    <p><%= search ? 'No students match your search criteria.' : 'Add your first student or upload an Excel sheet to get started.' %></p>
-    <div class="d-flex gap-2 justify-content-center">
-      <a href="/admin/certificates/create" class="btn btn-primary-custom">Add Student</a>
-      <a href="/admin/certificates/upload" class="btn btn-outline-primary">Upload Excel</a>
+    <h4>No students found <%= (typeof selectedCourse !== 'undefined' && selectedCourse) ? 'in ' + selectedCourse.title : '' %></h4>
+    <p>
+      <% if (search && typeof selectedCourse !== 'undefined' && selectedCourse) { %>
+        No students in <strong><%= selectedCourse.title %></strong> match "<%= search %>".
+      <% } else if (typeof selectedCourse !== 'undefined' && selectedCourse) { %>
+        No students found in this course.
+      <% } else if (search) { %>
+        No students match your search criteria.
+      <% } else { %>
+        Add your first student or upload an Excel sheet to get started.
+      <% } %>
+    </p>
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
+      <% if ((typeof selectedCourseId !== 'undefined' && selectedCourseId) || search) { %>
+        <a href="/admin/certificates" class="btn btn-outline-secondary">Show All Students</a>
+      <% } %>
+      <a href="/admin/certificates/create<%= (typeof selectedCourseId !== 'undefined' && selectedCourseId) ? '?courseId=' + selectedCourseId : '' %>" class="btn btn-primary-custom">Add Student</a>
+      <a href="/admin/certificates/upload<%= (typeof selectedCourseId !== 'undefined' && selectedCourseId) ? '?courseId=' + selectedCourseId : '' %>" class="btn btn-outline-primary">Upload Excel</a>
     </div>
   </div>
 <% } else { %>
@@ -137,6 +187,14 @@
             <!-- Actions -->
             <td class="text-end">
               <div class="action-btns justify-content-end">
+                <a href="/verify/<%= encodeURIComponent(student.studentId || student.certificateNumber || student._id) %>"
+                  class="btn-action view"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="View Verification Page"
+                  aria-label="View Verification Page">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </a>
                 <a href="/admin/certificates/<%= student._id %>/edit" class="btn-action edit" title="Edit Student" aria-label="Edit Student">
                   <i class="bi bi-pencil"></i>
                 </a>
@@ -225,6 +283,15 @@
           </div>
 
           <div class="student-card-actions d-flex gap-2">
+            <a href="/verify/<%= encodeURIComponent(student.studentId || student.certificateNumber || student._id) %>"
+              class="btn-card-action btn-card-share flex-grow-1"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View Verification Page"
+              aria-label="View Verification Page">
+              <i class="bi bi-box-arrow-up-right"></i>
+              <span>Verify</span>
+            </a>
             <a href="/admin/certificates/<%= student._id %>/edit" class="btn-card-action btn-card-edit flex-grow-1" title="Edit Student" aria-label="Edit Student">
               <i class="bi bi-pencil"></i>
               <span>Edit</span>
@@ -246,11 +313,11 @@
   <% if (totalPages > 1) { %>
     <nav class="pagination-nav">
       <% if (hasPrev) { %>
-        <a href="/admin/certificates?page=<%= prevPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="page-link-custom">← Previous</a>
+        <a href="/admin/certificates?page=<%= prevPage %><%= (typeof selectedCourseId !== 'undefined' && selectedCourseId) ? '&courseId=' + encodeURIComponent(selectedCourseId) : '' %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="page-link-custom">← Previous</a>
       <% } %>
       <span class="page-info">Page <%= currentPage %> of <%= totalPages %></span>
       <% if (hasNext) { %>
-        <a href="/admin/certificates?page=<%= nextPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="page-link-custom">Next →</a>
+        <a href="/admin/certificates?page=<%= nextPage %><%= (typeof selectedCourseId !== 'undefined' && selectedCourseId) ? '&courseId=' + encodeURIComponent(selectedCourseId) : '' %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="page-link-custom">Next →</a>
       <% } %>
     </nav>
   <% } %>

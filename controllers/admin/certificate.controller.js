@@ -2,6 +2,7 @@
  * controllers/admin/certificate.controller.js
  * Excel import and management for certificate students.
  */
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 const xlsx = require('xlsx');
 const CertificateStudent = require('../../models/CertificateStudent');
@@ -217,31 +218,68 @@ function extractProgressFields(body) {
 // GET /admin/certificates — Student Management Page
 exports.index = async (req, res, next) => {
   try {
-    const { page = 1, search = '' } = req.query;
+    const { page = 1, search = '', courseId = '' } = req.query;
     const filter = {};
+
+    let selectedCourseId = courseId ? String(courseId).trim() : '';
+    let selectedCourse = null;
+
+    if (selectedCourseId && selectedCourseId !== 'all') {
+      if (mongoose.Types.ObjectId.isValid(selectedCourseId)) {
+        filter.courseId = selectedCourseId;
+        selectedCourse = await Course.findById(selectedCourseId).select('title slug').lean();
+      } else {
+        selectedCourse = await Course.findOne({
+          $or: [{ slug: selectedCourseId }, { title: selectedCourseId }],
+        }).select('title slug').lean();
+        if (selectedCourse) {
+          filter.courseId = selectedCourse._id;
+          selectedCourseId = selectedCourse._id.toString();
+        }
+      }
+    } else {
+      selectedCourseId = '';
+    }
 
     if (search && search.trim()) {
       const s = search.trim();
-      filter.$or = [
+      const matchingCourses = await Course.find({
+        title: { $regex: s, $options: 'i' },
+      }).select('_id').lean();
+      const matchingCourseIds = matchingCourses.map((c) => c._id);
+
+      const orConditions = [
         { fullName: { $regex: s, $options: 'i' } },
         { name: { $regex: s, $options: 'i' } },
         { email: { $regex: s, $options: 'i' } },
         { certificateNumber: { $regex: s, $options: 'i' } },
         { studentId: { $regex: s, $options: 'i' } },
       ];
+
+      if (matchingCourseIds.length > 0) {
+        orConditions.push({ courseId: { $in: matchingCourseIds } });
+      }
+
+      filter.$or = orConditions;
     }
 
-    const result = await paginate(CertificateStudent, filter, {
-      page,
-      limit: 10,
-      sort: { createdAt: -1 },
-      populate: 'courseId',
-    });
+    const [courses, result] = await Promise.all([
+      Course.find().select('title slug').sort({ title: 1 }).lean(),
+      paginate(CertificateStudent, filter, {
+        page,
+        limit: 10,
+        sort: { createdAt: -1 },
+        populate: 'courseId',
+      }),
+    ]);
 
     res.render('admin/certificates/index', {
       title: 'Certificate Students — Admin',
       layout: 'layouts/admin',
       ...result,
+      courses,
+      selectedCourseId,
+      selectedCourse,
       search: search.trim(),
       currentPage: 'certificates',
     });
@@ -254,11 +292,13 @@ exports.index = async (req, res, next) => {
 exports.getCreate = async (req, res, next) => {
   try {
     const courses = await Course.find().sort({ title: 1 });
+    const selectedCourseId = req.query.courseId || '';
 
     res.render('admin/certificates/create', {
       title: 'Add Student — Admin',
       layout: 'layouts/admin',
       courses,
+      selectedCourseId,
       currentPage: 'certificates',
     });
   } catch (err) {
@@ -552,6 +592,7 @@ exports.postUpdate = async (req, res, next) => {
 exports.getUpload = async (req, res, next) => {
   try {
     const courses = await Course.find().sort({ title: 1 });
+    const selectedCourseId = req.query.courseId || '';
     const importResult = req.session.importResult || null;
     delete req.session.importResult;
 
@@ -559,6 +600,7 @@ exports.getUpload = async (req, res, next) => {
       title: 'Upload Students — Certificates',
       layout: 'layouts/admin',
       courses,
+      selectedCourseId,
       importResult,
       currentPage: 'certificates-upload',
     });
