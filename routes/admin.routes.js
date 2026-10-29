@@ -15,8 +15,13 @@ const certCtrl = require('../controllers/admin/certificate.controller');
 // All admin routes require auth (superadmin JWT)
 router.use(requireAuth);
 
-// Dashboard
-router.get('/dashboard', dashCtrl.getDashboard);
+// Root /admin or /admin/ redirect to dashboard
+router.get('/', (req, res) => res.redirect(303, '/admin/dashboard'));
+
+// Dashboard (support both GET and redirected POST)
+router.route('/dashboard')
+  .get(dashCtrl.getDashboard)
+  .post(dashCtrl.getDashboard);
 
 // Courses
 router.get('/courses', courseCtrl.index);

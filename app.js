@@ -21,6 +21,9 @@ const { notFound, errorHandler } = require('./middleware/error.middleware');
 const compression = require('compression');
 
 const app = express();
+// Trust Proxy (required for Vercel / Railway / reverse proxies)
+// Must be set before session and helmet so req.secure and x-forwarded headers are honored.
+app.set('trust proxy', 1);
 app.use(compression());
 
 
@@ -159,9 +162,6 @@ app.set('layout extractStyles', true);
 // ─── Static Files ─────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── Trust Proxy (required for Railway / reverse proxies) ─────────────────────
-// Without this, req.protocol returns 'http' even behind Railway's HTTPS proxy.
-app.set('trust proxy', 1);
 
 // ─── Global Template Locals ───────────────────────────────────────────────────
 app.use((req, res, next) => {

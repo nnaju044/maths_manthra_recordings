@@ -13,10 +13,17 @@ const getMongoUri = () => {
   return null;
 };
 
+let cachedPromise = null;
+
 const connectDB = async () => {
-  // Reuse existing connection in warm serverless invocations
-  if (mongoose.connection.readyState >= 1) {
+  // Reuse existing connection in warm serverless invocations if fully connected
+  if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
+  }
+
+  // If a connection attempt is already in progress, await the existing promise
+  if (cachedPromise) {
+    return cachedPromise;
   }
 
   const mongoUri = getMongoUri();
@@ -29,19 +36,21 @@ const connectDB = async () => {
     throw new Error(errorMsg);
   }
 
-  try {
-    const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
-    });
+  cachedPromise = mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 5000,
+  }).then((conn) => {
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    return conn;
-  } catch (err) {
+    return conn.connection;
+  }).catch((err) => {
+    cachedPromise = null;
     console.error(`❌ MongoDB connection error: ${err.message}`);
     if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
       process.exit(1);
     }
     throw err;
-  }
+  });
+
+  return cachedPromise;
 };
 
 mongoose.connection.on('disconnected', () => {

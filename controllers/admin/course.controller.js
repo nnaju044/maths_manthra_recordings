@@ -76,11 +76,37 @@ exports.create = (req, res) => {
 exports.store = async (req, res, next) => {
   try {
     const { title, description, password, isActive, certificateCompletionDate } = req.body;
+    const cleanTitle = (title || '').trim();
+
+    if (!cleanTitle) {
+      req.flash('error', 'Course title is required.');
+      if (req.session?.save) {
+        return req.session.save(() => res.redirect(303, '/admin/courses/create'));
+      }
+      return res.redirect(303, '/admin/courses/create');
+    }
 
     // Validate 4-digit password
     if (!password || !/^\d{4}$/.test(password)) {
       req.flash('error', 'Course password must be exactly 4 digits.');
-      return res.redirect('/admin/courses/create');
+      if (req.session?.save) {
+        return req.session.save(() => res.redirect(303, '/admin/courses/create'));
+      }
+      return res.redirect(303, '/admin/courses/create');
+    }
+
+    // Debounce rapid duplicate submissions (e.g. repeated button clicks or proxy retries within 15 seconds)
+    const recentDuplicate = await Course.findOne({
+      title: cleanTitle,
+      createdAt: { $gte: new Date(Date.now() - 15000) },
+    });
+    if (recentDuplicate) {
+      console.warn(`[Course Create] Debounced duplicate submission for "${cleanTitle}"`);
+      req.flash('success', 'Course created successfully.');
+      if (req.session?.save) {
+        return req.session.save(() => res.redirect(303, '/admin/courses'));
+      }
+      return res.redirect(303, '/admin/courses');
     }
 
     // Cloudinary upload — req.file.path is the secure_url
@@ -94,7 +120,7 @@ exports.store = async (req, res, next) => {
     const isScoresEnabled = req.body.scoresEnabled === 'on' || req.body.scoresEnabled === 'true' || req.body.scoresEnabled === true;
 
     const course = await Course.create({
-      title,
+      title: cleanTitle,
       description,
       thumbnail,
       thumbnailPublicId,
@@ -110,7 +136,10 @@ exports.store = async (req, res, next) => {
     console.log('scoresEnabled after create:', course.scoresEnabled);
 
     req.flash('success', 'Course created successfully.');
-    res.redirect('/admin/courses');
+    if (req.session?.save) {
+      return req.session.save(() => res.redirect(303, '/admin/courses'));
+    }
+    return res.redirect(303, '/admin/courses');
   } catch (err) {
     console.error('COURSE CREATE ERROR:', err);
     if (err.code === 11000) {
@@ -118,9 +147,11 @@ exports.store = async (req, res, next) => {
     } else {
       req.flash('error', err.message || 'Failed to create course. Please check the entered details.');
     }
-    return res.redirect('/admin/courses/create');
+    if (req.session?.save) {
+      return req.session.save(() => res.redirect(303, '/admin/courses/create'));
+    }
+    return res.redirect(303, '/admin/courses/create');
   }
-
 };
 
 // Show edit form
@@ -200,7 +231,10 @@ exports.update = async (req, res, next) => {
     console.log('scoresEnabled after save:', verifyCourse.scoresEnabled);
 
     req.flash('success', 'Course updated successfully.');
-    res.redirect('/admin/courses');
+    if (req.session?.save) {
+      return req.session.save(() => res.redirect(303, '/admin/courses'));
+    }
+    return res.redirect(303, '/admin/courses');
   } catch (err) {
     console.error('COURSE UPDATE ERROR:', err);
     if (err.code === 11000) {
@@ -208,7 +242,10 @@ exports.update = async (req, res, next) => {
     } else {
       req.flash('error', err.message || 'Failed to update course.');
     }
-    return res.redirect(`/admin/courses/${req.params.id}/edit`);
+    if (req.session?.save) {
+      return req.session.save(() => res.redirect(303, `/admin/courses/${req.params.id}/edit`));
+    }
+    return res.redirect(303, `/admin/courses/${req.params.id}/edit`);
   }
 };
 

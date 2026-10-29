@@ -34,9 +34,14 @@ const requireAuth = async (req, res, next) => {
     res.locals.currentUser = user;
     next();
   } catch (err) {
-    res.clearCookie('mm_token');
-    req.flash('error', 'Session expired. Please log in again.');
-    return res.redirect('/auth/login');
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError' || err.name === 'NotBeforeError') {
+      res.clearCookie('mm_token');
+      req.flash('error', 'Session expired. Please log in again.');
+      return res.redirect('/auth/login');
+    }
+    // Database or network error: do not wipe the user's valid login cookie
+    console.error('requireAuth database/server error:', err.message);
+    return next(err);
   }
 };
 

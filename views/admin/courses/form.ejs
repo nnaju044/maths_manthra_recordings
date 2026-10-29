@@ -10,7 +10,7 @@
 
 <div class="form-card">
   <form action="<%= course ? `/admin/courses/${course._id}` : '/admin/courses' %>" method="POST"
-    enctype="multipart/form-data" class="admin-form">
+    enctype="multipart/form-data" class="admin-form" id="courseForm" onsubmit="handleCourseSubmit(event, this)">
 
     <!-- Title -->
     <div class="mb-3">
@@ -120,7 +120,7 @@
       <% } %>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary-custom">
+          <button type="submit" class="btn btn-primary-custom" id="submitCourseBtn">
             <i class="bi bi-check-lg"></i>
             <%= course ? 'Update Course' : 'Create Course' %>
           </button>
@@ -128,3 +128,18 @@
         </div>
   </form>
 </div>
+
+<script>
+function handleCourseSubmit(e, form) {
+  var btn = document.getElementById('submitCourseBtn');
+  if (btn && btn.dataset.submitting === 'true') {
+    e.preventDefault();
+    return false;
+  }
+  if (btn) {
+    btn.dataset.submitting = 'true';
+    btn.classList.add('disabled');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
+  }
+}
+</script>

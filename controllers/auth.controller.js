@@ -73,7 +73,13 @@ exports.postLogin = async (req, res, next) => {
 
     issueToken(res, user);
     req.flash('success', `Welcome back, ${user.name}!`);
-    res.redirect('/admin/dashboard');
+    if (req.session && typeof req.session.save === 'function') {
+      req.session.save(() => {
+        res.redirect(303, '/admin/dashboard');
+      });
+    } else {
+      res.redirect(303, '/admin/dashboard');
+    }
   } catch (err) {
     next(err);
   }
@@ -83,5 +89,11 @@ exports.postLogin = async (req, res, next) => {
 exports.logout = (req, res) => {
   res.clearCookie('mm_token');
   req.flash('success', 'You have been logged out.');
-  res.redirect('/auth/login');
+  if (req.session && typeof req.session.save === 'function') {
+    req.session.save(() => {
+      res.redirect(303, '/auth/login');
+    });
+  } else {
+    res.redirect(303, '/auth/login');
+  }
 };
