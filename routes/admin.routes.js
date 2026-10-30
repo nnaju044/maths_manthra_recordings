@@ -42,8 +42,10 @@ router.post('/videos/:id', videoCtrl.update);
 router.post('/videos/:id/delete', videoCtrl.destroy);
 router.post('/videos/reorder', videoCtrl.reorder);
 
-// Certificates
-router.get('/certificates', certCtrl.index);
+// Certificates (support both GET and redirected POST from serverless environments)
+router.route('/certificates')
+  .get(certCtrl.index)
+  .post(certCtrl.index);
 router.get('/certificates/create', certCtrl.getCreate);
 router.post('/certificates/create', certCtrl.postCreate);
 router.get('/certificates/upload', certCtrl.getUpload);

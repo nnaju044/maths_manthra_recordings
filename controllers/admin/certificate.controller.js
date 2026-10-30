@@ -11,6 +11,18 @@ const Counter = require('../../models/Counter');
 const { paginate } = require('../../utils/pagination');
 
 /**
+ * Safe redirect helper for serverless / Vercel environments.
+ * Awaits session persistence before responding with HTTP 303 See Other
+ * to force the client to make a GET request and prevent redirect loops.
+ */
+function safeRedirect(req, res, targetUrl) {
+  if (req.session && typeof req.session.save === 'function') {
+    return req.session.save(() => res.redirect(303, targetUrl));
+  }
+  return res.redirect(303, targetUrl);
+}
+
+/**
  * Helper to extract value from row object matching candidate header names
  */
 function getRowValue(row, candidates) {
@@ -317,33 +329,45 @@ exports.postCreate = async (req, res, next) => {
     // Validate required fields
     if (!fullName || !fullName.trim()) {
       req.flash('error', 'Student full name is required.');
-      return res.redirect('/admin/certificates/create');
+      return safeRedirect(req, res, '/admin/certificates/create');
     }
     if (!email || !email.trim()) {
       req.flash('error', 'Student email is required.');
-      return res.redirect('/admin/certificates/create');
+      return safeRedirect(req, res, '/admin/certificates/create');
     }
     if (!courseId) {
       req.flash('error', 'Please select a course.');
-      return res.redirect('/admin/certificates/create');
+      return safeRedirect(req, res, '/admin/certificates/create');
     }
 
     const course = await Course.findById(courseId);
     if (!course) {
       req.flash('error', 'The selected course does not exist.');
-      return res.redirect('/admin/certificates/create');
+      return safeRedirect(req, res, '/admin/certificates/create');
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check for duplicate email+course
+    // Debounce duplicate submissions within 15 seconds
+    const recentDuplicate = await CertificateStudent.findOne({
+      email: normalizedEmail,
+      courseId: course._id,
+      createdAt: { $gte: new Date(Date.now() - 15000) },
+    });
+    if (recentDuplicate) {
+      console.warn(`[Student Create] Debounced duplicate submission for "${normalizedEmail}"`);
+      req.flash('success', `Student "${recentDuplicate.fullName || recentDuplicate.name}" created successfully.`);
+      return safeRedirect(req, res, '/admin/certificates');
+    }
+
+    // Check for duplicate email+course (older than 15s)
     const existing = await CertificateStudent.findOne({
       email: normalizedEmail,
       courseId: course._id,
     });
     if (existing) {
       req.flash('error', 'A student with this email already exists for the selected course.');
-      return res.redirect('/admin/certificates/create');
+      return safeRedirect(req, res, '/admin/certificates/create');
     }
 
     // Generate unique certificate number
@@ -357,7 +381,7 @@ exports.postCreate = async (req, res, next) => {
       const sidExists = await CertificateStudent.findOne({ studentId: finalStudentId });
       if (sidExists) {
         req.flash('error', `Student ID "${finalStudentId}" is already in use. Please choose a different one.`);
-        return res.redirect('/admin/certificates/create');
+        return safeRedirect(req, res, '/admin/certificates/create');
       }
     }
 
@@ -383,9 +407,16 @@ exports.postCreate = async (req, res, next) => {
     });
 
     req.flash('success', `Student "${fullName.trim()}" created successfully with certificate ${certificateNumber}.`);
-    res.redirect('/admin/certificates');
+    return safeRedirect(req, res, '/admin/certificates');
   } catch (err) {
-    next(err);
+    console.error('Student create error:', err);
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue || {})[0] || 'field';
+      req.flash('error', `A student with this ${field} already exists.`);
+      return safeRedirect(req, res, '/admin/certificates/create');
+    }
+    req.flash('error', err.message || 'Failed to create student.');
+    return safeRedirect(req, res, '/admin/certificates/create');
   }
 };
 
@@ -395,7 +426,7 @@ exports.getEdit = async (req, res, next) => {
     const student = await CertificateStudent.findById(req.params.id).populate('courseId');
     if (!student) {
       req.flash('error', 'Student record not found.');
-      return res.redirect('/admin/certificates');
+      return safeRedirect(req, res, '/admin/certificates');
     }
 
     const courses = await Course.find().sort({ title: 1 });
@@ -468,7 +499,7 @@ exports.postUpdate = async (req, res, next) => {
     const student = await CertificateStudent.findById(req.params.id);
     if (!student) {
       req.flash('error', 'Student record not found.');
-      return res.redirect('/admin/certificates');
+      return safeRedirect(req, res, '/admin/certificates');
     }
 
     const {
@@ -480,11 +511,11 @@ exports.postUpdate = async (req, res, next) => {
     // Validate required fields
     if (!fullName || !fullName.trim()) {
       req.flash('error', 'Student full name is required.');
-      return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+      return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
     }
     if (!email || !email.trim()) {
       req.flash('error', 'Student email is required.');
-      return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+      return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -498,7 +529,7 @@ exports.postUpdate = async (req, res, next) => {
       });
       if (existing) {
         req.flash('error', 'Another student with this email already exists for the selected course.');
-        return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+        return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
       }
     }
 
@@ -511,7 +542,7 @@ exports.postUpdate = async (req, res, next) => {
       });
       if (sidExists) {
         req.flash('error', `Student ID "${newStudentId}" is already in use by another student.`);
-        return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+        return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
       }
     }
 
@@ -527,14 +558,14 @@ exports.postUpdate = async (req, res, next) => {
         const ah = Number(ahRaw);
         if (isNaN(ah) || ah < 0 || ah > 5) {
           req.flash('error', `Week ${w} Assignment / Homework must be a number between 0 and 5.`);
-          return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+          return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
         }
       }
       if (aeRaw !== undefined && aeRaw !== null && String(aeRaw).trim() !== '') {
         const ae = Number(aeRaw);
         if (isNaN(ae) || ae < 0 || ae > 5) {
           req.flash('error', `Week ${w} Activity / Engagement must be a number between 0 and 5.`);
-          return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+          return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
         }
       }
     }
@@ -553,7 +584,7 @@ exports.postUpdate = async (req, res, next) => {
         const num = Number(item.val);
         if (isNaN(num) || num < 0) {
           req.flash('error', `${item.label} must be a valid non-negative number.`);
-          return res.redirect(`/admin/certificates/${req.params.id}/edit`);
+          return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
         }
       }
     }
@@ -582,9 +613,11 @@ exports.postUpdate = async (req, res, next) => {
     await student.save();
 
     req.flash('success', `Student "${student.fullName}" updated successfully.`);
-    res.redirect('/admin/certificates');
+    return safeRedirect(req, res, '/admin/certificates');
   } catch (err) {
-    next(err);
+    console.error('Student update error:', err);
+    req.flash('error', err.message || 'Failed to update student.');
+    return safeRedirect(req, res, `/admin/certificates/${req.params.id}/edit`);
   }
 };
 
@@ -617,19 +650,19 @@ exports.postUpload = async (req, res, next) => {
     // 1. Validate course selection
     if (!courseId) {
       req.flash('error', 'Please select a course before uploading.');
-      return res.redirect('/admin/certificates/upload');
+      return safeRedirect(req, res, '/admin/certificates/upload');
     }
 
     const course = await Course.findById(courseId);
     if (!course) {
       req.flash('error', 'The selected course does not exist.');
-      return res.redirect('/admin/certificates/upload');
+      return safeRedirect(req, res, '/admin/certificates/upload');
     }
 
     // 2. Validate file existence
     if (!req.file) {
       req.flash('error', 'Please upload a valid Excel file (.xlsx).');
-      return res.redirect('/admin/certificates/upload');
+      return safeRedirect(req, res, '/admin/certificates/upload');
     }
 
     // 3. Parse Excel using xlsx package
@@ -638,12 +671,12 @@ exports.postUpload = async (req, res, next) => {
       workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     } catch (parseErr) {
       req.flash('error', 'Unable to parse Excel file. Please ensure it is a valid .xlsx file.');
-      return res.redirect('/admin/certificates/upload');
+      return safeRedirect(req, res, '/admin/certificates/upload');
     }
 
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
       req.flash('error', 'The uploaded Excel file contains no worksheets.');
-      return res.redirect('/admin/certificates/upload');
+      return safeRedirect(req, res, '/admin/certificates/upload');
     }
 
     const sheetName = workbook.SheetNames[0];
@@ -652,7 +685,7 @@ exports.postUpload = async (req, res, next) => {
 
     if (!rows || rows.length === 0) {
       req.flash('error', 'The uploaded Excel sheet contains no data rows.');
-      return res.redirect('/admin/certificates/upload');
+      return safeRedirect(req, res, '/admin/certificates/upload');
     }
 
     let importedCount = 0;
@@ -742,9 +775,11 @@ exports.postUpload = async (req, res, next) => {
       );
     }
 
-    res.redirect('/admin/certificates/upload');
+    return safeRedirect(req, res, '/admin/certificates/upload');
   } catch (err) {
-    next(err);
+    console.error('Upload Excel error:', err);
+    req.flash('error', err.message || 'Failed to upload students.');
+    return safeRedirect(req, res, '/admin/certificates/upload');
   }
 };
 
@@ -774,8 +809,10 @@ exports.deleteStudent = async (req, res, next) => {
     } else {
       req.flash('success', `Student "${student.fullName || student.name}" deleted successfully.`);
     }
-    res.redirect('/admin/certificates');
+    return safeRedirect(req, res, '/admin/certificates');
   } catch (err) {
-    next(err);
+    console.error('Student delete error:', err);
+    req.flash('error', err.message || 'Failed to delete student.');
+    return safeRedirect(req, res, '/admin/certificates');
   }
 };

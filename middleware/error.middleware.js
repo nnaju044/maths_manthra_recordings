@@ -21,29 +21,36 @@ const notFound = (req, res) => {
 const errorHandler = (err, req, res, next) => {
   console.error('❌ Error:', err.stack || err.message);
 
+  const safeRedirect = (target) => {
+    if (req.session && typeof req.session.save === 'function') {
+      return req.session.save(() => res.redirect(303, target));
+    }
+    return res.redirect(303, target);
+  };
+
   // Multer & Cloudinary upload errors
   if (err.code === 'LIMIT_FILE_SIZE') {
     req.flash('error', 'File too large. Maximum size is 5MB.');
-    return res.redirect(req.get('Referrer') || '/admin/courses');
+    return safeRedirect(req.get('Referrer') || '/admin/courses');
   }
 
   if (err.message && (err.message.includes('Only image files') || err.message.includes('Image file format') || err.message.includes('not allowed'))) {
     req.flash('error', err.message || 'Invalid image file format. Allowed formats: JPG, JPEG, PNG, WebP.');
-    return res.redirect(req.get('Referrer') || '/admin/courses');
+    return safeRedirect(req.get('Referrer') || '/admin/courses');
   }
 
   // Mongoose validation errors
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map(e => e.message).join(', ');
     req.flash('error', messages);
-    return res.redirect(req.get('Referrer') || '/admin/courses');
+    return safeRedirect(req.get('Referrer') || '/admin/courses');
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue || {})[0] || 'field';
     req.flash('error', `A record with this ${field} already exists.`);
-    return res.redirect(req.get('Referrer') || '/admin/courses');
+    return safeRedirect(req.get('Referrer') || '/admin/courses');
   }
 
   const status = err.status || 500;
