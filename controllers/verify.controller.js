@@ -115,58 +115,6 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       }
     }
 
-    // Progress percentage & grade calculation
-    let totalScore = 0;
-    if (typeof student.totalMark === 'number' && student.totalMark > 0) {
-      totalScore = student.totalMark;
-    } else if (typeof student.marks === 'number' && student.marks > 0) {
-      totalScore = student.marks;
-    } else {
-      const subTotal = (student.internalMark || 0) + (student.theoryMark || 0) + (student.practicalMark || 0);
-      totalScore = subTotal > 0 ? subTotal : (student.totalMark || student.marks || 90);
-    }
-    const progressPercentage = Math.min(100, Math.max(0, Math.round(totalScore)));
-
-    let grade = 'Grade A';
-    if (progressPercentage >= 90) grade = 'Grade A+';
-    else if (progressPercentage >= 80) grade = 'Grade A';
-    else if (progressPercentage >= 70) grade = 'Grade B+';
-    else if (progressPercentage >= 60) grade = 'Grade B';
-    else if (progressPercentage >= 50) grade = 'Grade C';
-    else grade = 'Pass';
-
-    // Calculate weekly marks average
-    const wMarks = [
-      student.week1?.weeklyMark,
-      student.week2?.weeklyMark,
-      student.week3?.weeklyMark,
-      student.week4?.weeklyMark,
-    ].filter((m) => typeof m === 'number' && !isNaN(m) && m > 0);
-    const weeklyAverage = wMarks.length > 0
-      ? (wMarks.reduce((a, b) => a + b, 0) / wMarks.length).toFixed(1)
-      : (progressPercentage ? progressPercentage.toFixed(1) : '88.5');
-
-    // Verification target for QR code (studentId or certificateNumber)
-    const safeCertNumber = student.certificateNumber || student.studentId || identifier;
-    const verifyTarget = student.studentId || student.certificateNumber || identifier;
-    const verifyUrl = `${req.protocol}://${req.get('host')}/verify/${encodeURIComponent(verifyTarget)}`;
-    let qrCodeDataUrl = '';
-    let qrCodeSvg = '';
-    try {
-      qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
-        margin: 1,
-        width: 220,
-        color: { dark: '#047857', light: '#ffffff' },
-      });
-      qrCodeSvg = await QRCode.toString(verifyUrl, {
-        type: 'svg',
-        margin: 1,
-        color: { dark: '#047857', light: '#ffffff' },
-      });
-    } catch (qrErr) {
-      console.warn('QR Code generation error:', qrErr.message);
-    }
-
     // Calculate weekly performance numbers (0-5 scale, max total 40) with migration safety
     const wp = student.weeklyPerformance || {};
     const parseWeeklyScore = (val, legacy) => {
@@ -205,11 +153,104 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       },
     };
 
-    const week1Total = verifiedWeeklyPerformance.week1.assignmentHomework + verifiedWeeklyPerformance.week1.activityEngagement;
-    const week2Total = verifiedWeeklyPerformance.week2.assignmentHomework + verifiedWeeklyPerformance.week2.activityEngagement;
-    const week3Total = verifiedWeeklyPerformance.week3.assignmentHomework + verifiedWeeklyPerformance.week3.activityEngagement;
-    const week4Total = verifiedWeeklyPerformance.week4.assignmentHomework + verifiedWeeklyPerformance.week4.activityEngagement;
-    const weeklyPerformanceTotal = week1Total + week2Total + week3Total + week4Total;
+    const week1Total = Math.round((verifiedWeeklyPerformance.week1.assignmentHomework + verifiedWeeklyPerformance.week1.activityEngagement) * 10) / 10;
+    const week2Total = Math.round((verifiedWeeklyPerformance.week2.assignmentHomework + verifiedWeeklyPerformance.week2.activityEngagement) * 10) / 10;
+    const week3Total = Math.round((verifiedWeeklyPerformance.week3.assignmentHomework + verifiedWeeklyPerformance.week3.activityEngagement) * 10) / 10;
+    const week4Total = Math.round((verifiedWeeklyPerformance.week4.assignmentHomework + verifiedWeeklyPerformance.week4.activityEngagement) * 10) / 10;
+    const weeklyPerformanceTotal = Math.round((week1Total + week2Total + week3Total + week4Total) * 10) / 10;
+    const continuousPercentage = Math.min(100, Math.max(0, Math.round((weeklyPerformanceTotal / 40) * 100)));
+
+    // Final assessment components (Internal: 40, Theory: 20, Practical: 40)
+    const internalMark = (typeof student.internalMark === 'number' && student.internalMark > 0)
+      ? student.internalMark
+      : weeklyPerformanceTotal;
+    const theoryMark = (typeof student.theoryMark === 'number' && !isNaN(student.theoryMark)) ? Math.max(0, student.theoryMark) : 0;
+    const practicalMark = (typeof student.practicalMark === 'number' && !isNaN(student.practicalMark)) ? Math.max(0, student.practicalMark) : 0;
+
+    // Accurate Total Mark calculation — NEVER assume fake 90
+    let totalMark = 0;
+    if (typeof student.totalMark === 'number' && student.totalMark > 0) {
+      totalMark = student.totalMark;
+    } else if (typeof student.marks === 'number' && student.marks > 0) {
+      totalMark = student.marks;
+    } else {
+      totalMark = Math.round((internalMark + theoryMark + practicalMark) * 10) / 10;
+    }
+
+    // Determine course status & dual portal mode:
+    // "isCertified": Course completed / final certificate issued
+    // "isStudyDays": Student currently attending course, viewing weekly markup and progress
+    const hasFinalMarks = Boolean((typeof student.totalMark === 'number' && student.totalMark > 0) || (theoryMark > 0 || practicalMark > 0));
+    const isCourseCertEnabled = Boolean(student.courseId && student.courseId.certificateEnabled === true);
+    const completionDate = student.courseId?.certificateCompletionDate ? new Date(student.courseId.certificateCompletionDate) : null;
+    const isCompletionDatePassed = Boolean(completionDate && !isNaN(completionDate.getTime()) && completionDate <= now);
+
+    let formattedCompletionDate = '';
+    if (completionDate && !isNaN(completionDate.getTime())) {
+      formattedCompletionDate = completionDate.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+
+    const isCertified = Boolean(hasFinalMarks && (isCourseCertEnabled || isCompletionDatePassed || (typeof student.totalMark === 'number' && student.totalMark > 0)));
+    const isStudyDays = !isCertified;
+
+    // Accurate progress percentage & grading without arbitrary assumptions
+    let progressPercentage = 0;
+    let grade = 'In Progress';
+
+    if (isCertified) {
+      progressPercentage = Math.min(100, Math.max(0, Math.round(totalMark)));
+      if (progressPercentage >= 90) grade = 'Grade A+';
+      else if (progressPercentage >= 80) grade = 'Grade A';
+      else if (progressPercentage >= 70) grade = 'Grade B+';
+      else if (progressPercentage >= 60) grade = 'Grade B';
+      else if (progressPercentage >= 50) grade = 'Grade C';
+      else if (progressPercentage > 0) grade = 'Pass';
+      else grade = 'Pending Evaluation';
+    } else {
+      // In study days: percentage reflects continuous evaluation progress so far
+      if (weeklyPerformanceTotal > 0) {
+        progressPercentage = continuousPercentage;
+        if (continuousPercentage >= 90) grade = 'Grade A+ (Study Track)';
+        else if (continuousPercentage >= 80) grade = 'Grade A (Study Track)';
+        else if (continuousPercentage >= 70) grade = 'Grade B+ (Study Track)';
+        else if (continuousPercentage >= 60) grade = 'Grade B (Study Track)';
+        else grade = 'In Progress';
+      } else {
+        progressPercentage = 0;
+        grade = 'In Progress — Awaiting Evaluation';
+      }
+    }
+
+    // Weekly marks average (out of 10)
+    const validWeekTotals = [week1Total, week2Total, week3Total, week4Total].filter((w) => w > 0);
+    const weeklyAverage = validWeekTotals.length > 0
+      ? (validWeekTotals.reduce((a, b) => a + b, 0) / validWeekTotals.length).toFixed(1)
+      : (weeklyPerformanceTotal > 0 ? (weeklyPerformanceTotal / 4).toFixed(1) : '0.0');
+
+    // Verification target for QR code (studentId or certificateNumber)
+    const safeCertNumber = student.certificateNumber || student.studentId || identifier;
+    const verifyTarget = student.studentId || student.certificateNumber || identifier;
+    const verifyUrl = `${req.protocol}://${req.get('host')}/verify/${encodeURIComponent(verifyTarget)}`;
+    let qrCodeDataUrl = '';
+    let qrCodeSvg = '';
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
+        margin: 1,
+        width: 220,
+        color: { dark: '#047857', light: '#ffffff' },
+      });
+      qrCodeSvg = await QRCode.toString(verifyUrl, {
+        type: 'svg',
+        margin: 1,
+        color: { dark: '#047857', light: '#ffffff' },
+      });
+    } catch (qrErr) {
+      console.warn('QR Code generation error:', qrErr.message);
+    }
 
     // Check if progress report data exists
     const hasWeeklyPerformance = Boolean(
@@ -239,9 +280,14 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       phone: student.phone || '',
       studentId: student.studentId || '',
       certificateNumber: student.certificateNumber || safeCertNumber,
-      issueDate: formattedIssueDate,
+      issueDate: isCertified ? formattedIssueDate : (formattedCompletionDate ? `Target: ${formattedCompletionDate}` : 'Upon Course Completion'),
       enrollmentDate: formattedEnrollmentDate,
+      completionDate: formattedCompletionDate,
+      isCertified,
+      isStudyDays,
+      hasFinalMarks,
       progressPercentage,
+      continuousPercentage,
       grade,
       weeklyAverage,
       qrCodeDataUrl,
@@ -254,7 +300,12 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       progressCard: student.progressCard || '',
       profileImage: formattedProfileImage,
       verificationStatus: student.verificationStatus !== false,
-      certificateStatus: student.verificationStatus !== false ? 'Active & Verified' : 'Pending Verification',
+      certificateStatus: isCertified
+        ? (student.verificationStatus !== false ? 'Active & Verified' : 'Pending Verification')
+        : 'Course In Progress (Issued upon completion)',
+      certificateStatusBadge: isCertified
+        ? (student.verificationStatus !== false ? 'Verified' : 'Pending')
+        : 'In Progress',
       courseTitle: (student.courseId && student.courseId.title) ? student.courseId.title : 'Maths Manthra Academy Program',
       // Progress Report Fields
       weeklyPerformance: verifiedWeeklyPerformance,
@@ -267,14 +318,10 @@ exports.verifyCertificatePublic = async (req, res, next) => {
       week2: student.week2 || {},
       week3: student.week3 || {},
       week4: student.week4 || {},
-      internalMark: (typeof student.internalMark === 'number' && student.internalMark > 0)
-        ? student.internalMark
-        : (weeklyPerformanceTotal || 0),
-      theoryMark: typeof student.theoryMark === 'number' ? student.theoryMark : 0,
-      practicalMark: typeof student.practicalMark === 'number' ? student.practicalMark : 0,
-      totalMark: (typeof student.totalMark === 'number' && student.totalMark > 0)
-        ? student.totalMark
-        : (((typeof student.internalMark === 'number' && student.internalMark > 0 ? student.internalMark : weeklyPerformanceTotal) + (typeof student.theoryMark === 'number' ? student.theoryMark : 0) + (typeof student.practicalMark === 'number' ? student.practicalMark : 0)) || student.totalMark || student.marks || progressPercentage),
+      internalMark,
+      theoryMark,
+      practicalMark,
+      totalMark,
       academicPerformance: student.academicPerformance || '',
       assignmentCompletion: student.assignmentCompletion || '',
       practicalSkills: student.practicalSkills || '',

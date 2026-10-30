@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>
-    <%= locals.pageTitle || '✓ Verified Student | MathsManthra Academy' %>
+    <%= locals.pageTitle || (locals.student && locals.student.isStudyDays ? 'Student Academic Portal | MathsManthra Academy' : '✓ Verified Student | MathsManthra Academy') %>
   </title>
   <meta name="description"
     content="<%= locals.metaDescription || 'Official student verification and academic progress portal — MathsManthra Academy.' %>" />
@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
 
   <!-- OpenGraph Metadata -->
-  <meta property="og:title" content="<%= locals.pageTitle || '✓ Verified Student | MathsManthra Academy' %>" />
+  <meta property="og:title" content="<%= locals.pageTitle || 'Student Academic Record | MathsManthra Academy' %>" />
   <meta property="og:description"
     content="<%= locals.metaDescription || 'Official verified student record and academic progress report issued by MathsManthra Academy.' %>" />
   <meta property="og:type" content="website" />
@@ -112,113 +112,158 @@
   class="min-h-full bg-slate-50 font-sans text-slate-800 antialiased flex flex-col justify-between selection:bg-brand-100 selection:text-brand-900">
 
   <!-- Helper Functions for Criteria & Color Indicators -->
-  <% function getScoreCategory(val) { if (val===null || val===undefined || val==='' ) { return { text: '—' ,
-    cls: 'bg-slate-50 text-slate-400 border-slate-200' , dot: 'bg-slate-300' , label: 'Pending' }; } const
-    str=String(val).trim(); const num=parseFloat(str); if (!isNaN(num)) { if (num>= 75) {
-    return { text: str + ' / 100', cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20',
-    dot: 'bg-emerald-500', label: 'Good' };
-    } else if (num >= 50) {
-    return { text: str + ' / 100', cls: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20', dot:
-    'bg-amber-500', label: 'Average' };
-    } else {
-    return { text: str + ' / 100', cls: 'bg-rose-50 text-rose-800 border-rose-300 ring-1 ring-rose-500/20', dot:
-    'bg-rose-500', label: 'Poor' };
-    }
-    }
+  <%
+    const isStudy = Boolean(locals.student && locals.student.isStudyDays);
+    const isCert = Boolean(locals.student && locals.student.isCertified);
 
-    if (/good|excellent|attentive|active|consistent|outstanding|high|completed|regular|a\+|grade a|punctual/i.test(str))
-    {
-    return { text: str, cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot:
-    'bg-emerald-500', label: 'Good' };
-    }
-    if (/avg|average|moderate|satisfactory|fair|partial|grade b|b\+|medium|needs practice/i.test(str)) {
-    return { text: str, cls: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20', dot:
-    'bg-amber-500', label: 'Average' };
-    }
-    if (/poor|low|irregular|inactive|incomplete|weak|lagging|fail|needs improvement/i.test(str)) {
-    return { text: str, cls: 'bg-rose-50 text-rose-800 border-rose-300 ring-1 ring-rose-500/20', dot: 'bg-rose-500',
-    label: 'Poor' };
-    }
+    function getScoreCategory(val) {
+      if (val === null || val === undefined || val === '') {
+        return { text: '—', cls: 'bg-slate-50 text-slate-400 border-slate-200', dot: 'bg-slate-300', label: 'Pending' };
+      }
+      const str = String(val).trim();
+      const num = parseFloat(str);
+      if (!isNaN(num)) {
+        if (num >= 75) {
+          return { text: str + ' / 100', cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500', label: 'Good' };
+        } else if (num >= 50) {
+          return { text: str + ' / 100', cls: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20', dot: 'bg-amber-500', label: 'Average' };
+        } else {
+          return { text: str + ' / 100', cls: 'bg-rose-50 text-rose-800 border-rose-300 ring-1 ring-rose-500/20', dot: 'bg-rose-500', label: 'Poor' };
+        }
+      }
 
-    return { text: str, cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot:
-    'bg-emerald-500', label: 'Good' };
+      if (/good|excellent|attentive|active|consistent|outstanding|high|completed|regular|a\+|grade a|punctual/i.test(str)) {
+        return { text: str, cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500', label: 'Good' };
+      }
+      if (/avg|average|moderate|satisfactory|fair|partial|grade b|b\+|medium|needs practice/i.test(str)) {
+        return { text: str, cls: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20', dot: 'bg-amber-500', label: 'Average' };
+      }
+      if (/poor|low|irregular|inactive|incomplete|weak|lagging|fail|needs improvement/i.test(str)) {
+        return { text: str, cls: 'bg-rose-50 text-rose-800 border-rose-300 ring-1 ring-rose-500/20', dot: 'bg-rose-500', label: 'Poor' };
+      }
+
+      return { text: str, cls: 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20', dot: 'bg-emerald-500', label: 'Good' };
     }
 
     function getProgressMetric(val, fallbackScore, defaultText) {
-    const text = (val && String(val).trim()) ? String(val).trim() : defaultText;
-    let score = fallbackScore;
-    const match = text.match(/(\d{1,3})%/);
-    if (match) {
-    score = parseInt(match[1], 10);
-    } else if (/excellent|distinction|grade a\+|outstanding|advanced/i.test(text)) {
-    score = 94;
-    } else if (/consistent|high|first class|grade a|very good/i.test(text)) {
-    score = 88;
-    } else if (/good|completed|on schedule|satisfactory/i.test(text)) {
-    score = 80;
-    } else if (/average|moderate/i.test(text)) {
-    score = 68;
+      const text = (val && String(val).trim()) ? String(val).trim() : defaultText;
+      let score = (typeof fallbackScore === 'number' && !isNaN(fallbackScore)) ? fallbackScore : 0;
+      const match = text.match(/(\d{1,3})%/);
+      if (match) {
+        score = parseInt(match[1], 10);
+      } else if (/excellent|distinction|grade a\+|outstanding|advanced/i.test(text)) {
+        score = 94;
+      } else if (/consistent|high|first class|grade a|very good/i.test(text)) {
+        score = 88;
+      } else if (/good|completed|on schedule|satisfactory/i.test(text)) {
+        score = 80;
+      } else if (/average|moderate/i.test(text)) {
+        score = 68;
+      }
+      score = Math.min(100, Math.max(0, score));
+      return { text, score };
     }
-    score = Math.min(100, Math.max(0, score));
-    return { text, score };
-    }
-    %>
+  %>
 
-    <!-- TOP BRANDING HEADER -->
-    <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40">
-      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+  <!-- TOP BRANDING HEADER -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
-        <a href="/" class="flex items-center gap-3 group">
-          <img src="/images/MM_Logo.jpg" alt="MathsManthra Academy Logo"
-            class="h-14 sm:h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/MM_Logo.jpg" alt="MathsManthra Academy Logo"
+          class="h-14 sm:h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
 
-          <div>
-            <h1 class="font-heading font-bold text-base sm:text-lg text-slate-900 leading-tight">
-              MathsManthra Academy
-            </h1>
-            <p class="text-[11px] text-slate-500 font-medium">
-              Official Student Verification Portal
-            </p>
-          </div>
-        </a>
-
-        <!-- Green Security Badge -->
-        <div
-          class="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
-          <i class="bi bi-shield-check text-emerald-600 text-sm"></i>
-          <span class="hidden sm:inline">Official Academic Verification</span>
-          <span class="sm:hidden">Verified</span>
-        </div>
-
-      </div>
-    </header>
-
-    <!-- PRINT LETTERHEAD -->
-    <div class="print-letterhead px-6 pt-6 pb-4 border-b-2 border-slate-800 mb-6">
-      <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-heading font-bold text-slate-900 tracking-tight">MATHSMANTHRA ACADEMY</h1>
-          <p class="text-xs text-slate-600 font-medium">Official Verified Student Academic Progress Report</p>
+          <h1 class="font-heading font-bold text-base sm:text-lg text-slate-900 leading-tight">
+            MathsManthra Academy
+          </h1>
+          <p class="text-[11px] text-slate-500 font-medium">
+            <%= isStudy ? 'Student Academic & Evaluation Portal' : 'Official Student Verification Portal' %>
+          </p>
         </div>
-        <div class="text-right">
-          <span
-            class="inline-block bg-emerald-100 text-emerald-800 font-bold text-xs px-3 py-1 rounded border border-emerald-300">
-            ✓ VERIFIED STUDENT
-          </span>
-          <p class="text-[10px] text-slate-500 mt-1">Verified By: <strong>MathsManthra Academy</strong></p>
-        </div>
+      </a>
+
+      <!-- Security / Academic Badge -->
+      <div
+        class="flex items-center gap-2 <%= isStudy ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200' %> border px-3 py-1 rounded-full text-xs font-semibold">
+        <i class="bi <%= isStudy ? 'bi-mortarboard-fill text-blue-600' : 'bi-shield-check text-emerald-600' %> text-sm"></i>
+        <span class="hidden sm:inline">
+          <%= isStudy ? 'Active Student Portal' : 'Official Academic Verification' %>
+        </span>
+        <span class="sm:hidden">
+          <%= isStudy ? 'Portal' : 'Verified' %>
+        </span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- PRINT LETTERHEAD -->
+  <div class="print-letterhead px-6 pt-6 pb-4 border-b-2 border-slate-800 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-heading font-bold text-slate-900 tracking-tight">MATHSMANTHRA ACADEMY</h1>
+        <p class="text-xs text-slate-600 font-medium">
+          <%= isStudy ? 'Official Student Continuous Evaluation & Academic Record' : 'Official Verified Student Academic Progress Report' %>
+        </p>
+      </div>
+      <div class="text-right">
+        <span
+          class="inline-block <%= isStudy ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300' %> font-bold text-xs px-3 py-1 rounded border">
+          <%= isStudy ? 'STUDENT STUDY RECORD' : '✓ VERIFIED STUDENT' %>
+        </span>
+        <p class="text-[10px] text-slate-500 mt-1">Verified By: <strong>MathsManthra Academy</strong></p>
       </div>
     </div>
+  </div>
 
-    <!-- MAIN WRAPPER -->
-    <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow">
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow">
 
-      <% if (isValid && student) { %>
+    <% if (isValid && student) { %>
 
-        <!-- ══════════════════════════════════════════════════════════════════════
-           VERIFIED STUDENT BADGE (Top Header)
-           ✓ VERIFIED STUDENT
-           ══════════════════════════════════════════════════════════════════════ -->
+      <!-- ══════════════════════════════════════════════════════════════════════
+         TOP PORTAL HEADER BANNER
+         Dual Mode: Student Academic Portal (Study Days) vs Verified Student (Certified)
+         ══════════════════════════════════════════════════════════════════════ -->
+      <% if (isStudy) { %>
+        <!-- STUDY DAYS: ACTIVE ACADEMIC PORTAL BANNER -->
+        <section
+          class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl border border-slate-700 shadow-sm p-5 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print-shadow-none">
+
+          <div class="flex items-center gap-4">
+            <div
+              class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500 text-slate-900 flex items-center justify-center text-3xl shadow-md shrink-0">
+              <i class="bi bi-mortarboard-fill"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-white tracking-tight">
+                  STUDENT ACADEMIC PORTAL
+                </h2>
+                <span
+                  class="inline-flex items-center gap-1.5 bg-emerald-400/20 text-emerald-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Active Enrolled Student • Study Phase
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                Live weekly marks, assignment evaluation, and academic milestone tracker for <strong><%= student.courseTitle %></strong>.
+              </p>
+            </div>
+          </div>
+
+          <div class="no-print self-start sm:self-center shrink-0 flex items-center gap-2">
+            <button type="button" onclick="window.print()"
+              class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-xs transition-colors">
+              <i class="bi bi-printer-fill"></i>
+              Print Progress Report
+            </button>
+          </div>
+
+        </section>
+      <% } else { %>
+        <!-- CERTIFIED: VERIFIED STUDENT & CERTIFICATE BANNER -->
         <section
           class="bg-white rounded-2xl border-2 border-emerald-500 shadow-sm p-5 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print-shadow-none">
 
@@ -230,7 +275,7 @@
             <div>
               <div class="flex items-center gap-2 flex-wrap">
                 <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-emerald-800 tracking-tight">
-                  ✓ VERIFIED STUDENT
+                  ✓ VERIFIED STUDENT & CERTIFICATE
                 </h2>
                 <span
                   class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -239,7 +284,7 @@
                 </span>
               </div>
               <p class="text-xs sm:text-sm text-slate-600 mt-1">
-                Official academic enrollment and performance record verified by <strong>MathsManthra Academy</strong>.
+                Official academic completion and certificate credential verified by <strong>MathsManthra Academy</strong>.
               </p>
             </div>
           </div>
@@ -253,17 +298,19 @@
           </div>
 
         </section>
+      <% } %>
 
-        <!-- ══════════════════════════════════════════════════════════════════════
-           STUDENT DETAILS
-           Name, Student ID, Course, Email, Phone Number
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+      <!-- ══════════════════════════════════════════════════════════════════════
+         STUDENT DETAILS
+         Name, Student ID, Course, Email, Phone Number, Admission / Status
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
 
-          <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
             <div
-              class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+              class="w-8 h-8 rounded-lg <%= isStudy ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700' %> flex items-center justify-center text-base font-bold">
               <i class="bi bi-person-lines-fill"></i>
             </div>
             <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
@@ -271,763 +318,966 @@
             </h3>
           </div>
 
-          <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold <%= isStudy ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' %>">
+            <span class="w-2 h-2 rounded-full <%= isStudy ? 'bg-blue-600' : 'bg-emerald-600' %>"></span>
+            <%= isStudy ? 'Active Student Portal' : 'Official Alumnus Credential' %>
+          </span>
+        </div>
 
-            <!-- Avatar / Photo -->
-            <div class="shrink-0 text-center">
-              <% const names=(student.fullName || 'Student' ).trim().split(/\s+/); const initials=((names[0] ?
-                names[0][0] : '' ) + (names[1] ? names[1][0] : '' )).toUpperCase() || 'S' ; %>
-                <% if (student.profileImage && student.profileImage.trim() !=='' ) { %>
-                  <img src="<%= student.profileImage %>" alt="<%= student.fullName %>"
-                    class="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-md ring-2 ring-emerald-500/30 mx-auto"
-                    referrerpolicy="no-referrer"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                  <div
-                    class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-800 text-white font-heading font-extrabold text-2xl sm:text-3xl items-center justify-center border-4 border-white shadow-md ring-2 ring-emerald-500/30 mx-auto"
-                    style="display: none;">
-                    <%= initials %>
-                  </div>
-                  <% } else { %>
-                    <div
-                      class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-emerald-700 via-brand-600 to-teal-500 text-white font-heading font-extrabold text-2xl sm:text-3xl flex items-center justify-center border-4 border-white shadow-md ring-2 ring-emerald-500/30 mx-auto">
-                      <%= initials %>
-                    </div>
-                    <% } %>
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
 
-                      <span
-                        class="inline-block mt-2 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        Verified Student
-                      </span>
+          <!-- Avatar / Photo -->
+          <div class="shrink-0 text-center">
+            <% const names = (student.fullName || 'Student').trim().split(/\s+/);
+               const initials = ((names[0] ? names[0][0] : '') + (names[1] ? names[1][0] : '')).toUpperCase() || 'S'; %>
+            <% if (student.profileImage && student.profileImage.trim() !== '') { %>
+              <img src="<%= student.profileImage %>" alt="<%= student.fullName %>"
+                class="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-md ring-2 <%= isStudy ? 'ring-blue-500/30' : 'ring-emerald-500/30' %> mx-auto"
+                referrerpolicy="no-referrer"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+              <div
+                class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-800 text-white font-heading font-extrabold text-2xl sm:text-3xl items-center justify-center border-4 border-white shadow-md ring-2 <%= isStudy ? 'ring-blue-500/30' : 'ring-emerald-500/30' %> mx-auto"
+                style="display: none;">
+                <%= initials %>
+              </div>
+            <% } else { %>
+              <div
+                class="w-24 h-24 sm:w-28 sm:h-28 rounded-full <%= isStudy ? 'bg-gradient-to-tr from-slate-800 via-blue-700 to-teal-500' : 'bg-gradient-to-tr from-emerald-700 via-brand-600 to-teal-500' %> text-white font-heading font-extrabold text-2xl sm:text-3xl flex items-center justify-center border-4 border-white shadow-md ring-2 <%= isStudy ? 'ring-blue-500/30' : 'ring-emerald-500/30' %> mx-auto">
+                <%= initials %>
+              </div>
+            <% } %>
+
+            <span
+              class="inline-block mt-2 text-[11px] font-bold <%= isStudy ? 'text-blue-700 bg-blue-50 border border-blue-200' : 'text-emerald-700 bg-emerald-50 border border-emerald-200' %> px-2.5 py-0.5 rounded-full">
+              <%= isStudy ? 'Enrolled Student' : 'Verified Student' %>
+            </span>
+          </div>
+
+          <!-- Info Fields Grid -->
+          <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <!-- Name -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Name
+              </span>
+              <p class="font-bold text-slate-900 text-sm sm:text-base leading-tight">
+                <%= student.fullName %>
+              </p>
             </div>
 
-            <!-- Info Fields Grid -->
-            <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Student ID -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Student ID
+              </span>
+              <p class="font-mono font-bold text-emerald-800 text-sm sm:text-base">
+                <%= student.studentId || 'N/A' %>
+              </p>
+            </div>
 
-              <!-- Name -->
-              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                  Name
-                </span>
-                <p class="font-bold text-slate-900 text-sm sm:text-base leading-tight">
-                  <%= student.fullName %>
-                </p>
-              </div>
+            <!-- Course -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Course
+              </span>
+              <p class="font-bold text-slate-900 text-sm leading-snug">
+                <%= student.courseTitle %>
+              </p>
+            </div>
 
-              <!-- Student ID -->
-              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                  Student ID
-                </span>
-                <p class="font-mono font-bold text-emerald-800 text-sm sm:text-base">
-                  <%= student.studentId || 'N/A' %>
-                </p>
-              </div>
+            <!-- Email -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Email
+              </span>
+              <p class="font-medium text-slate-800 text-xs sm:text-sm truncate" title="<%= student.email %>">
+                <%= student.email %>
+              </p>
+            </div>
 
-              <!-- Course -->
-              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                  Course
-                </span>
-                <p class="font-bold text-slate-900 text-sm leading-snug">
-                  <%= student.courseTitle %>
-                </p>
-              </div>
+            <!-- Phone Number -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Phone Number
+              </span>
+              <p class="font-medium text-slate-800 text-sm">
+                <%= student.phone || 'Not Specified' %>
+              </p>
+            </div>
 
-
-
-              <!-- Email -->
-              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                  Email
-                </span>
-                <p class="font-medium text-slate-800 text-xs sm:text-sm truncate" title="<%= student.email %>">
-                  <%= student.email %>
-                </p>
-              </div>
-
-              <!-- Phone Number -->
-              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                  Phone Number
-                </span>
-                <p class="font-medium text-slate-800 text-sm">
-                  <%= student.phone || 'Not Specified' %>
-                </p>
-              </div>
-
+            <!-- Admission / Certificate Track -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                <%= isStudy ? 'Study Track Status' : 'Certificate Number' %>
+              </span>
+              <p class="font-mono font-bold <%= isStudy ? 'text-blue-700' : 'text-emerald-800' %> text-xs sm:text-sm">
+                <%= isStudy ? 'Continuous Evaluation Active' : (student.certificateNumber || 'Verified') %>
+              </p>
             </div>
 
           </div>
 
-        </section>
+        </div>
 
-        <!-- ══════════════════════════════════════════════════════════════════════
-           PROGRESS SUMMARY
-           Progress % & Certificate Status
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+      </section>
 
-          <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+      <!-- ══════════════════════════════════════════════════════════════════════
+         ACADEMIC PROGRESS ROADMAP (4 STEPS)
+         Visual milestone tracker:
+         Step 1: Enrollment -> Step 2: 4-Week Continuous Evaluation -> Step 3: Final Assessment -> Step 4: Certificate
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-5 sm:p-6 mb-6 print-shadow-none page-break-inside-avoid">
+
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
             <div
-              class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
-              <i class="bi bi-speedometer2"></i>
+              class="w-7 h-7 rounded-lg <%= isStudy ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700' %> flex items-center justify-center text-sm font-bold">
+              <i class="bi bi-signpost-split-fill"></i>
             </div>
-            <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
-              Progress Summary
+            <h3 class="font-heading font-bold text-sm sm:text-base text-slate-900 uppercase tracking-tight">
+              Academic Progress Roadmap
             </h3>
           </div>
+          <span
+            class="text-xs font-semibold px-2.5 py-1 rounded-full <%= isCert ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200' %>">
+            <%= isCert ? 'All Milestones Completed' : 'Step 2: 4-Week Classes & Markup Active' %>
+          </span>
+        </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
 
-            <!-- Progress % Card -->
-            <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Course Progress</span>
-                  <span class="font-heading font-extrabold text-2xl text-emerald-700">
-                    <%= student.progressPercentage %>%
-                  </span>
-                </div>
-                <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden p-0.5">
-                  <div
-                    class="h-full bg-gradient-to-r from-brand-600 to-emerald-400 rounded-full transition-all duration-1000"
-                    style="width: <%= student.progressPercentage %>%;"></div>
-                </div>
-              </div>
+          <!-- Step 1: Course Enrollment -->
+          <div
+            class="p-3.5 rounded-xl border bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-500/10 transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Step 1</span>
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                <i class="bi bi-check-circle-fill text-xs"></i> Enrolled
+              </span>
             </div>
-
-            <!-- Certificate Status Card -->
-            <div class="p-5 rounded-xl bg-emerald-50/60 border border-emerald-200 flex flex-col justify-between">
-              <div>
-                <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider block mb-2">
-                  Certificate Status
-                </span>
-                <div class="flex items-center gap-2.5">
-                  <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200"></span>
-                  <span class="font-heading font-extrabold text-lg text-emerald-900">
-                    <%= student.certificateStatus==='Active & Verified' ? 'Verified' : student.certificateStatus %>
-                  </span>
-                </div>
-                <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                  Certificate ID: <strong class="font-mono text-slate-800">
-                    <%= student.certificateNumber %>
-                  </strong>
-                </p>
-              </div>
-              <div
-                class="flex justify-between items-center text-xs text-slate-500 mt-3 pt-2 border-t border-emerald-200/60 font-medium">
-                <span>Issue Date: <%= student.issueDate || 'Current' %></span>
-                <span class="text-emerald-700 font-bold flex items-center gap-1">
-                  <i class="bi bi-shield-check"></i> Validated
-                </span>
-              </div>
-            </div>
-
+            <h4 class="font-heading font-bold text-sm text-slate-900">Course Enrollment</h4>
+            <p class="text-xs text-slate-600 mt-1">Official admission and batch registration confirmed.</p>
           </div>
 
-        </section>
+          <!-- Step 2: 4-Week Classes & Continuous Evaluation -->
+          <div
+            class="p-3.5 rounded-xl border <%= isCert ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-500/10' : 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-500/20' %> transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider <%= isCert ? 'text-emerald-800' : 'text-blue-800' %>">Step 2</span>
+              <% if (isCert) { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  <i class="bi bi-check-circle-fill text-xs"></i> Completed
+                </span>
+              <% } else { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Active Now
+                </span>
+              <% } %>
+            </div>
+            <h4 class="font-heading font-bold text-sm text-slate-900">Weekly Classes & Tasks</h4>
+            <p class="text-xs text-slate-600 mt-1">
+              <%= isCert ? '4-Week weekly homework & engagement submitted.' : 'Attend live classes, submit weekly homework & activities.' %>
+            </p>
+          </div>
 
-        <!-- ══════════════════════════════════════════════════════════════════════
-           WEEKLY PERFORMANCE ASSESSMENT
-           Professional Academic Progress Report Table & Continuous Evaluation Summary
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+          <!-- Step 3: Final Assessment -->
+          <div
+            class="p-3.5 rounded-xl border <%= isCert ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-500/10' : (student.hasFinalMarks ? 'bg-blue-50/80 border-blue-300' : 'bg-slate-50 border-slate-200') %> transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider <%= isCert ? 'text-emerald-800' : 'text-slate-500' %>">Step 3</span>
+              <% if (isCert) { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  <i class="bi bi-check-circle-fill text-xs"></i> Completed
+                </span>
+              <% } else if (student.hasFinalMarks) { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                  <i class="bi bi-clock-history text-xs"></i> Evaluated
+                </span>
+              <% } else { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                  <i class="bi bi-hourglass-split text-xs"></i> Scheduled
+                </span>
+              <% } %>
+            </div>
+            <h4 class="font-heading font-bold text-sm text-slate-900">Final Assessment</h4>
+            <p class="text-xs text-slate-600 mt-1">
+              <%= isCert ? 'Internal, Theory, and Practical evaluations recorded.' : 'Theory and Practical examinations held at course conclusion.' %>
+            </p>
+          </div>
 
-          <% const wp=student.weeklyPerformance || {}; const parseVal=(val, fallback)=> {
+          <!-- Step 4: Certificate & Verification -->
+          <div
+            class="p-3.5 rounded-xl border <%= isCert ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-500/10' : 'bg-slate-50 border-slate-200' %> transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider <%= isCert ? 'text-emerald-800' : 'text-slate-500' %>">Step 4</span>
+              <% if (isCert) { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  <i class="bi bi-patch-check-fill text-xs"></i> Issued & Verified
+                </span>
+              <% } else { %>
+                <span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                  <i class="bi bi-lock-fill text-xs"></i> Pending
+                </span>
+              <% } %>
+            </div>
+            <h4 class="font-heading font-bold text-sm text-slate-900">Certificate Issuance</h4>
+            <p class="text-xs text-slate-600 mt-1">
+              <%= isCert ? 'Authenticated certificate issued with official QR verification seal.' : (student.completionDate ? `Unlocks upon course completion on ${student.completionDate}.` : 'Unlocks upon successful completion of the course.') %>
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+         WEEKLY PERFORMANCE ASSESSMENT (CONTINUOUS EVALUATION)
+         Professional Academic Progress Report Table & Continuous Evaluation Summary
+         (Displayed prominently for students during study days and as academic record for certified students)
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+
+        <%
+          const wp = student.weeklyPerformance || {};
+          const parseVal = (val, fallback) => {
             if (typeof val === 'number' && !isNaN(val)) return Math.min(5, Math.max(0, val));
             if (val !== undefined && val !== null && String(val).trim() !== '') {
-            const n = parseFloat(val);
-            if (!isNaN(n)) return Math.min(5, Math.max(0, n));
+              const n = parseFloat(val);
+              if (!isNaN(n)) return Math.min(5, Math.max(0, n));
             }
             if (typeof fallback === 'number' && !isNaN(fallback)) return Math.min(5, Math.max(0, fallback));
             if (fallback && typeof fallback === 'string') {
-            const m = fallback.match(/(\d+(\.\d+)?)/);
-            if (m) {
-            const n = parseFloat(m[1]);
-            if (!isNaN(n)) return Math.min(5, Math.max(0, n));
-            }
+              const m = fallback.match(/(\d+(\.\d+)?)/);
+              if (m) {
+                const n = parseFloat(m[1]);
+                if (!isNaN(n)) return Math.min(5, Math.max(0, n));
+              }
             }
             return 0;
-            };
+          };
 
-            const w1_ah = parseVal(wp.week1?.assignmentHomework, student.week1?.assignmentHomework);
-            const w1_ae = parseVal(wp.week1?.activityEngagement, student.week1?.activityEngagement);
-            const w2_ah = parseVal(wp.week2?.assignmentHomework, student.week2?.assignmentHomework);
-            const w2_ae = parseVal(wp.week2?.activityEngagement, student.week2?.activityEngagement);
-            const w3_ah = parseVal(wp.week3?.assignmentHomework, student.week3?.assignmentHomework);
-            const w3_ae = parseVal(wp.week3?.activityEngagement, student.week3?.activityEngagement);
-            const w4_ah = parseVal(wp.week4?.assignmentHomework, student.week4?.assignmentHomework);
-            const w4_ae = parseVal(wp.week4?.activityEngagement, student.week4?.activityEngagement);
+          const w1_ah = parseVal(wp.week1?.assignmentHomework, student.week1?.assignmentHomework);
+          const w1_ae = parseVal(wp.week1?.activityEngagement, student.week1?.activityEngagement);
+          const w2_ah = parseVal(wp.week2?.assignmentHomework, student.week2?.assignmentHomework);
+          const w2_ae = parseVal(wp.week2?.activityEngagement, student.week2?.activityEngagement);
+          const w3_ah = parseVal(wp.week3?.assignmentHomework, student.week3?.assignmentHomework);
+          const w3_ae = parseVal(wp.week3?.activityEngagement, student.week3?.activityEngagement);
+          const w4_ah = parseVal(wp.week4?.assignmentHomework, student.week4?.assignmentHomework);
+          const w4_ae = parseVal(wp.week4?.activityEngagement, student.week4?.activityEngagement);
 
-            const week1Total = Math.round((w1_ah + w1_ae) * 10) / 10;
-            const week2Total = Math.round((w2_ah + w2_ae) * 10) / 10;
-            const week3Total = Math.round((w3_ah + w3_ae) * 10) / 10;
-            const week4Total = Math.round((w4_ah + w4_ae) * 10) / 10;
+          const week1Total = Math.round((w1_ah + w1_ae) * 10) / 10;
+          const week2Total = Math.round((w2_ah + w2_ae) * 10) / 10;
+          const week3Total = Math.round((w3_ah + w3_ae) * 10) / 10;
+          const week4Total = Math.round((w4_ah + w4_ae) * 10) / 10;
 
-            const overallTotal = Math.round((week1Total + week2Total + week3Total + week4Total) * 10) / 10;
-            const percentage = Math.round((overallTotal / 40) * 100);
+          const overallTotal = Math.round((week1Total + week2Total + week3Total + week4Total) * 10) / 10;
+          const percentage = Math.round((overallTotal / 40) * 100);
+        %>
 
-            let statusText = 'Needs Improvement';
-            let statusBadgeCls = 'bg-rose-50 text-rose-700 border-rose-200';
-            let statusDotCls = 'bg-rose-500';
+        <!-- SECTION HEADER -->
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-3">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-8 h-8 rounded-lg <%= isStudy ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700' %> flex items-center justify-center text-base font-bold shadow-2xs">
+              <i class="bi bi-calendar4-week"></i>
+            </div>
+            <div>
+              <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+                Weekly Performance Assessment
+              </h3>
+              <p class="text-xs text-slate-400 font-medium hidden sm:block">
+                Official Academic Continuous Evaluation Record (Weeks 1 to 4)
+              </p>
+            </div>
+          </div>
 
-            if (overallTotal >= 36) {
-            statusText = 'Excellent';
-            statusBadgeCls = 'bg-emerald-50 text-emerald-800 border-emerald-300';
-            statusDotCls = 'bg-emerald-500';
-            } else if (overallTotal >= 30) {
-            statusText = 'Very Good';
-            statusBadgeCls = 'bg-emerald-50 text-emerald-800 border-emerald-300';
-            statusDotCls = 'bg-emerald-500';
-            } else if (overallTotal >= 20) {
-            statusText = 'Good';
-            statusBadgeCls = 'bg-blue-50 text-blue-700 border-blue-200';
-            statusDotCls = 'bg-blue-500';
-            }
-            %>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold <%= isStudy ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-700 border border-slate-200' %>">
+              <i class="bi <%= isStudy ? 'bi-stopwatch text-blue-600' : 'bi-shield-check text-emerald-600' %> text-xs"></i>
+              <span>4-Week Continuous Evaluation</span>
+            </span>
+          </div>
+        </div>
 
-            <!-- SECTION HEADER -->
-            <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-3">
-              <div class="flex items-center gap-2.5">
-                <div
-                  class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold shadow-2xs">
-                  <i class="bi bi-calendar4-week"></i>
-                </div>
-                <div>
-                  <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
-                    Weekly Performance Assessment
-                  </h3>
-                  <p class="text-xs text-slate-400 font-medium hidden sm:block">
-                    Official Academic Continuous Evaluation Record
-                  </p>
-                </div>
-              </div>
+        <!-- ACADEMIC EVALUATION TABLE -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+          <table class="w-full text-left border-collapse text-sm table-fixed min-w-[560px]">
+            <thead>
+              <tr
+                class="bg-slate-50 text-slate-700 border-b border-slate-200 text-xs uppercase font-extrabold tracking-wider">
+                <th scope="col" class="py-3 px-4 sm:px-6 w-[40%]">Performance Criteria</th>
+                <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 1</th>
+                <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 2</th>
+                <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 3</th>
+                <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 4</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
 
+              <!-- Row 1: Assignment / Homework -->
+              <tr class="hover:bg-slate-50/60 transition-colors">
+                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-journal-check text-slate-400 text-base"></i>
+                  <span>Assignment / Homework</span>
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w1_ah %>/5
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w2_ah %>/5
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w3_ah %>/5
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w4_ah %>/5
+                </td>
+              </tr>
+
+              <!-- Row 2: Activity / Engagement -->
+              <tr class="hover:bg-slate-50/60 transition-colors">
+                <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-activity text-slate-400 text-base"></i>
+                  <span>Activity / Engagement</span>
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w1_ae %>/5
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w2_ae %>/5
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w3_ae %>/5
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
+                  <%= w4_ae %>/5
+                </td>
+              </tr>
+
+              <!-- Row 3: Weekly Total -->
+              <tr class="bg-slate-50/80 font-bold border-t-2 border-slate-200">
+                <td class="py-3.5 px-4 sm:px-6 text-slate-900 flex items-center gap-2">
+                  <i class="bi bi-calculator text-emerald-600 text-base"></i>
+                  <span class="font-extrabold">Weekly Total</span>
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
+                  <%= week1Total %>/10
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
+                  <%= week2Total %>/10
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
+                  <%= week3Total %>/10
+                </td>
+                <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
+                  <%= week4Total %>/10
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TOTAL SUMMARY CARD -->
+        <div
+          class="mt-5 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/70 to-white p-5 sm:p-6 shadow-2xs">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-5">
+
+            <!-- Left: Title & Subtitle -->
+            <div class="space-y-1">
               <div class="flex items-center gap-2">
-                <span
-                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                  <i class="bi bi-shield-check text-emerald-600 text-xs"></i>
-                  <span>4-Week Continuous Evaluation</span>
+                <span class="w-2.5 h-2.5 rounded-full <%= overallTotal > 0 ? 'bg-emerald-500' : 'bg-slate-400' %>"></span>
+                <h4 class="font-heading font-extrabold text-xs uppercase tracking-wider text-slate-500">
+                  Continuous Evaluation Total
+                </h4>
+              </div>
+              <p class="text-xs text-slate-500">
+                <% if (overallTotal > 0) { %>
+                  Cumulative 4-Week Continuous Evaluation Total based on weekly academic metrics
+                <% } else if (isStudy) { %>
+                  Continuous evaluation marks will be posted by the instructor after weekly submissions.
+                <% } else { %>
+                  Continuous evaluation records completed.
+                <% } %>
+              </p>
+            </div>
+
+            <!-- Right: Scores & Badges -->
+            <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+
+              <!-- Large Total Mark Display -->
+              <div
+                class="flex items-baseline gap-1 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
+                <span class="font-heading font-black text-2xl sm:text-3xl text-emerald-900 tracking-tight">
+                  <%= overallTotal %>
+                </span>
+                <span class="text-sm sm:text-base font-bold text-slate-400">
+                  / 40
                 </span>
               </div>
-            </div>
 
-            <!-- ACADEMIC EVALUATION TABLE -->
-            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
-              <table class="w-full text-left border-collapse text-sm table-fixed min-w-[560px]">
-                <thead>
-                  <tr
-                    class="bg-slate-50 text-slate-700 border-b border-slate-200 text-xs uppercase font-extrabold tracking-wider">
-                    <th scope="col" class="py-3 px-4 sm:px-6 w-[40%]">Performance Criteria</th>
-                    <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 1</th>
-                    <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 2</th>
-                    <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 3</th>
-                    <th scope="col" class="py-3 px-3 text-center w-[15%]">Week 4</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
-
-                  <!-- Row 1: Assignment / Homework -->
-                  <tr class="hover:bg-slate-50/60 transition-colors">
-                    <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
-                      <i class="bi bi-journal-check text-slate-400 text-base"></i>
-                      <span>Assignment / Homework</span>
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w1_ah %>/5
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w2_ah %>/5
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w3_ah %>/5
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w4_ah %>/5
-                    </td>
-                  </tr>
-
-                  <!-- Row 2: Activity / Engagement -->
-                  <tr class="hover:bg-slate-50/60 transition-colors">
-                    <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 flex items-center gap-2">
-                      <i class="bi bi-activity text-slate-400 text-base"></i>
-                      <span>Activity / Engagement</span>
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w1_ae %>/5
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w2_ae %>/5
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w3_ae %>/5
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-bold text-sm text-slate-800">
-                      <%= w4_ae %>/5
-                    </td>
-                  </tr>
-
-                  <!-- Row 3: Weekly Total -->
-                  <tr class="bg-slate-50/80 font-bold border-t-2 border-slate-200">
-                    <td class="py-3.5 px-4 sm:px-6 text-slate-900 flex items-center gap-2">
-                      <i class="bi bi-calculator text-emerald-600 text-base"></i>
-                      <span class="font-extrabold">Weekly Total</span>
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
-                      <%= week1Total %>/10
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
-                      <%= week2Total %>/10
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
-                      <%= week3Total %>/10
-                    </td>
-                    <td class="py-3.5 px-3 text-center align-middle font-heading font-black text-sm text-emerald-900">
-                      <%= week4Total %>/10
-                    </td>
-                  </tr>
-
-                </tbody>
-              </table>
-            </div>
-
-            <!-- TOTAL SUMMARY CARD -->
-            <div
-              class="mt-5 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/70 to-white p-5 sm:p-6 shadow-2xs">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-5">
-
-                <!-- Left: Title & Subtitle -->
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <h4 class="font-heading font-extrabold text-xs uppercase tracking-wider text-slate-500">
-                      Continuous Evaluation Total
-                    </h4>
-                  </div>
-                  <p class="text-xs text-slate-500">
-                    Cumulative 4-Week Continuous Evaluation Total based on weekly academic metrics
-                  </p>
-                </div>
-
-                <!-- Right: Scores & Badges -->
-                <div class="flex flex-wrap items-center gap-3 sm:gap-4">
-
-                  <!-- Large Total Mark Display -->
-                  <div
-                    class="flex items-baseline gap-1 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
-                    <span class="font-heading font-black text-2xl sm:text-3xl text-emerald-900 tracking-tight">
-                      <%= overallTotal %>
-                    </span>
-                    <span class="text-sm sm:text-base font-bold text-slate-400">
-                      / 40
-                    </span>
-                  </div>
-
-                  <!-- Percentage Badge -->
-                  <div
-                    class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl font-heading font-extrabold text-sm sm:text-base text-emerald-800 shadow-2xs">
-                    <i class="bi bi-graph-up-arrow text-emerald-600 text-xs"></i>
-                    <span>
-                      <%= percentage %>%
-                    </span>
-                  </div>
-
-                </div>
-
-              </div>
-            </div>
-
-        </section>
-
-        <!-- ══════════════════════════════════════════════════════════════════════
-           FINAL ASSESSMENT
-           Show marks, percentage, grade and progress bar.
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
-
-          <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-3">
-            <div class="flex items-center gap-2.5">
+              <!-- Percentage Badge -->
               <div
-                class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
-                <i class="bi bi-award-fill"></i>
+                class="inline-flex items-center gap-1.5 <%= overallTotal > 0 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200' %> border px-3.5 py-2 rounded-xl font-heading font-extrabold text-sm sm:text-base shadow-2xs">
+                <i class="bi bi-graph-up-arrow <%= overallTotal > 0 ? 'text-emerald-600' : 'text-slate-400' %> text-xs"></i>
+                <span>
+                  <%= percentage %>%
+                </span>
               </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+         FINAL ASSESSMENT (ACCURATE & ZERO ARBITRARY ASSUMPTIONS)
+         Shows exact Internal, Theory, Practical and Total Mark.
+         Accurate scoring displayed without assumptions when marks are unentered.
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-3">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+              <i class="bi bi-award-fill"></i>
+            </div>
+            <div>
               <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
                 Final Assessment
               </h3>
+              <p class="text-xs text-slate-400 font-medium hidden sm:block">
+                <%= isStudy ? 'Academic Evaluation Breakdown (Internal 40 + Theory 20 + Practical 40)' : 'Certified Assessment Breakdown & Final Grade' %>
+              </p>
             </div>
           </div>
 
-          <!-- 4 Assessment Component Cards -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-5">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold <%= student.totalMark > 0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200' %>">
+            <i class="bi <%= student.totalMark > 0 ? 'bi-check2-circle text-emerald-600' : 'bi-hourglass-split text-slate-500' %> text-xs"></i>
+            <span><%= student.totalMark > 0 ? 'Marks Verified' : (isStudy ? 'Evaluation In Progress' : 'Final Assessment') %></span>
+          </span>
+        </div>
 
-            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <span class="text-xs font-semibold text-slate-400 block mb-1">Internal Mark</span>
-              <span class="font-heading font-extrabold text-xl text-slate-900">
-                <%= (student.internalMark !==undefined && student.internalMark !==null) ? student.internalMark :
-                  (student.weeklyPerformanceTotal || 0) %>
-              </span>
-              <span class="text-[11px] text-slate-400 block mt-0.5">Max: 40</span>
-            </div>
+        <!-- 4 Assessment Component Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-5">
 
-            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <span class="text-xs font-semibold text-slate-400 block mb-1">Theory Mark</span>
-              <span class="font-heading font-extrabold text-xl text-slate-900">
-                <%= student.theoryMark || 0 %>
-              </span>
-              <span class="text-[11px] text-slate-400 block mt-0.5">Max: 20</span>
-            </div>
-
-            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <span class="text-xs font-semibold text-slate-400 block mb-1">Practical Mark</span>
-              <span class="font-heading font-extrabold text-xl text-slate-900">
-                <%= student.practicalMark || 0 %>
-              </span>
-              <span class="text-[11px] text-slate-400 block mt-0.5">Max: 40</span>
-            </div>
-
-            <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-center">
-              <span class="text-xs font-bold text-emerald-800 block mb-1">Total Mark</span>
-              <span class="font-heading font-extrabold text-xl text-emerald-800">
-                <%= student.totalMark || 0 %>
-              </span>
-              <span class="text-[11px] text-emerald-600 font-bold block mt-0.5">out of 100</span>
-            </div>
-
+          <!-- Internal Mark -->
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+            <span class="text-xs font-semibold text-slate-400 block mb-1">Internal Mark</span>
+            <span class="font-heading font-extrabold text-xl text-slate-900">
+              <%= (student.internalMark !== undefined && student.internalMark !== null) ? student.internalMark : (student.weeklyPerformanceTotal || 0) %>
+            </span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">Max: 40</span>
           </div>
 
-          <!-- Progress Bar & Grade Percentage Summary -->
-          <div class="p-4 sm:p-5 rounded-xl bg-slate-900 text-white flex flex-col gap-3">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">Aggregate Academic
-                  Percentage</span>
-                <p class="text-xs text-slate-400 mt-0.5">Comprehensive Performance Evaluation</p>
-              </div>
-              <div class="text-right">
-                <span class="font-heading font-extrabold text-2xl text-white">
+          <!-- Theory Mark -->
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+            <span class="text-xs font-semibold text-slate-400 block mb-1">Theory Mark</span>
+            <span class="font-heading font-extrabold text-xl text-slate-900">
+              <%= student.theoryMark || 0 %>
+            </span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">
+              <%= (isStudy && (student.theoryMark === 0 || !student.theoryMark)) ? 'Scheduled (Max 20)' : 'Max: 20' %>
+            </span>
+          </div>
+
+          <!-- Practical Mark -->
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+            <span class="text-xs font-semibold text-slate-400 block mb-1">Practical Mark</span>
+            <span class="font-heading font-extrabold text-xl text-slate-900">
+              <%= student.practicalMark || 0 %>
+            </span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">
+              <%= (isStudy && (student.practicalMark === 0 || !student.practicalMark)) ? 'Scheduled (Max 40)' : 'Max: 40' %>
+            </span>
+          </div>
+
+          <!-- Total Mark -->
+          <div class="p-3.5 rounded-xl <%= student.totalMark > 0 ? 'bg-emerald-50 border border-emerald-300' : 'bg-slate-50 border border-slate-200' %> text-center">
+            <span class="text-xs font-bold <%= student.totalMark > 0 ? 'text-emerald-800' : 'text-slate-500' %> block mb-1">Total Mark</span>
+            <span class="font-heading font-extrabold text-xl <%= student.totalMark > 0 ? 'text-emerald-800' : 'text-slate-900' %>">
+              <%= student.totalMark || 0 %>
+            </span>
+            <span class="text-[11px] <%= student.totalMark > 0 ? 'text-emerald-600 font-bold' : 'text-slate-400' %> block mt-0.5">out of 100</span>
+          </div>
+
+        </div>
+
+        <!-- Progress Bar & Grade Percentage Summary -->
+        <div class="p-4 sm:p-5 rounded-xl bg-slate-900 text-white flex flex-col gap-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
+                Aggregate Academic Percentage
+              </span>
+              <p class="text-xs text-slate-400 mt-0.5">
+                <%= isStudy ? 'Cumulative Evaluation Progress' : 'Comprehensive Certified Performance Evaluation' %>
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="font-heading font-extrabold text-2xl text-white">
+                <%= student.progressPercentage %>%
+              </span>
+              <span class="text-xs text-emerald-300 font-semibold block">
+                <%= student.grade %>
+              </span>
+            </div>
+          </div>
+
+          <!-- Progress Bar (Accurate width matching calculated percentage) -->
+          <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden p-0.5">
+            <div
+              class="h-full bg-gradient-to-r from-brand-500 to-emerald-400 rounded-full transition-all duration-1000"
+              style="width: <%= student.progressPercentage %>%;"></div>
+          </div>
+
+          <% if (isStudy) { %>
+            <div class="pt-2 border-t border-white/10 flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-300">
+              <span class="flex items-center gap-1.5">
+                <i class="bi bi-info-circle text-emerald-400"></i>
+                Continuous 4-week coursework accounts for 40 Internal marks. Final assessment marks are compiled upon course completion.
+              </span>
+              <span class="text-slate-400">Study Days Mode</span>
+            </div>
+          <% } %>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+         PROGRESS SUMMARY & CERTIFICATE STATUS
+         Dual Mode: Readiness & Target Completion (Study Days) vs Verified Certificate (Certified)
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-8 h-8 rounded-lg <%= isStudy ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700' %> flex items-center justify-center text-base font-bold">
+              <i class="bi <%= isStudy ? 'bi-mortarboard' : 'bi-speedometer2' %>"></i>
+            </div>
+            <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+              <%= isStudy ? 'Course Progress & Certificate Readiness' : 'Progress Summary' %>
+            </h3>
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full <%= isStudy ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' %>">
+            <%= isStudy ? 'Enrollment Active' : 'Validated' %>
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+          <!-- Course Progress % Card -->
+          <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Course Progress</span>
+                <span class="font-heading font-extrabold text-2xl <%= isStudy ? 'text-blue-700' : 'text-emerald-700' %>">
                   <%= student.progressPercentage %>%
                 </span>
-                <span class="text-xs text-emerald-300 font-semibold block">
-                  <%= student.grade %>
-                </span>
+              </div>
+              <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden p-0.5">
+                <div
+                  class="h-full <%= isStudy ? 'bg-gradient-to-r from-blue-600 to-emerald-400' : 'bg-gradient-to-r from-brand-600 to-emerald-400' %> rounded-full transition-all duration-1000"
+                  style="width: <%= student.progressPercentage %>%;"></div>
               </div>
             </div>
+            <p class="text-xs text-slate-500 mt-3">
+              <%= isStudy ? 'Continuous progress updates with each attended lecture and homework evaluation.' : 'Course curriculum requirements fully satisfied.' %>
+            </p>
+          </div>
 
-            <!-- Progress Bar -->
-            <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden p-0.5">
-              <div
-                class="h-full bg-gradient-to-r from-brand-500 to-emerald-400 rounded-full transition-all duration-1000"
-                style="width: <%= student.progressPercentage %>%;"></div>
+          <!-- Certificate Status Card -->
+          <div class="p-5 rounded-xl <%= isStudy ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50/60 border-emerald-200' %> border flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold <%= isStudy ? 'text-slate-600' : 'text-emerald-800' %> uppercase tracking-wider block mb-2">
+                Certificate Status
+              </span>
+              <div class="flex items-center gap-2.5">
+                <span class="w-3.5 h-3.5 rounded-full <%= isStudy ? 'bg-blue-500 ring-4 ring-blue-200' : 'bg-emerald-500 ring-4 ring-emerald-200' %>"></span>
+                <span class="font-heading font-extrabold text-lg <%= isStudy ? 'text-slate-900' : 'text-emerald-900' %>">
+                  <%= isStudy ? 'In Progress (Issued upon completion)' : (student.certificateStatus === 'Active & Verified' ? 'Verified' : student.certificateStatus) %>
+                </span>
+              </div>
+              <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                <% if (isStudy) { %>
+                  Certificate will be officially generated and issued with institutional QR verification upon completion of the course syllabus.
+                <% } else { %>
+                  Certificate ID: <strong class="font-mono text-slate-800"><%= student.certificateNumber %></strong>
+                <% } %>
+              </p>
+            </div>
+            <div
+              class="flex justify-between items-center text-xs text-slate-500 mt-3 pt-2 border-t <%= isStudy ? 'border-slate-200' : 'border-emerald-200/60' %> font-medium">
+              <span>
+                <%= isStudy ? (student.completionDate ? `Expected Date: ${student.completionDate}` : 'Target: At Course Completion') : `Issue Date: ${student.issueDate || 'Current'}` %>
+              </span>
+              <span class="<%= isStudy ? 'text-blue-700' : 'text-emerald-700' %> font-bold flex items-center gap-1">
+                <i class="bi <%= isStudy ? 'bi-clock-history' : 'bi-shield-check' %>"></i>
+                <%= isStudy ? 'Study Track Active' : 'Validated' %>
+              </span>
             </div>
           </div>
 
-        </section>
+        </div>
 
-        <!-- ══════════════════════════════════════════════════════════════════════
-           OVERALL PROGRESS
-           Render evaluation cards.
-           Academic Performance, Assignment Completion, Practical Skills, Overall Progress
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+      </section>
 
-          <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+      <!-- ══════════════════════════════════════════════════════════════════════
+         OVERALL PROGRESS & SKILLS
+         Academic Performance, Assignment Completion, Practical Skills
+         (Accurate zero-assumption metrics tailored for both study days and certified states)
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
             <div
               class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
               <i class="bi bi-graph-up-arrow"></i>
             </div>
             <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
-              Overall Progress
+              <%= isStudy ? 'Continuous Skills & Academic Progress' : 'Overall Progress' %>
             </h3>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            <!-- Academic Performance -->
-            <% const acad=getProgressMetric(student.academicPerformance,
-              student.progressPercentage, 'Consistently demonstrates solid conceptual grasp and active class participation.'
-              ); %>
-              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-slate-700">Academic Performance</span>
-                  </div>
-                  <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-                    <%= acad.text %>
-                  </p>
-                </div>
-                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-emerald-600 rounded-full" style="width: <%= acad.score %>%;"></div>
-                </div>
-              </div>
-
-              <!-- Assignment Completion -->
-              <% const assign=getProgressMetric(student.assignmentCompletion,
-                95, 'All core curriculum homework modules and practical tasks submitted on time.' ); %>
-                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-                  <div>
-                    <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-bold text-slate-700">Assignment Completion</span>
-                    </div>
-                    <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-                      <%= assign.text %>
-                    </p>
-                  </div>
-                  <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-emerald-600 rounded-full" style="width: <%= assign.score %>%;"></div>
-                  </div>
-                </div>
-
-                <!-- Practical Skills -->
-                <% const pract=getProgressMetric(student.practicalSkills,
-                  90, 'High mathematical reasoning velocity and applied problem-solving execution.' ); %>
-                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-                    <div>
-                      <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-700">Practical Skills</span>
-                      </div>
-                      <p class="text-xs text-slate-600 mb-3 leading-relaxed">
-                        <%= pract.text %>
-                      </p>
-                    </div>
-                    <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div class="h-full bg-emerald-600 rounded-full" style="width: <%= pract.score %>%;"></div>
-                    </div>
-                  </div>
-
-          </div>
-
-        </section>
-
-        <!-- ══════════════════════════════════════════════════════════════════════
-           TEACHER REMARKS
-           Display formatted paragraph.
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
-
-          <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
-            <div
-              class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
-              <i class="bi bi-chat-quote-fill"></i>
-            </div>
-            <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
-              Teacher Remarks
-            </h3>
-          </div>
-
-          <div class="p-5 sm:p-6 rounded-xl bg-slate-50 border border-slate-200 relative">
-            <p class="text-slate-800 text-sm sm:text-base leading-relaxed italic font-normal">
-              <% if (student.progressCard && student.progressCard.trim()) { %>
-                &ldquo;<%= student.progressCard.trim() %>&rdquo;
-                  <% } else { %>
-                    &ldquo;<%= student.fullName %> demonstrates excellent problem solving abilities and consistently
-                      completes assignments on time.&rdquo;
-                      <% } %>
-            </p>
-
-            <div
-              class="mt-4 pt-4 border-t border-slate-200/80 flex flex-col items-center justify-center text-xs text-slate-500">
-
-              <!-- Signature -->
-              <img src="/images/Signature_smija.png" alt="Smija KS Signature" class="h-20 object-contain mb-2" />
-
-              <!-- Founder Name -->
-              <span class="text-emerald-700 font-bold text-sm">
-                Smija KS
-              </span>
-
-              <!-- Designation -->
-              <span class="font-semibold text-slate-700 mt-1">
-                Founder & CEO
-              </span>
-
-            </div>
-
-        </section>
-
-        <!-- ══════════════════════════════════════════════════════════════════════
-           VERIFICATION
-           Verified By: MathsManthra Academy
-           Verification Time: Current Timestamp
-           Verification ID: Unique Reference
-           ══════════════════════════════════════════════════════════════════════ -->
-        <section
-          class="bg-white rounded-2xl border border-emerald-300 shadow-card p-6 sm:p-7 mb-8 print-shadow-none page-break-inside-avoid">
-
-          <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
-            <div
-              class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-base font-bold">
-              <i class="bi bi-patch-check-fill"></i>
-            </div>
-            <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
-              Verification
-            </h3>
-          </div>
-
-          <div
-            class="flex flex-col md:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-xl bg-emerald-50/40 border border-emerald-200">
-
-            <div class="w-full space-y-4">
-
-              <!-- Verified By -->
-              <div
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
-                <span class="font-semibold text-slate-500">Verified By:</span>
-                <strong class="font-bold text-emerald-900 text-sm sm:text-base">
-                  <%= student.verifiedBy || 'MathsManthra Academy' %>
-                </strong>
-              </div>
-
-              <!-- Verification Time -->
-              <div
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
-                <span class="font-semibold text-slate-500">Verification Time:</span>
-                <strong class="font-bold text-slate-800">
-                  <%= student.verificationTime %>
-                </strong>
-              </div>
-
-              <!-- Certificate ID -->
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 text-xs sm:text-sm">
-                <span class="font-semibold text-slate-500">Certificate ID:</span>
-                <strong class="font-mono font-bold text-emerald-800 text-sm sm:text-base select-all">
-                  <%= student.certificateNumber || student.verificationId %>
-                </strong>
-              </div>
-
-            </div>
-
-            <!-- QR Code Preview -->
-            <div
-              class="shrink-0 flex flex-col items-center bg-white p-3.5 rounded-xl border border-emerald-200 shadow-xs">
-              <% if (student.qrCodeDataUrl) { %>
-                <img src="<%= student.qrCodeDataUrl %>" alt="Verification QR Code"
-                  class="w-28 h-28 sm:w-32 sm:h-32 rounded" />
-                <% } else if (student.qrCodeSvg) { %>
-                  <div class="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
-                    <%- student.qrCodeSvg %>
-                  </div>
-                  <% } else { %>
-                    <div
-                      class="w-28 h-28 sm:w-32 sm:h-32 bg-slate-100 flex items-center justify-center text-slate-400 text-3xl rounded">
-                      <i class="bi bi-qr-code"></i>
-                    </div>
-                    <% } %>
-                      <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Official QR
-                        Seal</span>
-            </div>
-
-          </div>
-
-        </section>
-
-        <% } else if (isSearchOnly) { %>
-
-          <!-- SEARCH PORTAL VIEW -->
-          <div
-            class="max-w-lg mx-auto my-12 bg-white rounded-2xl border border-slate-200 shadow-card p-7 sm:p-9 text-center">
-            <div
-              class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-100">
-              <i class="bi bi-patch-check-fill"></i>
-            </div>
-
-            <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 mb-1.5">
-              Student Verification Portal
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-500 mb-6">
-              Enter Student ID or Certificate Number to verify student progress and credential authenticity.
-            </p>
-
-            <form action="/verify" method="GET" class="space-y-4" onsubmit="handleSearchSubmit(event)">
-              <div class="text-left">
-                <label for="certInput" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Student ID or Certificate Number
-                </label>
-                <input type="text" id="certInput" name="cert" placeholder="e.g. MM-2026-0028 or MMC-2026-20028"
-                  class="w-full bg-slate-50 border border-slate-200 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none transition-all"
-                  required autocomplete="off" autofocus />
-              </div>
-
-              <button type="submit"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-sm sm:text-base py-3 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2">
-                <i class="bi bi-shield-check"></i>
-                Verify Student
-              </button>
-            </form>
-          </div>
-
-          <% } else { %>
-
-            <!-- ERROR / NOT FOUND VIEW -->
-            <div
-              class="max-w-lg mx-auto my-12 bg-white rounded-2xl border border-rose-200 shadow-card p-7 sm:p-9 text-center">
-              <div
-                class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-rose-100">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-              </div>
-
-              <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 mb-2">
-                Student Record Not Found
-              </h2>
-
-              <p class="text-xs sm:text-sm text-slate-600 mb-6">
-                <%= errorMessage
-                  || 'No active verified student record was found for this identifier. Please double-check the Student ID or Certificate Number.'
-                  %>
-              </p>
-
-              <form action="/verify" method="GET" class="space-y-4 mb-5" onsubmit="handleSearchSubmit(event)">
-                <input type="text" id="certInput" name="cert"
-                  value="<%= certificateNumber && certificateNumber !== 'Unknown' ? certificateNumber : '' %>"
-                  placeholder="e.g. MM-2026-0028"
-                  class="w-full bg-slate-50 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none"
-                  required autocomplete="off" />
-
-                <button type="submit"
-                  class="w-full bg-slate-900 hover:bg-slate-800 text-white font-heading font-bold text-sm py-2.5 rounded-xl transition-colors">
-                  Check Again
-                </button>
-              </form>
-
-              <a href="/verify" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
-                ← Return to Verification Portal
-              </a>
-            </div>
-
-            <% } %>
-
-    </main>
-
-    <!-- OFFICIAL TRUST FOOTER -->
-    <footer class="no-print bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-      <div class="max-w-5xl mx-auto px-4 flex flex-col items-center gap-1.5">
-        <div class="flex items-center gap-1.5 text-slate-700 font-semibold text-xs">
-          <i class="bi bi-shield-check text-emerald-600"></i>
-          <span>Official Verification Portal • MathsManthra Academy</span>
+          <span class="text-xs text-slate-400 font-medium">
+            <%= isStudy ? 'Monitored across 4 weeks' : 'Evaluated across curriculum' %>
+          </span>
         </div>
-        <p class="text-slate-400">
-          &copy; <%= new Date().getFullYear() %> MathsManthra Academy. All rights reserved. Authenticated Academic Record. Read-only
-            verification page.
-        </p>
-      </div>
-    </footer>
 
-    <script>
-      function handleSearchSubmit(event) {
-        event.preventDefault();
-        const input = document.getElementById('certInput');
-        if (input && input.value) {
-          const clean = input.value.trim();
-          if (clean) {
-            window.location.href = '/verify/' + encodeURIComponent(clean);
-          }
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <!-- Academic Performance -->
+          <%
+            let defaultAcadText = isCert
+              ? 'Consistently demonstrates solid conceptual grasp and active class participation.'
+              : (student.weeklyPerformanceTotal > 0 ? 'Continuous academic performance tracked across completed weekly modules.' : 'Academic evaluation in progress. Scores update as weekly sessions are attended.');
+            let defaultAcadScore = student.progressPercentage;
+            const acad = getProgressMetric(student.academicPerformance, defaultAcadScore, defaultAcadText);
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Academic Performance</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                <%= acad.text %>
+              </p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= acad.score %>%;"></div>
+            </div>
+          </div>
+
+          <!-- Assignment Completion -->
+          <%
+            let defaultAssignText = isCert
+              ? 'All core curriculum homework modules and practical tasks submitted on time.'
+              : (student.weeklyPerformanceTotal > 0 ? 'Active weekly assignment and homework submissions in progress.' : 'Weekly assignments ongoing. Submissions will be reflected upon mentor review.');
+            let defaultAssignScore = student.progressPercentage;
+            const assign = getProgressMetric(student.assignmentCompletion, defaultAssignScore, defaultAssignText);
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Assignment Completion</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                <%= assign.text %>
+              </p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= assign.score %>%;"></div>
+            </div>
+          </div>
+
+          <!-- Practical Skills -->
+          <%
+            let defaultPractText = isCert
+              ? 'High mathematical reasoning velocity and applied problem-solving execution.'
+              : (student.weeklyPerformanceTotal > 0 ? 'Applied practical skills evaluated across completed weekly sessions.' : 'Practical classroom activities in progress. Continuous tracking active.');
+            let defaultPractScore = student.progressPercentage;
+            const pract = getProgressMetric(student.practicalSkills, defaultPractScore, defaultPractText);
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Practical Skills</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                <%= pract.text %>
+              </p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= pract.score %>%;"></div>
+            </div>
+          </div>
+
+          <!-- Overall Progress Metric -->
+          <%
+            let defaultOverallText = isCert
+              ? 'Comprehensive performance across homework, engagement, and final examinations.'
+              : (student.weeklyPerformanceTotal > 0 ? 'Continuous evaluation progressing on schedule.' : 'Course study days in progress. Attend scheduled classes and complete weekly homework.');
+            let defaultOverallScore = student.progressPercentage;
+            const overall = getProgressMetric(student.overallProgress, defaultOverallScore, defaultOverallText);
+          %>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700">Overall Progress</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                <%= overall.text %>
+              </p>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded-full" style="width: <%= overall.score %>%;"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+         TEACHER REMARKS
+         Display instructor observations & institutional signature
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-7 mb-6 print-shadow-none page-break-inside-avoid">
+
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div
+            class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-base font-bold">
+            <i class="bi bi-chat-quote-fill"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            Teacher Remarks
+          </h3>
+        </div>
+
+        <div class="p-5 sm:p-6 rounded-xl bg-slate-50 border border-slate-200 relative">
+          <p class="text-slate-800 text-sm sm:text-base leading-relaxed italic font-normal">
+            <% if (student.progressCard && student.progressCard.trim()) { %>
+              &ldquo;<%= student.progressCard.trim() %>&rdquo;
+            <% } else if (isStudy) { %>
+              &ldquo;<%= student.fullName %> is currently attending <%= student.courseTitle %>. Weekly attendance, homework assignments, and classroom activity are being continuously evaluated.&rdquo;
+            <% } else { %>
+              &ldquo;<%= student.fullName %> has completed <%= student.courseTitle %> with commendable dedication and active participation throughout the curriculum.&rdquo;
+            <% } %>
+          </p>
+
+          <div
+            class="mt-4 pt-4 border-t border-slate-200/80 flex flex-col items-center justify-center text-xs text-slate-500">
+
+            <!-- Signature -->
+            <img src="/images/Signature_smija.png" alt="Smija KS Signature" class="h-20 object-contain mb-2" />
+
+            <!-- Founder Name -->
+            <span class="text-emerald-700 font-bold text-sm">
+              Smija KS
+            </span>
+
+            <!-- Designation -->
+            <span class="font-semibold text-slate-700 mt-1">
+              Founder & CEO, MathsManthra Academy
+            </span>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+         VERIFICATION & ACCESS QR CODE
+         Verified By: MathsManthra Academy
+         Verification Time: Current Timestamp
+         Verification ID: Unique Reference / QR code
+         ══════════════════════════════════════════════════════════════════════ -->
+      <section
+        class="bg-white rounded-2xl border border-emerald-300 shadow-card p-6 sm:p-7 mb-8 print-shadow-none page-break-inside-avoid">
+
+        <div class="flex items-center gap-2.5 pb-4 mb-5 border-b border-slate-100">
+          <div
+            class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-base font-bold">
+            <i class="bi <%= isStudy ? 'bi-qr-code-scan' : 'bi-patch-check-fill' %>"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base sm:text-lg text-slate-900 uppercase tracking-tight">
+            <%= isStudy ? 'Portal Access & Verification' : 'Official Verification' %>
+          </h3>
+        </div>
+
+        <div
+          class="flex flex-col md:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-xl bg-emerald-50/40 border border-emerald-200">
+
+          <div class="w-full space-y-4">
+
+            <!-- Verified By -->
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
+              <span class="font-semibold text-slate-500">Verified By:</span>
+              <strong class="font-bold text-emerald-900 text-sm sm:text-base">
+                <%= student.verifiedBy || 'MathsManthra Academy' %>
+              </strong>
+            </div>
+
+            <!-- Verification Time -->
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-emerald-100 text-xs sm:text-sm">
+              <span class="font-semibold text-slate-500">Verification Time:</span>
+              <strong class="font-bold text-slate-800">
+                <%= student.verificationTime %>
+              </strong>
+            </div>
+
+            <!-- Identifier / Reference -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 text-xs sm:text-sm">
+              <span class="font-semibold text-slate-500"><%= isStudy ? 'Student Reference ID:' : 'Certificate ID:' %></span>
+              <strong class="font-mono font-bold text-emerald-800 text-sm sm:text-base select-all">
+                <%= student.studentId || student.certificateNumber || student.verificationId %>
+              </strong>
+            </div>
+
+          </div>
+
+          <!-- QR Code Preview -->
+          <div
+            class="shrink-0 flex flex-col items-center bg-white p-3.5 rounded-xl border border-emerald-200 shadow-xs">
+            <% if (student.qrCodeDataUrl) { %>
+              <img src="<%= student.qrCodeDataUrl %>" alt="Verification QR Code"
+                class="w-28 h-28 sm:w-32 sm:h-32 rounded" />
+            <% } else if (student.qrCodeSvg) { %>
+              <div class="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                <%- student.qrCodeSvg %>
+              </div>
+            <% } else { %>
+              <div
+                class="w-28 h-28 sm:w-32 sm:h-32 bg-slate-100 flex items-center justify-center text-slate-400 text-3xl rounded">
+                <i class="bi bi-qr-code"></i>
+              </div>
+            <% } %>
+            <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+              <%= isStudy ? 'Live Record QR' : 'Official QR Seal' %>
+            </span>
+          </div>
+
+        </div>
+
+      </section>
+
+    <% } else if (isSearchOnly) { %>
+
+      <!-- SEARCH PORTAL VIEW -->
+      <div
+        class="max-w-lg mx-auto my-12 bg-white rounded-2xl border border-slate-200 shadow-card p-7 sm:p-9 text-center">
+        <div
+          class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-100">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 mb-1.5">
+          Student Verification Portal
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mb-6">
+          Enter Student ID or Certificate Number to verify student progress and credential authenticity.
+        </p>
+
+        <form action="/verify" method="GET" class="space-y-4" onsubmit="handleSearchSubmit(event)">
+          <div class="text-left">
+            <label for="certInput" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              Student ID or Certificate Number
+            </label>
+            <input type="text" id="certInput" name="cert" placeholder="e.g. MM-2026-0028 or MMC-2026-20028"
+              class="w-full bg-slate-50 border border-slate-200 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/20 rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none transition-all"
+              required autocomplete="off" autofocus />
+          </div>
+
+          <button type="submit"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-sm sm:text-base py-3 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2">
+            <i class="bi bi-shield-check"></i>
+            Verify Student
+          </button>
+        </form>
+      </div>
+
+    <% } else { %>
+
+      <!-- ERROR / NOT FOUND VIEW -->
+      <div
+        class="max-w-lg mx-auto my-12 bg-white rounded-2xl border border-rose-200 shadow-card p-7 sm:p-9 text-center">
+        <div
+          class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-rose-100">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 mb-2">
+          Student Record Not Found
+        </h2>
+
+        <p class="text-xs sm:text-sm text-slate-600 mb-6">
+          <%= errorMessage
+            || 'No active verified student record was found for this identifier. Please double-check the Student ID or Certificate Number.'
+            %>
+        </p>
+
+        <form action="/verify" method="GET" class="space-y-4 mb-5" onsubmit="handleSearchSubmit(event)">
+          <input type="text" id="certInput" name="cert"
+            value="<%= certificateNumber && certificateNumber !== 'Unknown' ? certificateNumber : '' %>"
+            placeholder="e.g. MM-2026-0028"
+            class="w-full bg-slate-50 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl px-4 py-3 text-sm font-mono font-medium text-slate-900 outline-none"
+            required autocomplete="off" />
+
+          <button type="submit"
+            class="w-full bg-slate-900 hover:bg-slate-800 text-white font-heading font-bold text-sm py-2.5 rounded-xl transition-colors">
+            Check Again
+          </button>
+        </form>
+
+        <a href="/verify" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+          ← Return to Verification Portal
+        </a>
+      </div>
+
+    <% } %>
+
+  </main>
+
+  <!-- OFFICIAL TRUST FOOTER -->
+  <footer class="no-print bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col items-center gap-1.5">
+      <div class="flex items-center gap-1.5 text-slate-700 font-semibold text-xs">
+        <i class="bi bi-shield-check text-emerald-600"></i>
+        <span>Official Verification Portal • MathsManthra Academy</span>
+      </div>
+      <p class="text-slate-400">
+        &copy; <%= new Date().getFullYear() %> MathsManthra Academy. All rights reserved. Authenticated Academic Record. Read-only
+          verification page.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    function handleSearchSubmit(event) {
+      event.preventDefault();
+      const input = document.getElementById('certInput');
+      if (input && input.value) {
+        const clean = input.value.trim();
+        if (clean) {
+          window.location.href = '/verify/' + encodeURIComponent(clean);
         }
       }
-    </script>
+    }
+  </script>
 
 </body>
 

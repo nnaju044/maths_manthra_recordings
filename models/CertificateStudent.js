@@ -223,7 +223,7 @@ certificateStudentSchema.statics.findActiveByIdentifier = function (identifier) 
   return this.findOne({
     $or: orQueries,
     isActive: true,
-  }).populate('courseId', 'title slug');
+  }).populate('courseId', 'title slug certificateEnabled certificateCompletionDate');
 };
 
 certificateStudentSchema.statics.findActiveByCertificateNumber = function (certNumber) {
