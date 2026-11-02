@@ -50,6 +50,14 @@ const videoSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    uploadOperationId: {
+      type: String,
+      trim: true,
+    },
+    thumbnailPublicId: {
+      type: String,
+      trim: true,
+    },
   },
   { timestamps: true }
 );
@@ -57,5 +65,7 @@ const videoSchema = new mongoose.Schema(
 // Compound index for efficient per-course queries sorted by order
 videoSchema.index({ courseId: 1, order: 1 });
 videoSchema.index({ title: 'text', description: 'text' });
+// Sparse unique index to enforce backend idempotency at database level
+videoSchema.index({ uploadOperationId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Video', videoSchema);

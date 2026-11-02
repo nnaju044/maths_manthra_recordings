@@ -33,10 +33,12 @@ router.post('/courses/:id/toggle-active', courseCtrl.toggleActive);
 router.post('/courses/:id/regenerate-slug', courseCtrl.regenerateSlug);
 router.post('/courses/:id/delete', courseCtrl.destroy);
 
-// Videos
-router.get('/videos', videoCtrl.index);
+// Videos (support both GET and redirected POST from serverless environments)
+router.route('/videos')
+  .get(videoCtrl.index)
+  .post(videoCtrl.store);
 router.get('/videos/create', videoCtrl.create);
-router.post('/videos', videoCtrl.store);
+router.post('/videos/create', videoCtrl.store);
 router.get('/videos/:id/edit', videoCtrl.edit);
 router.post('/videos/:id', videoCtrl.update);
 router.post('/videos/:id/delete', videoCtrl.destroy);

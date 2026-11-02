@@ -53,6 +53,12 @@ const errorHandler = (err, req, res, next) => {
     return safeRedirect(req.get('Referrer') || '/admin/courses');
   }
 
+  // Mongoose CastError (invalid ObjectId)
+  if (err.name === 'CastError') {
+    req.flash('error', 'Invalid resource identifier.');
+    return safeRedirect(req.get('Referrer') || '/admin/dashboard');
+  }
+
   const status = err.status || 500;
   res.status(status).render('error', {
     title: 'Something went wrong',

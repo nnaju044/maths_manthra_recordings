@@ -8,7 +8,8 @@
 
 <div class="form-card">
   <form action="<%= video ? `/admin/videos/${video._id}` : '/admin/videos' %>"
-        method="POST" class="admin-form">
+        method="POST" class="admin-form" id="videoForm" onsubmit="handleVideoSubmit(event, this)">
+    <input type="hidden" name="uploadOperationId" id="uploadOperationId" value="<%= typeof uploadOperationId !== 'undefined' ? uploadOperationId : '' %>" />
 
     <!-- Course Selection -->
     <div class="mb-3">
@@ -17,7 +18,7 @@
         <option value="">Select a course...</option>
         <% courses.forEach(c => { %>
           <option value="<%= c._id %>"
-            <%= (video && video.courseId.toString() === c._id.toString()) || preselectedCourse === c._id.toString() ? 'selected' : '' %>>
+            <%= (video && video.courseId && video.courseId.toString() === c._id.toString()) || preselectedCourse === c._id.toString() ? 'selected' : '' %>>
             <%= c.title %>
           </option>
         <% }) %>
@@ -87,10 +88,40 @@
     <% } %>
 
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary-custom">
+      <button type="submit" class="btn btn-primary-custom" id="submitVideoBtn">
         <i class="bi bi-check-lg"></i> <%= video ? 'Update Video' : 'Add Video' %>
       </button>
       <a href="/admin/videos<%= preselectedCourse ? '?courseId=' + preselectedCourse : '' %>" class="btn btn-outline-secondary">Cancel</a>
     </div>
   </form>
 </div>
+
+<script>
+function handleVideoSubmit(e, form) {
+  if (!form.checkValidity()) {
+    return; // Allow native HTML5 validation UI to appear
+  }
+  var btn = document.getElementById('submitVideoBtn');
+  if (btn && btn.dataset.submitting === 'true') {
+    e.preventDefault();
+    return false;
+  }
+  if (btn) {
+    btn.dataset.submitting = 'true';
+    btn.classList.add('disabled');
+    var isEdit = <%= video ? 'true' : 'false' %>;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> ' + (isEdit ? 'Updating Video...' : 'Adding Video...');
+  }
+}
+
+// Restore button state if navigated back via BFCache (Back/Forward Cache)
+window.addEventListener('pageshow', function (event) {
+  var btn = document.getElementById('submitVideoBtn');
+  if (btn) {
+    btn.dataset.submitting = 'false';
+    btn.classList.remove('disabled');
+    var isEdit = <%= video ? 'true' : 'false' %>;
+    btn.innerHTML = '<i class="bi bi-check-lg"></i> ' + (isEdit ? 'Update Video' : 'Add Video');
+  }
+});
+</script>

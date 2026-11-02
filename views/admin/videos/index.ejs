@@ -66,8 +66,8 @@
           <a href="/admin/videos/<%= video._id %>/edit" class="btn-action edit" title="Edit">
             <i class="bi bi-pencil"></i>
           </a>
-          <form action="/admin/videos/<%= video._id %>/delete" method="POST" class="d-inline"
-                onsubmit="return confirm('Delete this video?')">
+          <form action="/admin/videos/<%= video._id %>/delete" method="POST" class="d-inline video-delete-form"
+                onsubmit="return handleVideoDeleteSubmit(event, this)">
             <button type="submit" class="btn-action delete" title="Delete">
               <i class="bi bi-trash"></i>
             </button>
@@ -120,8 +120,8 @@
               <span>Edit</span>
             </a>
 
-            <form action="/admin/videos/<%= video._id %>/delete" method="POST" class="video-card-delete-form"
-              onsubmit="return confirm('Delete this video?')">
+            <form action="/admin/videos/<%= video._id %>/delete" method="POST" class="video-card-delete-form video-delete-form"
+              onsubmit="return handleVideoDeleteSubmit(event, this)">
               <button type="submit" class="btn-card-action btn-card-delete"
                 title="Delete video" aria-label="Delete video">
                 <i class="bi bi-trash"></i>
@@ -147,3 +147,33 @@
     </nav>
   <% } %>
 <% } %>
+
+<script>
+function handleVideoDeleteSubmit(e, form) {
+  if (!confirm('Delete this video? This action cannot be undone.')) {
+    e.preventDefault();
+    return false;
+  }
+  var btn = form.querySelector('button[type="submit"]');
+  if (btn) {
+    if (btn.dataset.submitting === 'true') {
+      e.preventDefault();
+      return false;
+    }
+    btn.dataset.submitting = 'true';
+    btn.classList.add('disabled');
+    var isMobile = btn.classList.contains('btn-card-delete');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>' + (isMobile ? ' <span>Deleting...</span>' : '');
+  }
+  return true;
+}
+
+window.addEventListener('pageshow', function (event) {
+  document.querySelectorAll('.video-delete-form button[type="submit"]').forEach(function (btn) {
+    btn.dataset.submitting = 'false';
+    btn.classList.remove('disabled');
+    var isMobile = btn.classList.contains('btn-card-delete');
+    btn.innerHTML = '<i class="bi bi-trash"></i>' + (isMobile ? ' <span>Delete</span>' : '');
+  });
+});
+</script>
