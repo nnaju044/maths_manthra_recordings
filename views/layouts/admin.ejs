@@ -55,6 +55,17 @@
           <span class="icon"><i class="bi bi-file-earmark-arrow-up"></i></span> Upload Students
         </a>
 
+        <div class="nav-section-title">Examinations</div>
+        <a href="/admin/examinations/dashboard" class="sidebar-link <%= currentPage==='examinations-dashboard'?'active':'' %>">
+          <span class="icon"><i class="bi bi-speedometer2"></i></span> Exam Dashboard
+        </a>
+        <a href="/admin/examinations" class="sidebar-link <%= currentPage==='examinations-manage'?'active':'' %>">
+          <span class="icon"><i class="bi bi-journal-text"></i></span> Manage Exams
+        </a>
+        <a href="/admin/questions" class="sidebar-link <%= currentPage==='examinations-questions'?'active':'' %>">
+          <span class="icon"><i class="bi bi-question-diamond"></i></span> Question Bank
+        </a>
+
         <div class="nav-section-title">Account</div>
         <a href="/auth/logout" class="sidebar-link">
           <span class="icon"><i class="bi bi-box-arrow-right"></i></span> Logout
@@ -119,6 +130,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/admin.js"></script>
+    <%- script %>
 </body>
 
 </html>

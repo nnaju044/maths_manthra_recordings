@@ -191,6 +191,7 @@ app.locals.truncate = truncate;
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth.routes'));
 app.use('/admin', require('./routes/admin.routes'));
+app.use('/exams', require('./routes/exam.routes'));
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound);

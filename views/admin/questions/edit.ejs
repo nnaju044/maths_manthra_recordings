@@ -1,0 +1,315 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Question</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 small">
+          <li class="breadcrumb-item"><a href="/admin/questions">Question Bank</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Edit #<%= question._id.toString().slice(-6) %>
+          </li>
+        </ol>
+      </nav>
+    </div>
+    <a href="/admin/questions" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back to Questions
+    </a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form method="POST" action="/admin/questions/<%= question._id %>" enctype="multipart/form-data"
+            id="questionEditForm">
+            <!-- Question Type Selector -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Question Type <span class="text-danger">*</span></label>
+                <select name="questionType" id="questionTypeSelect" class="form-select" required>
+                  <option value="single_choice" <%=question.questionType==='single_choice' ? 'selected' : '' %>>Single
+                    Choice (MCQ - 1 Correct)</option>
+                  <option value="multiple_choice" <%=question.questionType==='multiple_choice' ? 'selected' : '' %>
+                    >Multiple Choice (Multiple Correct)</option>
+                  <option value="true_false" <%=question.questionType==='true_false' ? 'selected' : '' %>>True / False
+                  </option>
+                  <option value="fill_blank" <%=question.questionType==='fill_blank' ? 'selected' : '' %>>Fill in the
+                    Blank</option>
+                  <option value="short_answer" <%=question.questionType==='short_answer' ? 'selected' : '' %>>Short
+                    Answer (Manual Grading)</option>
+                  <option value="descriptive" <%=question.questionType==='descriptive' ? 'selected' : '' %>>Descriptive
+                    Answer (Manual Grading)</option>
+                </select>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                <input type="text" name="category" class="form-control" list="categoryList"
+                  value="<%= question.category %>" required>
+                <datalist id="categoryList">
+                  <% categories.forEach(cat=> { %>
+                    <option value="<%= cat %>">
+                      <% }) %>
+                </datalist>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Topic / Chapter</label>
+                <input type="text" name="topic" class="form-control" value="<%= question.topic || '' %>">
+              </div>
+            </div>
+
+            <!-- Question Text -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Question Text / Statement <span class="text-danger">*</span></label>
+              <textarea name="questionText" class="form-control" rows="4"
+                required><%= question.questionText %></textarea>
+            </div>
+
+            <!-- Optional Image Upload -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Question Image</label>
+              <% if (question.image) { %>
+                <div class="mb-2">
+                  <img src="<%= question.image %>" alt="Question Image" class="img-thumbnail"
+                    style="max-height: 180px;">
+                </div>
+                <% } %>
+                  <input type="file" name="image" class="form-control" accept="image/*">
+            </div>
+
+            <!-- Answer Configuration Section -->
+            <div class="card bg-light border p-3 mb-4" id="answerConfigBox">
+              <h5 class="fw-bold mb-3"><i class="bi bi-check2-circle me-2 text-success"></i>Answer Configuration</h5>
+
+              <!-- 1. Single Choice Options -->
+              <div id="singleChoiceConfig"
+                class="answer-config-panel <%= question.questionType === 'single_choice' ? '' : 'd-none' %>">
+                <p class="text-muted small mb-2">Update options and designate the single correct radio button:</p>
+                <div class="row g-2 mb-2">
+                  <% ['a', 'b' , 'c' , 'd' ].forEach((letter, i)=> {
+                    const opt = (question.options || []).find(o => o.optionId === letter) || { text: '' };
+                    const isCorrect = (question.correctAnswers || []).includes(letter) || (i === 0 &&
+                    (!question.correctAnswers || question.correctAnswers.length === 0));
+                    %>
+                    <div class="col-md-6 mb-2">
+                      <div class="input-group">
+                        <div class="input-group-text">
+                          <input class="form-check-input mt-0 single-correct-radio" type="radio"
+                            name="singleCorrectOption" value="<%= letter %>" <%=isCorrect ? 'checked' : '' %>>
+                        </div>
+                        <span class="input-group-text fw-bold text-uppercase">
+                          <%= letter %>
+                        </span>
+                        <input type="hidden" name="optionIds" value="<%= letter %>" class="mcq-option-id">
+                        <input type="text" name="optionTexts" class="form-control mcq-option-text"
+                          value="<%= opt.text %>" placeholder="Option <%= letter.toUpperCase() %> text">
+                      </div>
+                    </div>
+                    <% }) %>
+                </div>
+              </div>
+
+              <!-- 2. Multiple Choice Options -->
+              <div id="multipleChoiceConfig"
+                class="answer-config-panel <%= question.questionType === 'multiple_choice' ? '' : 'd-none' %>">
+                <p class="text-muted small mb-2">Update options and check all correct answers:</p>
+                <div class="row g-2 mb-2">
+                  <% ['a', 'b' , 'c' , 'd' ].forEach((letter)=> {
+                    const opt = (question.options || []).find(o => o.optionId === letter) || { text: '' };
+                    const isCorrect = (question.correctAnswers || []).includes(letter);
+                    %>
+                    <div class="col-md-6 mb-2">
+                      <div class="input-group">
+                        <div class="input-group-text">
+                          <input class="form-check-input mt-0 multi-correct-check" type="checkbox"
+                            name="correctOptionIds" value="<%= letter %>" <%=isCorrect ? 'checked' : '' %>>
+                        </div>
+                        <span class="input-group-text fw-bold text-uppercase">
+                          <%= letter %>
+                        </span>
+                        <input type="hidden" name="optionIds" value="<%= letter %>" class="mcq-option-id">
+                        <input type="text" name="optionTexts" class="form-control mcq-option-text"
+                          value="<%= opt.text %>" placeholder="Option <%= letter.toUpperCase() %> text">
+                      </div>
+                    </div>
+                    <% }) %>
+                </div>
+              </div>
+
+              <!-- 3. True / False -->
+              <div id="trueFalseConfig"
+                class="answer-config-panel <%= question.questionType === 'true_false' ? '' : 'd-none' %>">
+                <label class="form-label fw-semibold">Correct Answer</label>
+                <p class="text-muted small mb-2">Select whether the statement is True or False:</p>
+                <div class="d-flex gap-4 p-2 bg-white rounded border">
+                  <div class="form-check">
+                    <input class="form-check-input tf-correct-radio" type="radio" name="tfCorrect" id="tfTrue"
+                      value="true" <%=(question.correctAnswers || []).includes('true') ? 'checked' : '' %>>
+                    <label class="form-check-label fw-semibold text-success" for="tfTrue"><i
+                        class="bi bi-check-circle me-1"></i>True</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input tf-correct-radio" type="radio" name="tfCorrect" id="tfFalse"
+                      value="false" <%=(question.correctAnswers || []).includes('false') ? 'checked' : '' %>>
+                    <label class="form-check-label fw-semibold text-danger" for="tfFalse"><i
+                        class="bi bi-x-circle me-1"></i>False</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Fill in Blank -->
+              <div id="fillBlankConfig"
+                class="answer-config-panel <%= question.questionType === 'fill_blank' ? '' : 'd-none' %>">
+                <label class="form-label fw-semibold">Accepted Answers <span class="text-danger">*</span></label>
+                <p class="text-muted small mb-1">Enter valid accepted answers (one per line). Student answers will be
+                  matched against these variants:</p>
+                <textarea name="acceptedAnswersText" id="acceptedAnswersInput" class="form-control mb-2"
+                  rows="3"><%= (question.acceptedAnswers || []).join('\n') %></textarea>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="caseSensitive" value="true"
+                    id="caseSensitiveCheck" <%=question.caseSensitive ? 'checked' : '' %>>
+                  <label class="form-check-label small" for="caseSensitiveCheck">Case sensitive evaluation</label>
+                </div>
+              </div>
+
+              <!-- 5. Short Answer -->
+              <div id="shortAnswerConfig"
+                class="answer-config-panel <%= question.questionType === 'short_answer' ? '' : 'd-none' %>">
+                <div class="alert alert-info py-2 mb-3 small">
+                  <i class="bi bi-pencil-square me-1"></i>
+                  <strong>Short Answer Question (Manual Grading):</strong> This question will be answered as a concise
+                  text entry by students and queued for instructor evaluation. No multiple-choice options are needed.
+                </div>
+                <div class="mb-2">
+                  <label class="form-label fw-semibold small">Marking Guideline / Key Points (Optional)</label>
+                  <textarea name="markingGuideline" class="form-control" rows="2"
+                    placeholder="Key points or criteria evaluators should check when scoring..."><%= question.markingGuideline || '' %></textarea>
+                  <div class="form-text small">Internal guidance for instructors during evaluation.</div>
+                </div>
+              </div>
+
+              <!-- 6. Descriptive Answer -->
+              <div id="descriptiveConfig"
+                class="answer-config-panel <%= question.questionType === 'descriptive' ? '' : 'd-none' %>">
+                <div class="alert alert-info py-2 mb-3 small">
+                  <i class="bi bi-file-text me-1"></i>
+                  <strong>Descriptive Question (Manual Grading):</strong> Students will provide detailed long-form
+                  answers or derivations. Evaluated manually by instructors on the evaluation portal.
+                </div>
+                <div class="mb-2">
+                  <label class="form-label fw-semibold small">Evaluation Rubric / Model Answer (Optional)</label>
+                  <textarea name="markingGuideline" class="form-control" rows="3"
+                    placeholder="Outline steps, formula derivations, or evaluation rubric for instructors..."><%= question.markingGuideline || '' %></textarea>
+                  <div class="form-text small">Internal guidance for instructors during evaluation.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scoring & Evaluation Settings -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Marks Awarded <span class="text-danger">*</span></label>
+                <input type="number" step="0.25" min="0.25" name="marks" class="form-control"
+                  value="<%= question.marks %>" required>
+              </div>
+              <div class="col-md-3" id="negativeMarksCol">
+                <label class="form-label fw-semibold">Negative Marks</label>
+                <input type="number" step="0.25" min="0" name="negativeMarks" id="negativeMarksInput"
+                  class="form-control" value="<%= question.negativeMarks || 0 %>">
+                <div class="form-text">Deducted for incorrect answers.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Difficulty Level</label>
+                <select name="difficulty" class="form-select">
+                  <option value="easy" <%=question.difficulty==='easy' ? 'selected' : '' %>>Easy</option>
+                  <option value="medium" <%=question.difficulty==='medium' ? 'selected' : '' %>>Medium</option>
+                  <option value="hard" <%=question.difficulty==='hard' ? 'selected' : '' %>>Hard</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Status</label>
+                <select name="status" class="form-select">
+                  <option value="active" <%=question.status==='active' ? 'selected' : '' %>>Active</option>
+                  <option value="archived" <%=question.status==='archived' ? 'selected' : '' %>>Archived</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Explanation / Solution Rationale -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Explanation / Solution Note (Optional)</label>
+              <textarea name="explanation" class="form-control" rows="2"><%= question.explanation || '' %></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a href="/admin/questions" class="btn btn-light">Cancel</a>
+              <button type="submit" class="btn btn-primary px-4">Update Question</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const typeSelect = document.getElementById('questionTypeSelect');
+    const panels = {
+      single_choice: document.getElementById('singleChoiceConfig'),
+      multiple_choice: document.getElementById('multipleChoiceConfig'),
+      true_false: document.getElementById('trueFalseConfig'),
+      fill_blank: document.getElementById('fillBlankConfig'),
+      short_answer: document.getElementById('shortAnswerConfig'),
+      descriptive: document.getElementById('descriptiveConfig'),
+    };
+
+    function updateAnswerPanels() {
+      const selectedType = typeSelect.value;
+
+      // 1. Hide all panels and disable their form inputs so inactive fields are not submitted
+      Object.keys(panels).forEach(function (type) {
+        const panel = panels[type];
+        if (!panel) return;
+
+        const isCurrent = (type === selectedType);
+        if (isCurrent) {
+          panel.classList.remove('d-none');
+          // Enable all inputs/textareas inside the active panel
+          const activeInputs = panel.querySelectorAll('input, textarea, select');
+          activeInputs.forEach(function (el) {
+            el.disabled = false;
+          });
+        } else {
+          panel.classList.add('d-none');
+          // Disable all inputs/textareas inside hidden panels so they are omitted from submission
+          const inactiveInputs = panel.querySelectorAll('input, textarea, select');
+          inactiveInputs.forEach(function (el) {
+            el.disabled = true;
+          });
+        }
+      });
+
+      // 2. Clear stale MCQ values if switching away from single/multiple choice
+      if (selectedType !== 'single_choice' && selectedType !== 'multiple_choice') {
+        const mcqTexts = document.querySelectorAll('.mcq-option-text');
+        mcqTexts.forEach(function (input) {
+          if (input.closest('.answer-config-panel.d-none')) {
+            input.value = '';
+          }
+        });
+      }
+
+      // 3. For manual grading questions, negative marks typically don't apply; set to 0
+      const negInput = document.getElementById('negativeMarksInput');
+      if (negInput && (selectedType === 'short_answer' || selectedType === 'descriptive')) {
+        negInput.value = '0';
+      }
+    }
+
+    typeSelect.addEventListener('change', updateAnswerPanels);
+    document.addEventListener('DOMContentLoaded', updateAnswerPanels);
+    // Initial call in case DOM is already ready
+    updateAnswerPanels();
+  })();
+</script>

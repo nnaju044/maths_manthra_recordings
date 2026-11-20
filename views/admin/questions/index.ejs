@@ -1,0 +1,162 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-question-diamond me-2 text-primary"></i>Question Bank</h3>
+      <p class="text-muted small mb-0">Create, curate, and organize reusable questions across all subjects and courses.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/admin/questions/import" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Import Excel
+      </a>
+      <a href="/admin/questions/create" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Add Question
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/admin/questions" class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <input type="text" name="search" class="form-control form-control-sm" placeholder="Search questions..." value="<%= filter.search || '' %>">
+        </div>
+        <div class="col-md-2">
+          <select name="category" class="form-select form-select-sm">
+            <option value="">All Categories</option>
+            <% categories.forEach(cat => { %>
+              <option value="<%= cat %>" <%= filter.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="type" class="form-select form-select-sm">
+            <option value="">All Types</option>
+            <option value="single_choice" <%= filter.type === 'single_choice' ? 'selected' : '' %>>Single Choice (MCQ)</option>
+            <option value="multiple_choice" <%= filter.type === 'multiple_choice' ? 'selected' : '' %>>Multiple Choice</option>
+            <option value="true_false" <%= filter.type === 'true_false' ? 'selected' : '' %>>True / False</option>
+            <option value="fill_blank" <%= filter.type === 'fill_blank' ? 'selected' : '' %>>Fill in Blank</option>
+            <option value="short_answer" <%= filter.type === 'short_answer' ? 'selected' : '' %>>Short Answer</option>
+            <option value="descriptive" <%= filter.type === 'descriptive' ? 'selected' : '' %>>Descriptive</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="difficulty" class="form-select form-select-sm">
+            <option value="">All Difficulties</option>
+            <option value="easy" <%= filter.difficulty === 'easy' ? 'selected' : '' %>>Easy</option>
+            <option value="medium" <%= filter.difficulty === 'medium' ? 'selected' : '' %>>Medium</option>
+            <option value="hard" <%= filter.difficulty === 'hard' ? 'selected' : '' %>>Hard</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="status" class="form-select form-select-sm">
+            <option value="active" <%= filter.status === 'active' ? 'selected' : '' %>>Active</option>
+            <option value="archived" <%= filter.status === 'archived' ? 'selected' : '' %>>Archived</option>
+            <option value="all" <%= filter.status === 'all' ? 'selected' : '' %>>All Statuses</option>
+          </select>
+        </div>
+        <div class="col-md-1 d-flex gap-1">
+          <button type="submit" class="btn btn-secondary btn-sm w-100">Filter</button>
+          <a href="/admin/questions" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Questions Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Question</th>
+            <th>Type</th>
+            <th>Category & Topic</th>
+            <th>Marks</th>
+            <th>Difficulty</th>
+            <th>Status</th>
+            <th class="text-end" style="min-width: 120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (questions && questions.length > 0) { %>
+            <% questions.forEach((q, idx) => { %>
+              <tr>
+                <td class="text-muted small"><%= ((pagination.page - 1) * pagination.limit) + idx + 1 %></td>
+                <td>
+                  <div class="fw-semibold text-truncate" style="max-width: 420px;" title="<%= q.questionText %>">
+                    <%= q.questionText %>
+                  </div>
+                  <% if (q.image) { %>
+                    <span class="badge bg-light text-dark border extra-small mt-1"><i class="bi bi-image me-1"></i>Image</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="badge bg-secondary-subtle text-secondary border">
+                    <%= q.questionType.replace('_', ' ').toUpperCase() %>
+                  </span>
+                </td>
+                <td>
+                  <div class="small fw-semibold"><%= q.category %></div>
+                  <div class="text-muted extra-small"><%= q.topic || 'General' %></div>
+                </td>
+                <td>
+                  <span class="badge bg-primary-subtle text-primary border"><%= q.marks %> pts</span>
+                  <% if (q.negativeMarks > 0) { %>
+                    <span class="badge bg-danger-subtle text-danger border">-<%= q.negativeMarks %></span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="badge <%= q.difficulty === 'easy' ? 'bg-success' : q.difficulty === 'medium' ? 'bg-warning text-dark' : 'bg-danger' %>">
+                    <%= q.difficulty %>
+                  </span>
+                </td>
+                <td>
+                  <span class="badge <%= q.status === 'active' ? 'bg-success-subtle text-success' : 'bg-secondary' %>">
+                    <%= q.status %>
+                  </span>
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <a href="/admin/questions/<%= q._id %>/edit" class="btn btn-outline-primary btn-sm py-0 px-2" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <form method="POST" action="/admin/questions/<%= q._id %>/toggle-status" onsubmit="return confirm('Change status of this question?');">
+                      <button type="submit" class="btn btn-outline-<%= q.status === 'active' ? 'warning' : 'success' %> btn-sm py-0 px-2" title="<%= q.status === 'active' ? 'Archive' : 'Restore' %>">
+                        <i class="bi bi-<%= q.status === 'active' ? 'archive' : 'check-circle' %>"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                No questions found. Click <strong>Add Question</strong> or <strong>Import Excel</strong> to get started.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+      <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="text-muted small">Showing page <%= pagination.page %> of <%= pagination.totalPages %> (<%= pagination.totalCount %> items)</span>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= !pagination.hasPrev ? 'disabled' : '' %>">
+            <a class="page-link" href="/admin/questions?page=<%= pagination.page - 1 %>&category=<%= filter.category || '' %>&type=<%= filter.type || '' %>&difficulty=<%= filter.difficulty || '' %>&status=<%= filter.status || '' %>&search=<%= filter.search || '' %>">Previous</a>
+          </li>
+          <li class="page-item <%= !pagination.hasNext ? 'disabled' : '' %>">
+            <a class="page-link" href="/admin/questions?page=<%= pagination.page + 1 %>&category=<%= filter.category || '' %>&type=<%= filter.type || '' %>&difficulty=<%= filter.difficulty || '' %>&status=<%= filter.status || '' %>&search=<%= filter.search || '' %>">Next</a>
+          </li>
+        </ul>
+      </div>
+    <% } %>
+  </div>
+</div>
+

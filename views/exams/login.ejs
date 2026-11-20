@@ -1,0 +1,133 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-primary text-white p-4 text-center">
+          <div class="mb-2">
+            <i class="bi bi-mortarboard-fill display-5"></i>
+          </div>
+          <h4 class="fw-bold mb-1">Student Examination Portal</h4>
+          <p class="text-white-50 small mb-0">Sign in using your registered student email address</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <% if (step === 'email') { %>
+            <!-- STEP 1: Enter Email -->
+            <form action="/exams/send-otp" method="POST" id="emailForm">
+              <div class="mb-4">
+                <label for="email" class="form-label fw-semibold text-secondary small">Registered Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                  <input
+                    type="email"
+                    class="form-control bg-light border-start-0"
+                    id="email"
+                    name="email"
+                    placeholder="student@example.com"
+                    value="<%= email %>"
+                    required
+                    autofocus
+                  />
+                </div>
+                <div class="form-text small">Enter the email you provided during course enrollment.</div>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-3" id="sendOtpBtn">
+                <i class="bi bi-send me-1"></i> Send Verification Code
+              </button>
+            </form>
+
+          <% } else if (step === 'record_selection') { %>
+            <!-- STEP 1B: Disambiguate multiple students sharing the same email -->
+            <div class="alert alert-info py-2 small mb-4">
+              <i class="bi bi-info-circle-fill me-1"></i> Multiple enrollments found for <strong><%= email %></strong>. Please choose your profile:
+            </div>
+
+            <form action="/exams/send-otp" method="POST" id="selectStudentForm">
+              <input type="hidden" name="email" value="<%= email %>" />
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary small mb-2">Select Your Enrollment Profile</label>
+                <div class="list-group">
+                  <% studentsList.forEach(function(s, idx) { %>
+                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 rounded-3 mb-2 border">
+                      <input class="form-check-input flex-shrink-0" type="radio" name="studentId" value="<%= s.id %>" <%= idx === 0 ? 'checked' : '' %>>
+                      <div class="w-100">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <strong class="text-dark"><%= s.fullName %></strong>
+                          <span class="badge bg-secondary-subtle text-secondary font-monospace"><%= s.studentId %></span>
+                        </div>
+                        <div class="text-muted small mt-1">
+                          <i class="bi bi-book me-1"></i> <%= s.courseTitle %>
+                        </div>
+                      </div>
+                    </label>
+                  <% }); %>
+                </div>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3">
+                  <i class="bi bi-check-circle me-1"></i> Proceed to Verification
+                </button>
+                <a href="/exams/login" class="btn btn-link text-muted text-decoration-none small">
+                  <i class="bi bi-arrow-left me-1"></i> Use a different email
+                </a>
+              </div>
+            </form>
+
+          <% } else if (step === 'otp') { %>
+            <!-- STEP 2: Enter OTP -->
+            <div class="alert alert-light border small mb-4 text-center">
+              A 6-digit one-time code was sent to<br>
+              <strong class="text-dark"><%= email %></strong>
+            </div>
+
+            <form action="/exams/verify-otp" method="POST" id="otpForm">
+              <input type="hidden" name="email" value="<%= email %>" />
+
+              <div class="mb-4 text-center">
+                <label for="otp" class="form-label fw-semibold text-secondary small d-block">6-Digit Verification Code</label>
+                <input
+                  type="text"
+                  class="form-control form-control-lg text-center font-monospace fs-3 tracking-widest bg-light"
+                  id="otp"
+                  name="otp"
+                  placeholder="000000"
+                  maxlength="6"
+                  pattern="\d{6}"
+                  inputmode="numeric"
+                  required
+                  autofocus
+                />
+                <div class="form-text small mt-2">Code expires in 10 minutes.</div>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3">
+                  <i class="bi bi-shield-check me-1"></i> Verify & Access Examinations
+                </button>
+              </div>
+            </form>
+
+            <div class="text-center mt-4 border-top pt-3">
+              <form action="/exams/send-otp" method="POST" class="d-inline">
+                <input type="hidden" name="email" value="<%= email %>" />
+                <button type="submit" class="btn btn-link text-decoration-none small text-muted">
+                  <i class="bi bi-arrow-clockwise me-1"></i> Didn't receive code? Resend
+                </button>
+              </form>
+              <span class="text-muted mx-1">&bull;</span>
+              <a href="/exams/login" class="small text-muted text-decoration-none">Change Email</a>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="card-footer bg-light p-3 text-center text-muted small border-0">
+          <i class="bi bi-lock-fill me-1"></i> Secure exam environment powered by Maths Manthra
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -334,7 +334,8 @@ async function runScoresFeatureTests() {
 
         delete process.env.SMTP_FROM;
         delete process.env.EMAIL_FROM;
-        assert.strictEqual(emailService.resolveSender('admin@gmail.com'), '"Maths Manthra" <admin@gmail.com>', 'Should fallback to appName and SMTP_USER');
+        const expectedAppName = (process.env.APP_NAME || 'Maths Manthra').trim();
+        assert.strictEqual(emailService.resolveSender('admin@gmail.com'), `"${expectedAppName}" <admin@gmail.com>`, 'Should fallback to appName and SMTP_USER');
         console.log('  ✔ Sender address resolution supports SMTP_FROM, EMAIL_FROM, and sensible fallback');
 
         // 6c. Error categorization tests

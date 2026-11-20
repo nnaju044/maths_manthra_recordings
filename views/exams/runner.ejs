@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      user-select: none; /* Anti-distraction / exam focus */
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .exam-header {
+      background: #0f172a;
+      color: #fff;
+      border-bottom: 2px solid #334155;
+      position: sticky;
+      top: 0;
+      z-index: 1020;
+    }
+    .timer-badge {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #38bdf8;
+      font-size: 1.15rem;
+      letter-spacing: 1px;
+    }
+    .timer-warning {
+      background: #7f1d1d !important;
+      border-color: #ef4444 !important;
+      color: #fca5a5 !important;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
+    .q-palette-btn {
+      width: 38px;
+      height: 38px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.15s ease-in-out;
+      cursor: pointer;
+    }
+    .q-palette-btn.current {
+      box-shadow: 0 0 0 3px #0284c7 !important;
+    }
+    .q-not-visited {
+      background-color: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #cbd5e1;
+    }
+    .q-answered {
+      background-color: #10b981;
+      color: #ffffff;
+      border: 1px solid #059669;
+    }
+    .q-marked-review {
+      background-color: #8b5cf6;
+      color: #ffffff;
+      border: 1px solid #7c3aed;
+    }
+    .q-answered-marked {
+      background-color: #8b5cf6;
+      color: #ffffff;
+      border: 2px solid #10b981;
+      position: relative;
+    }
+    .q-answered-marked::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+    .option-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      transition: all 0.15s ease-in-out;
+      cursor: pointer;
+    }
+    .option-card:hover {
+      background-color: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .option-card.selected {
+      background-color: #f0fdf4;
+      border-color: #10b981;
+      box-shadow: 0 1px 3px rgba(16, 185, 129, 0.15);
+    }
+    .save-indicator {
+      font-size: 0.75rem;
+      transition: opacity 0.2s ease;
+    }
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+  <!-- Top Navbar / Server Timer Bar -->
+  <header class="exam-header py-2.5 px-3 px-md-4 shadow-sm">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary px-2.5 py-1.5 rounded-pill fw-bold">Attempt <%= attempt.attemptNumber %></span>
+        <h5 class="fw-bold mb-0 text-truncate text-white" style="max-width: 320px;" title="<%= exam.title %>">
+          <%= exam.title %>
+        </h5>
+      </div>
+
+      <!-- Center Server Clock Display -->
+      <div class="d-flex align-items-center gap-3">
+        <div class="timer-badge font-mono px-3 py-1.5 rounded-3 fw-bold shadow-sm d-flex align-items-center gap-2" id="examTimerBadge">
+          <i class="bi bi-clock-history"></i>
+          <span id="timerDisplay">--:--:--</span>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="d-flex align-items-center gap-3">
+        <span id="autosaveIndicator" class="save-indicator text-muted d-none d-md-inline">
+          <i class="bi bi-cloud-check text-success me-1"></i> All changes saved
+        </span>
+        <button type="button" class="btn btn-outline-danger btn-sm px-3 fw-bold rounded-pill" id="finishExamBtn">
+          <i class="bi bi-check-circle me-1"></i> Submit Exam
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Runner Area -->
+  <main class="flex-grow-1 py-3 px-2 px-md-4">
+    <div class="container-fluid">
+      <div class="row g-3">
+        
+        <!-- Left: Question Workspace (8 cols) -->
+        <div class="col-lg-8 col-xl-9">
+          <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white h-100 d-flex flex-column justify-content-between">
+            <div>
+              <!-- Question Header Meta -->
+              <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fs-5 fw-bold text-dark">Question <span id="currentQuestionNum">1</span></span>
+                  <span class="text-muted">of <%= questions.length %></span>
+                  <span class="badge bg-light text-secondary border small ms-2" id="qTypeBadge">Single Choice</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 small">
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                    +<span id="qMarks">1</span> Mark
+                  </span>
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" id="qNegativeMarksBadge">
+                    -<span id="qNegativeMarks">0</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Question Text -->
+              <div class="fs-5 fw-medium text-dark mb-4 lh-base" id="questionText">
+                Loading question text...
+              </div>
+
+              <!-- Question Options Container -->
+              <div id="optionsContainer" class="mb-4">
+                <!-- Dynamically populated based on question type -->
+              </div>
+            </div>
+
+            <!-- Question Navigation Bottom Bar -->
+            <div class="border-top pt-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary px-3 rounded-3" id="prevBtn">
+                  <i class="bi bi-chevron-left me-1"></i> Previous
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-3 rounded-3" id="nextBtn">
+                  Next <i class="bi bi-chevron-right ms-1"></i>
+                </button>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-warning px-3 rounded-3" id="reviewBtn">
+                  <i class="bi bi-bookmark me-1"></i> <span id="reviewBtnText">Mark for Review</span>
+                </button>
+                <button type="button" class="btn btn-outline-light text-muted px-3 rounded-3 border" id="clearBtn">
+                  <i class="bi bi-eraser me-1"></i> Clear Selection
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Question Palette & Overview Sidebar (4 cols) -->
+        <div class="col-lg-4 col-xl-3">
+          <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+            <!-- Student Mini Info -->
+            <div class="d-flex align-items-center gap-2 border-bottom pb-3 mb-3">
+              <i class="bi bi-person-circle fs-4 text-primary"></i>
+              <div class="overflow-hidden">
+                <div class="fw-bold small text-truncate"><%= student.fullName %></div>
+                <div class="text-muted" style="font-size: 11px;"><%= student.email %></div>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="small mb-3">
+              <div class="row g-2" style="font-size: 11px;">
+                <div class="col-6 d-flex align-items-center gap-1.5">
+                  <span class="q-palette-btn q-answered" style="width: 14px; height: 14px; border-radius: 4px;"></span>
+                  <span>Answered (<span id="countAnswered">0</span>)</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-1.5">
+                  <span class="q-palette-btn q-marked-review" style="width: 14px; height: 14px; border-radius: 4px;"></span>
+                  <span>Review (<span id="countReview">0</span>)</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-1.5">
+                  <span class="q-palette-btn q-not-visited" style="width: 14px; height: 14px; border-radius: 4px;"></span>
+                  <span>Unanswered (<span id="countUnanswered">0</span>)</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-1.5">
+                  <span class="q-palette-btn q-answered-marked" style="width: 14px; height: 14px; border-radius: 4px;"></span>
+                  <span>Answered & Review (<span id="countBoth">0</span>)</span>
+                </div>
+              </div>
+            </div>
+
+            <hr class="text-muted my-2">
+
+            <!-- Question Palette Buttons Grid -->
+            <div class="flex-grow-1 overflow-y-auto mb-3" style="max-height: 380px;">
+              <h6 class="fw-bold text-secondary text-uppercase small mb-2" style="font-size: 11px;">Question Palette</h6>
+              <div class="d-flex flex-wrap gap-2" id="paletteGrid">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Submit Final Button in Sidebar -->
+            <div class="border-top pt-3">
+              <button type="button" class="btn btn-success w-100 py-2.5 fw-bold rounded-3 shadow-sm" id="sidebarSubmitBtn">
+                <i class="bi bi-send-check me-1"></i> Submit Examination
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Submit Confirmation Modal -->
+  <div class="modal fade" id="submitModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow rounded-4">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark">Submit Examination</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-secondary mb-4">Are you sure you want to finish and submit your examination? Once submitted, you cannot modify your answers.</p>
+          
+          <div class="row g-2 text-center p-3 bg-light rounded-3 mb-3 small">
+            <div class="col-4">
+              <div class="text-muted">Total Questions</div>
+              <div class="fw-bold fs-5 text-dark" id="modalTotalQ"><%= questions.length %></div>
+            </div>
+            <div class="col-4 border-start border-end">
+              <div class="text-muted">Answered</div>
+              <div class="fw-bold fs-5 text-success" id="modalAnsweredQ">0</div>
+            </div>
+            <div class="col-4">
+              <div class="text-muted">Unanswered</div>
+              <div class="fw-bold fs-5 text-danger" id="modalUnansweredQ">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary px-4 rounded-3" data-bs-dismiss="modal">Resume Exam</button>
+          <button type="button" class="btn btn-success px-4 fw-bold rounded-3" id="confirmSubmitBtn">Confirm & Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Examination Runner Client Engine -->
+  <script>
+    (function () {
+      // Server-passed variables
+      const attemptId = "<%= attempt._id %>";
+      const examinationSlug = "<%= exam.slug %>";
+      const totalQuestionsCount = <%= questions.length %>;
+      const initialRemainingSeconds = <%= remainingSeconds %>;
+      const serverExpiresAt = new Date("<%= expiresAt %>").getTime();
+
+      // Sanitized questions array & saved responses from server
+      const questions = <%- JSON.stringify(questions) %>;
+      const savedResponses = <%- JSON.stringify(savedResponses) %>;
+
+      let currentIndex = 0;
+      let remainingSeconds = initialRemainingSeconds;
+      let isSubmitting = false;
+      let debounceTimeout = null;
+
+      // State store for answers & flags
+      const state = {};
+      questions.forEach((q, idx) => {
+        const qId = q._id;
+        const saved = savedResponses[qId] || {};
+        state[qId] = {
+          answer: saved.studentAnswer !== undefined ? saved.studentAnswer : null,
+          isMarkedForReview: Boolean(saved.isMarkedForReview),
+          isAnswered: Boolean(saved.isAnswered),
+          lastSavedAt: new Date().toISOString(),
+        };
+      });
+
+      // ── Timer Engine ────────────────────────────────────────────────────────
+      function updateTimerDisplay() {
+        if (remainingSeconds <= 0) {
+          document.getElementById('timerDisplay').innerText = "00:00:00";
+          triggerAutoExpire();
+          return;
+        }
+
+        const hrs = Math.floor(remainingSeconds / 3600);
+        const mins = Math.floor((remainingSeconds % 3600) / 60);
+        const secs = remainingSeconds % 60;
+        const fmt = (n) => String(n).padStart(2, '0');
+        document.getElementById('timerDisplay').innerText = `${fmt(hrs)}:${fmt(mins)}:${fmt(secs)}`;
+
+        // Warning under 5 minutes
+        const timerBadge = document.getElementById('examTimerBadge');
+        if (remainingSeconds < 300) {
+          timerBadge.classList.add('timer-warning');
+        } else {
+          timerBadge.classList.remove('timer-warning');
+        }
+
+        remainingSeconds--;
+      }
+
+      // Sync timer strictly with server clock every second
+      setInterval(updateTimerDisplay, 1000);
+      updateTimerDisplay();
+
+      function triggerAutoExpire() {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        showAutosaveStatus('Time expired! Auto-submitting...', 'danger');
+        
+        // Auto-submit attempt to finalize
+        fetch(`/exams/attempt/${attemptId}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ isAutoExpired: true }),
+        })
+        .then(res => res.json())
+        .then(data => {
+          window.location.href = data.redirectUrl || `/exams/results/${attemptId}`;
+        })
+        .catch(() => {
+          window.location.href = `/exams/results/${attemptId}`;
+        });
+      }
+
+      // ── Palette Rendering ──────────────────────────────────────────────────
+      function updatePalette() {
+        const grid = document.getElementById('paletteGrid');
+        grid.innerHTML = '';
+
+        let answeredCount = 0;
+        let reviewCount = 0;
+        let bothCount = 0;
+
+        questions.forEach((q, idx) => {
+          const s = state[q._id];
+          const btn = document.createElement('div');
+          btn.className = 'q-palette-btn';
+          btn.innerText = idx + 1;
+
+          if (idx === currentIndex) {
+            btn.classList.add('current');
+          }
+
+          if (s.isAnswered && s.isMarkedForReview) {
+            btn.classList.add('q-answered-marked');
+            bothCount++;
+          } else if (s.isMarkedForReview) {
+            btn.classList.add('q-marked-review');
+            reviewCount++;
+          } else if (s.isAnswered) {
+            btn.classList.add('q-answered');
+            answeredCount++;
+          } else {
+            btn.classList.add('q-not-visited');
+          }
+
+          btn.addEventListener('click', () => {
+            goToQuestion(idx);
+          });
+
+          grid.appendChild(btn);
+        });
+
+        document.getElementById('countAnswered').innerText = answeredCount;
+        document.getElementById('countReview').innerText = reviewCount;
+        document.getElementById('countBoth').innerText = bothCount;
+        document.getElementById('countUnanswered').innerText = questions.length - (answeredCount + bothCount);
+      }
+
+      // ── Question Renderer ──────────────────────────────────────────────────
+      function renderCurrentQuestion() {
+        const q = questions[currentIndex];
+        const s = state[q._id];
+
+        document.getElementById('currentQuestionNum').innerText = currentIndex + 1;
+        document.getElementById('qMarks').innerText = q.marks || 1;
+        document.getElementById('qNegativeMarks').innerText = q.negativeMarks || 0;
+        
+        const negBadge = document.getElementById('qNegativeMarksBadge');
+        if (q.negativeMarks > 0) {
+          negBadge.classList.remove('d-none');
+        } else {
+          negBadge.classList.add('d-none');
+        }
+
+        const typeLabels = {
+          'single_choice': 'Single Choice (MCQ)',
+          'multiple_choice': 'Multiple Choice (Select all correct)',
+          'true_false': 'True / False',
+          'fill_blank': 'Fill in the Blank',
+          'short_answer': 'Short Answer',
+          'descriptive': 'Descriptive Answer'
+        };
+        document.getElementById('qTypeBadge').innerText = typeLabels[q.questionType] || q.questionType;
+        document.getElementById('questionText').innerText = q.questionText;
+
+        // Review toggle button state
+        const revBtn = document.getElementById('reviewBtn');
+        const revBtnText = document.getElementById('reviewBtnText');
+        if (s.isMarkedForReview) {
+          revBtn.classList.remove('btn-outline-warning');
+          revBtn.classList.add('btn-warning');
+          revBtnText.innerText = 'Marked for Review';
+        } else {
+          revBtn.classList.remove('btn-warning');
+          revBtn.classList.add('btn-outline-warning');
+          revBtnText.innerText = 'Mark for Review';
+        }
+
+        // Render Options / Inputs based on Question Type
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+
+        if (q.questionType === 'single_choice' || q.questionType === 'true_false') {
+          // Single select options
+          (q.options || []).forEach(opt => {
+            const card = document.createElement('div');
+            const isSelected = s.answer === opt.optionId;
+            card.className = `option-card p-3 mb-2.5 d-flex align-items-center gap-3 ${isSelected ? 'selected' : ''}`;
+            
+            card.innerHTML = `
+              <input type="radio" name="optRadio_${q._id}" class="form-check-input flex-shrink-0" ${isSelected ? 'checked' : ''}>
+              <div class="flex-grow-1 text-dark">${opt.text}</div>
+            `;
+
+            card.addEventListener('click', () => {
+              s.answer = opt.optionId;
+              s.isAnswered = true;
+              renderCurrentQuestion();
+              triggerAutosave(q._id);
+            });
+
+            container.appendChild(card);
+          });
+        } else if (q.questionType === 'multiple_choice') {
+          // Multiple select options
+          const currentArr = Array.isArray(s.answer) ? s.answer : [];
+          (q.options || []).forEach(opt => {
+            const card = document.createElement('div');
+            const isChecked = currentArr.includes(opt.optionId);
+            card.className = `option-card p-3 mb-2.5 d-flex align-items-center gap-3 ${isChecked ? 'selected' : ''}`;
+
+            card.innerHTML = `
+              <input type="checkbox" class="form-check-input flex-shrink-0" ${isChecked ? 'checked' : ''}>
+              <div class="flex-grow-1 text-dark">${opt.text}</div>
+            `;
+
+            card.addEventListener('click', () => {
+              let updated = Array.isArray(s.answer) ? [...s.answer] : [];
+              if (updated.includes(opt.optionId)) {
+                updated = updated.filter(id => id !== opt.optionId);
+              } else {
+                updated.push(opt.optionId);
+              }
+              s.answer = updated;
+              s.isAnswered = updated.length > 0;
+              renderCurrentQuestion();
+              triggerAutosave(q._id);
+            });
+
+            container.appendChild(card);
+          });
+        } else if (q.questionType === 'fill_blank' || q.questionType === 'short_answer') {
+          // Text Input
+          const inputGroup = document.createElement('div');
+          inputGroup.className = 'mb-3';
+          inputGroup.innerHTML = `
+            <label class="form-label text-muted small fw-semibold">Your Answer</label>
+            <input type="text" class="form-control form-control-lg bg-light" id="textAnswerInput" placeholder="Type your answer here..." value="${s.answer || ''}">
+          `;
+          container.appendChild(inputGroup);
+
+          const inp = document.getElementById('textAnswerInput');
+          inp.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            s.answer = val;
+            s.isAnswered = val.length > 0;
+            triggerAutosave(q._id);
+          });
+        } else if (q.questionType === 'descriptive') {
+          // Textarea for descriptive
+          const inputGroup = document.createElement('div');
+          inputGroup.className = 'mb-3';
+          inputGroup.innerHTML = `
+            <label class="form-label text-muted small fw-semibold">Your Detailed Answer</label>
+            <textarea class="form-control bg-light" id="textareaAnswerInput" rows="7" placeholder="Write your full explanation or steps here...">${s.answer || ''}</textarea>
+          `;
+          container.appendChild(inputGroup);
+
+          const txt = document.getElementById('textareaAnswerInput');
+          txt.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            s.answer = val;
+            s.isAnswered = val.length > 0;
+            triggerAutosave(q._id);
+          });
+        }
+
+        // Prev / Next button states
+        document.getElementById('prevBtn').disabled = currentIndex === 0;
+        document.getElementById('nextBtn').disabled = currentIndex === questions.length - 1;
+
+        updatePalette();
+      }
+
+      function goToQuestion(index) {
+        if (index >= 0 && index < questions.length) {
+          currentIndex = index;
+          renderCurrentQuestion();
+        }
+      }
+
+      // ── Autosave Engine ────────────────────────────────────────────────────
+      function showAutosaveStatus(msg, type = 'muted') {
+        const el = document.getElementById('autosaveIndicator');
+        if (!el) return;
+        if (type === 'saving') {
+          el.innerHTML = '<i class="bi bi-arrow-repeat text-warning spin me-1"></i> Saving answer...';
+        } else if (type === 'saved') {
+          el.innerHTML = '<i class="bi bi-cloud-check text-success me-1"></i> All changes saved';
+        } else if (type === 'danger') {
+          el.innerHTML = `<i class="bi bi-exclamation-circle text-danger me-1"></i> ${msg}`;
+        }
+      }
+
+      function triggerAutosave(qId) {
+        showAutosaveStatus('', 'saving');
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+
+        debounceTimeout = setTimeout(() => {
+          const s = state[qId];
+          const payload = {
+            snapshotQuestionId: qId,
+            answer: s.answer,
+            isMarkedForReview: s.isMarkedForReview,
+            clientTimestamp: new Date().toISOString(),
+          };
+
+          fetch(`/exams/attempt/${attemptId}/save-answer`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.isExpired) {
+              triggerAutoExpire();
+              return;
+            }
+            if (data.remainingSeconds !== undefined) {
+              // Sync client remaining time with server
+              remainingSeconds = data.remainingSeconds;
+            }
+            showAutosaveStatus('', 'saved');
+            updatePalette();
+          })
+          .catch(err => {
+            console.error('Autosave failure:', err);
+            showAutosaveStatus('Retrying save...', 'danger');
+          });
+        }, 300); // 300ms debounce
+      }
+
+      // ── Event Handlers ─────────────────────────────────────────────────────
+      document.getElementById('prevBtn').addEventListener('click', () => {
+        goToQuestion(currentIndex - 1);
+      });
+
+      document.getElementById('nextBtn').addEventListener('click', () => {
+        goToQuestion(currentIndex + 1);
+      });
+
+      document.getElementById('reviewBtn').addEventListener('click', () => {
+        const qId = questions[currentIndex]._id;
+        state[qId].isMarkedForReview = !state[qId].isMarkedForReview;
+        renderCurrentQuestion();
+        triggerAutosave(qId);
+      });
+
+      document.getElementById('clearBtn').addEventListener('click', () => {
+        const qId = questions[currentIndex]._id;
+        state[qId].answer = null;
+        state[qId].isAnswered = false;
+        renderCurrentQuestion();
+        triggerAutosave(qId);
+      });
+
+      // Submit Dialog Preparation
+      function openSubmitModal() {
+        let answered = 0;
+        questions.forEach(q => {
+          if (state[q._id].isAnswered) answered++;
+        });
+
+        document.getElementById('modalAnsweredQ').innerText = answered;
+        document.getElementById('modalUnansweredQ').innerText = questions.length - answered;
+
+        const modal = new bootstrap.Modal(document.getElementById('submitModal'));
+        modal.show();
+      }
+
+      document.getElementById('finishExamBtn').addEventListener('click', openSubmitModal);
+      document.getElementById('sidebarSubmitBtn').addEventListener('click', openSubmitModal);
+
+      // Final Submission Action
+      document.getElementById('confirmSubmitBtn').addEventListener('click', function () {
+        if (isSubmitting) return;
+        isSubmitting = true;
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting...';
+
+        fetch(`/exams/attempt/${attemptId}/submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({}),
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.redirectUrl) {
+            window.location.href = data.redirectUrl;
+          } else {
+            alert(data.message || 'Error submitting examination.');
+            isSubmitting = false;
+            document.getElementById('confirmSubmitBtn').disabled = false;
+          }
+        })
+        .catch(err => {
+          console.error('Submission error:', err);
+          window.location.href = `/exams/results/${attemptId}`;
+        });
+      });
+
+      // Initialize first question
+      renderCurrentQuestion();
+    })();
+  </script>
+</body>
+</html>
+

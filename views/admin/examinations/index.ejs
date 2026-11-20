@@ -1,0 +1,160 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-journal-text me-2 text-primary"></i>Manage Examinations</h3>
+      <p class="text-muted small mb-0">Create, configure, and manage institutional examinations across courses.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/admin/examinations/create" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Create Examination
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/admin/examinations" class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <input type="text" name="search" class="form-control form-control-sm" placeholder="Search exams..." value="<%= filter.search || '' %>">
+        </div>
+        <div class="col-md-3">
+          <select name="category" class="form-select form-select-sm">
+            <option value="">All Categories</option>
+            <% categories.forEach(cat => { %>
+              <option value="<%= cat %>" <%= filter.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select form-select-sm">
+            <option value="all" <%= filter.status === 'all' ? 'selected' : '' %>>All Statuses</option>
+            <option value="draft" <%= filter.status === 'draft' ? 'selected' : '' %>>Draft</option>
+            <option value="published" <%= filter.status === 'published' ? 'selected' : '' %>>Published</option>
+            <option value="closed" <%= filter.status === 'closed' ? 'selected' : '' %>>Closed</option>
+            <option value="archived" <%= filter.status === 'archived' ? 'selected' : '' %>>Archived</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-1">
+          <button type="submit" class="btn btn-secondary btn-sm flex-grow-1">Filter</button>
+          <a href="/admin/examinations" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Examinations Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Title & Course</th>
+            <th>Category</th>
+            <th>Mode & Schedule</th>
+            <th>Marks & Time</th>
+            <th>Attempts</th>
+            <th>Status</th>
+            <th class="text-end" style="min-width: 140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (examinations && examinations.length > 0) { %>
+            <% examinations.forEach((exam, idx) => { %>
+              <tr>
+                <td class="text-muted small"><%= ((pagination.page - 1) * pagination.limit) + idx + 1 %></td>
+                <td>
+                  <div class="fw-semibold"><%= exam.title %></div>
+                  <div class="text-muted extra-small">
+                    <% if (exam.courseId) { %>
+                      <i class="bi bi-book me-1"></i><%= exam.courseId.title %>
+                    <% } else { %>
+                      <span class="badge bg-light text-secondary border">Standalone Exam</span>
+                    <% } %>
+                  </div>
+                </td>
+                <td><span class="badge bg-light text-dark border"><%= exam.category %></span></td>
+                <td>
+                  <span class="badge <%= exam.availabilityMode === 'scheduled' ? 'bg-primary-subtle text-primary' : 'bg-success-subtle text-success' %> border text-capitalize mb-1">
+                    <%= exam.availabilityMode %>
+                  </span>
+                  <% if (exam.availabilityMode === 'scheduled' && exam.startAt && exam.endAt) { %>
+                    <div class="extra-small text-muted">
+                      <%= new Date(exam.startAt).toLocaleDateString() %> - <%= new Date(exam.endAt).toLocaleDateString() %>
+                    </div>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="small fw-semibold"><%= exam.totalMarks %> marks (<%= exam.passingMarks %> to pass)</div>
+                  <div class="extra-small text-muted"><%= exam.durationMinutes %> mins duration</div>
+                </td>
+                <td>
+                  <span class="badge bg-secondary-subtle text-secondary border">Max <%= exam.maxAttempts %></span>
+                  <% if (exam.isLocked) { %>
+                    <span class="badge bg-warning-subtle text-warning border" title="Students have started attempts; structure locked"><i class="bi bi-lock-fill"></i> Locked</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="badge <%= exam.status === 'published' ? 'bg-success' : exam.status === 'draft' ? 'bg-secondary' : 'bg-danger' %>">
+                    <%= exam.status %>
+                  </span>
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <a href="/admin/examinations/<%= exam._id %>/edit" class="btn btn-outline-primary btn-sm py-0 px-2" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <!-- Quick Status Selector Form -->
+                    <form method="POST" action="/admin/examinations/<%= exam._id %>/status" class="d-inline">
+                      <% if (exam.status === 'draft') { %>
+                        <input type="hidden" name="status" value="published">
+                        <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" title="Publish Examination">
+                          <i class="bi bi-broadcast"></i>
+                        </button>
+                      <% } else if (exam.status === 'published') { %>
+                        <input type="hidden" name="status" value="closed">
+                        <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" title="Close Examination">
+                          <i class="bi bi-pause-circle"></i>
+                        </button>
+                      <% } else { %>
+                        <input type="hidden" name="status" value="published">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Reopen / Publish">
+                          <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                      <% } %>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <i class="bi bi-journal-x fs-2 d-block mb-2 text-secondary"></i>
+                No examinations found. Click <strong>Create Examination</strong> to build your first exam.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+      <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="text-muted small">Showing page <%= pagination.page %> of <%= pagination.totalPages %> (<%= pagination.totalCount %> items)</span>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= !pagination.hasPrev ? 'disabled' : '' %>">
+            <a class="page-link" href="/admin/examinations?page=<%= pagination.page - 1 %>&category=<%= filter.category || '' %>&status=<%= filter.status || '' %>&search=<%= filter.search || '' %>">Previous</a>
+          </li>
+          <li class="page-item <%= !pagination.hasNext ? 'disabled' : '' %>">
+            <a class="page-link" href="/admin/examinations?page=<%= pagination.page + 1 %>&category=<%= filter.category || '' %>&status=<%= filter.status || '' %>&search=<%= filter.search || '' %>">Next</a>
+          </li>
+        </ul>
+      </div>
+    <% } %>
+  </div>
+</div>
+

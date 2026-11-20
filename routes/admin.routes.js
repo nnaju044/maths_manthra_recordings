@@ -11,6 +11,9 @@ const dashCtrl = require('../controllers/admin/dashboard.controller');
 const courseCtrl = require('../controllers/admin/course.controller');
 const videoCtrl = require('../controllers/admin/video.controller');
 const certCtrl = require('../controllers/admin/certificate.controller');
+const questionCtrl = require('../controllers/admin/question.controller');
+const examCtrl = require('../controllers/admin/examination.controller');
+const examDashCtrl = require('../controllers/admin/exam.dashboard.controller');
 
 // All admin routes require auth (superadmin JWT)
 router.use(requireAuth);
@@ -57,5 +60,28 @@ router.post('/certificates/:id/update', certCtrl.postUpdate);
 router.post('/certificates/:id/toggle-active', certCtrl.toggleActive);
 router.post('/certificates/:id/delete', certCtrl.deleteStudent);
 router.get('/certificates/students', (req, res) => res.redirect('/admin/certificates'));
+
+// ── Examinations & Question Bank Module ──────────────────────────────────────
+// Exam Dashboard
+router.get('/examinations/dashboard', examDashCtrl.getDashboard);
+
+// Question Bank
+router.get('/questions', questionCtrl.index);
+router.get('/questions/create', questionCtrl.create);
+router.post('/questions', upload.single('image'), questionCtrl.store);
+router.get('/questions/template', questionCtrl.downloadTemplate);
+router.get('/questions/import', questionCtrl.getImport);
+router.post('/questions/import', uploadExcel.single('file'), questionCtrl.postImport);
+router.get('/questions/:id/edit', questionCtrl.edit);
+router.post('/questions/:id', upload.single('image'), questionCtrl.update);
+router.post('/questions/:id/toggle-status', questionCtrl.toggleStatus);
+
+// Examinations Management
+router.get('/examinations', examCtrl.index);
+router.get('/examinations/create', examCtrl.create);
+router.post('/examinations', upload.single('thumbnail'), examCtrl.store);
+router.get('/examinations/:id/edit', examCtrl.edit);
+router.post('/examinations/:id', upload.single('thumbnail'), examCtrl.update);
+router.post('/examinations/:id/status', examCtrl.updateStatus);
 
 module.exports = router;

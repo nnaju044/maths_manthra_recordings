@@ -1,0 +1,183 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Examination</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 small">
+          <li class="breadcrumb-item"><a href="/admin/examinations">Examinations</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Edit #<%= examination._id.toString().slice(-6) %></li>
+        </ol>
+      </nav>
+    </div>
+    <a href="/admin/examinations" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back to Examinations
+    </a>
+  </div>
+
+  <% if (hasAttempts) { %>
+    <div class="alert alert-warning d-flex align-items-center py-2 mb-4" role="alert">
+      <i class="bi bi-lock-fill fs-4 me-2"></i>
+      <div>
+        <strong>Exam is Locked:</strong> Student attempts have already started for this examination. 
+        Structural questions, duration, and baseline marks are preserved to maintain academic integrity and score consistency.
+      </div>
+    </div>
+  <% } %>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form method="POST" action="/admin/examinations/<%= examination._id %>" enctype="multipart/form-data">
+            
+            <!-- 1. Basic Information -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-info-circle me-2"></i>1. Basic Information</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-8">
+                <label class="form-label fw-semibold">Examination Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" value="<%= examination.title %>" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                <input type="text" name="category" class="form-control" list="categoryList" value="<%= examination.category %>" required>
+                <datalist id="categoryList">
+                  <% categories.forEach(cat => { %>
+                    <option value="<%= cat %>">
+                  <% }) %>
+                </datalist>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Associated Course / Programme</label>
+                <select name="courseId" class="form-select">
+                  <option value="">None (Independent Examination)</option>
+                  <% courses.forEach(c => { %>
+                    <option value="<%= c._id %>" <%= (examination.courseId && examination.courseId._id.toString() === c._id.toString()) ? 'selected' : '' %>><%= c.title %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Examination Thumbnail</label>
+                <% if (examination.thumbnail) { %>
+                  <div class="mb-2">
+                    <img src="<%= examination.thumbnail %>" alt="Thumbnail" class="img-thumbnail" style="max-height: 80px;">
+                  </div>
+                <% } %>
+                <input type="file" name="thumbnail" class="form-control" accept="image/*">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea name="description" class="form-control" rows="2"><%= examination.description || '' %></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Instructions for Candidates</label>
+                <textarea name="instructions" class="form-control" rows="2"><%= examination.instructions || '' %></textarea>
+              </div>
+            </div>
+
+            <!-- 2. Availability & Scheduling -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-clock-history me-2"></i>2. Availability & Scheduling</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Availability Mode</label>
+                <select name="availabilityMode" id="availabilityModeSelect" class="form-select" <%= hasAttempts ? 'disabled' : '' %>>
+                  <option value="anytime" <%= examination.availabilityMode === 'anytime' ? 'selected' : '' %>>Anytime</option>
+                  <option value="scheduled" <%= examination.availabilityMode === 'scheduled' ? 'selected' : '' %>>Scheduled</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 scheduled-field <%= examination.availabilityMode === 'scheduled' ? '' : 'd-none' %>">
+                <label class="form-label fw-semibold">Window Start Date & Time</label>
+                <input type="datetime-local" name="startAt" class="form-control" value="<%= examination.startAt ? new Date(examination.startAt).toISOString().slice(0, 16) : '' %>" <%= hasAttempts ? 'disabled' : '' %>>
+              </div>
+
+              <div class="col-md-4 scheduled-field <%= examination.availabilityMode === 'scheduled' ? '' : 'd-none' %>">
+                <label class="form-label fw-semibold">Window End Date & Time</label>
+                <input type="datetime-local" name="endAt" class="form-control" value="<%= examination.endAt ? new Date(examination.endAt).toISOString().slice(0, 16) : '' %>" <%= hasAttempts ? 'disabled' : '' %>>
+              </div>
+            </div>
+
+            <!-- 3. Examination & Scoring Rules -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-sliders me-2"></i>3. Examination & Scoring Rules</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Duration (Minutes)</label>
+                <input type="number" min="1" name="durationMinutes" class="form-control" value="<%= examination.durationMinutes %>" <%= hasAttempts ? 'readonly' : '' %>>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Total Marks</label>
+                <input type="number" min="1" name="totalMarks" class="form-control" value="<%= examination.totalMarks %>" <%= hasAttempts ? 'readonly' : '' %>>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Passing Marks</label>
+                <input type="number" min="0" name="passingMarks" class="form-control" value="<%= examination.passingMarks %>" <%= hasAttempts ? 'readonly' : '' %>>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Max Attempts</label>
+                <input type="number" min="1" max="10" name="maxAttempts" class="form-control" value="<%= examination.maxAttempts %>" <%= hasAttempts ? 'readonly' : '' %>>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" name="showResultsImmediately" value="true" id="resCheck" <%= examination.showResultsImmediately ? 'checked' : '' %>>
+                  <label class="form-check-label fw-semibold" for="resCheck">Show Results Immediately after Submission</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" name="certificateEnabled" value="true" id="certCheck" <%= examination.certificateEnabled ? 'checked' : '' %>>
+                  <label class="form-check-label fw-semibold" for="certCheck">Generate Official Examination Certificate on Pass</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Questions Selection -->
+            <% if (!hasAttempts) { %>
+              <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-question-diamond me-2"></i>4. Questions Selection</h5>
+              <div class="card border p-3 mb-4 bg-light" style="max-height: 360px; overflow-y: auto;">
+                <% availableQuestions.forEach(q => { 
+                     const isSelected = (examination.selectedQuestions || []).some(sq => (sq._id || sq).toString() === q._id.toString());
+                %>
+                  <div class="form-check border-bottom py-2">
+                    <input class="form-check-input" type="checkbox" name="selectedQuestions" value="<%= q._id %>" id="q_<%= q._id %>" <%= isSelected ? 'checked' : '' %>>
+                    <label class="form-check-label small" for="q_<%= q._id %>">
+                      <span class="badge bg-secondary-subtle text-secondary me-1"><%= q.questionType.toUpperCase() %></span>
+                      <span class="badge bg-light text-dark border me-1"><%= q.category %></span>
+                      <strong class="text-dark"><%= q.questionText %></strong>
+                      <span class="text-muted ms-2">(<%= q.marks %> pts)</span>
+                    </label>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <!-- Status -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Status</label>
+              <select name="status" class="form-select w-auto">
+                <option value="draft" <%= examination.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                <option value="published" <%= examination.status === 'published' ? 'selected' : '' %>>Published</option>
+                <option value="closed" <%= examination.status === 'closed' ? 'selected' : '' %>>Closed</option>
+                <option value="archived" <%= examination.status === 'archived' ? 'selected' : '' %>>Archived</option>
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a href="/admin/examinations" class="btn btn-light">Cancel</a>
+              <button type="submit" class="btn btn-primary px-4">Update Examination</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

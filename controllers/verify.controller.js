@@ -7,6 +7,7 @@
  */
 
 const CertificateStudent = require('../models/CertificateStudent');
+const ExamCertificate = require('../models/ExamCertificate');
 
 const QRCode = require('qrcode');
 
@@ -39,7 +40,69 @@ exports.verifyCertificatePublic = async (req, res, next) => {
     }
 
     // Lookup active student record by studentId, certificateNumber, or _id
-    const student = await CertificateStudent.findActiveByIdentifier(identifier);
+    let student = await CertificateStudent.findActiveByIdentifier(identifier);
+
+    // If not found in traditional CertificateStudent, check ExamCertificate
+    let examCert = null;
+    if (!student) {
+      examCert = await ExamCertificate.findOne({
+        $or: [
+          { certificateNumber: identifier },
+          { certificateNumber: identifier.toUpperCase() },
+          { verificationToken: identifier },
+          { verificationToken: identifier.toLowerCase() },
+        ],
+      })
+        .populate('studentId')
+        .populate('examinationId')
+        .populate('resultId');
+
+      if (examCert) {
+        // If certificate is revoked, render explicit revoked state
+        if (examCert.status === 'revoked') {
+          return res.status(403).render('verify', {
+            layout: false,
+            isValid: false,
+            isSearchOnly: false,
+            student: null,
+            certificateNumber: examCert.certificateNumber,
+            errorMessage: `Certificate "${examCert.certificateNumber}" has been officially REVOKED by Maths Manthra Academy. Reason: ${examCert.revocationReason || 'Administrative revocation'}.`,
+            pageTitle: 'Certificate Revoked | Maths Manthra Academy',
+            metaDescription: 'Official certificate verification status — Maths Manthra Academy.',
+          });
+        }
+
+        // Map examCert to verified student shape for verify.ejs
+        const examObtainedMarks = (examCert.resultId && typeof examCert.resultId.obtainedMarks === 'number')
+          ? examCert.resultId.obtainedMarks
+          : 100;
+        const examPercentage = (examCert.resultId && typeof examCert.resultId.percentage === 'number')
+          ? examCert.resultId.percentage
+          : 100;
+
+        student = {
+          _id: examCert.studentId?._id,
+          fullName: examCert.studentId?.fullName || 'Exam Candidate',
+          studentId: examCert.studentId?.studentId || examCert.certificateNumber,
+          certificateNumber: examCert.certificateNumber,
+          issuedDate: examCert.issueDate,
+          createdAt: examCert.createdAt,
+          isActive: true,
+          verificationStatus: true,
+          courseId: {
+            title: examCert.examinationId?.title || 'Certification Examination',
+            slug: examCert.examinationId?.slug || '',
+            certificateEnabled: true,
+          },
+          marks: examPercentage,
+          totalMark: examObtainedMarks,
+          isCertified: true,
+          hasFinalMarks: true,
+          academicPerformance: examCert.resultId?.isPassed ? 'Passed with Certification' : 'Completed',
+          overallProgress: `Verified Examination: ${examCert.examinationId?.title || 'Academic Exam'} (${examObtainedMarks} / ${examCert.resultId?.totalAvailableMarks || 0} marks)`,
+        };
+      }
+    }
 
     // If record doesn't exist or is not active
     if (!student || student.isActive !== true) {

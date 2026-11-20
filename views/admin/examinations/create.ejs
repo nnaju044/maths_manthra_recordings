@@ -1,0 +1,208 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-plus-circle me-2 text-primary"></i>Create Examination</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 small">
+          <li class="breadcrumb-item"><a href="/admin/examinations">Examinations</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Create</li>
+        </ol>
+      </nav>
+    </div>
+    <a href="/admin/examinations" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back to Examinations
+    </a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form method="POST" action="/admin/examinations" enctype="multipart/form-data">
+            
+            <!-- 1. Basic Information -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-info-circle me-2"></i>1. Basic Information</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-8">
+                <label class="form-label fw-semibold">Examination Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. ETCP Final Certification Examination" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                <input type="text" name="category" class="form-control" list="categoryList" placeholder="e.g. ETCP, Class 10" required>
+                <datalist id="categoryList">
+                  <% categories.forEach(cat => { %>
+                    <option value="<%= cat %>">
+                  <% }) %>
+                </datalist>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Associated Course / Programme (Optional)</label>
+                <select name="courseId" class="form-select">
+                  <option value="">None (Independent / Standalone Examination)</option>
+                  <% courses.forEach(c => { %>
+                    <option value="<%= c._id %>"><%= c.title %></option>
+                  <% }) %>
+                </select>
+                <div class="form-text">If associated, students enrolled in this course will automatically see this exam.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Examination Thumbnail (Optional)</label>
+                <input type="file" name="thumbnail" class="form-control" accept="image/*">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea name="description" class="form-control" rows="2" placeholder="Brief summary of syllabus and scope..."></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Instructions for Candidates</label>
+                <textarea name="instructions" class="form-control" rows="2">Please answer all questions carefully before submitting. Ensure an active internet connection. Do not close or refresh the window while the exam is in progress.</textarea>
+              </div>
+            </div>
+
+            <!-- 2. Availability & Scheduling -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-clock-history me-2"></i>2. Availability & Scheduling</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Availability Mode <span class="text-danger">*</span></label>
+                <select name="availabilityMode" id="availabilityModeSelect" class="form-select" required>
+                  <option value="anytime">Anytime (Candidate starts at will)</option>
+                  <option value="scheduled">Scheduled (Specific date & time window)</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 scheduled-field d-none">
+                <label class="form-label fw-semibold">Window Start Date & Time <span class="text-danger">*</span></label>
+                <input type="datetime-local" name="startAt" id="startAtInput" class="form-control">
+              </div>
+
+              <div class="col-md-4 scheduled-field d-none">
+                <label class="form-label fw-semibold">Window End Date & Time <span class="text-danger">*</span></label>
+                <input type="datetime-local" name="endAt" id="endAtInput" class="form-control">
+              </div>
+            </div>
+
+            <!-- 3. Examination & Scoring Rules -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-sliders me-2"></i>3. Examination & Scoring Rules</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Duration (Minutes) <span class="text-danger">*</span></label>
+                <input type="number" min="1" name="durationMinutes" class="form-control" value="60" required>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Total Marks <span class="text-danger">*</span></label>
+                <input type="number" min="1" name="totalMarks" class="form-control" value="100" required>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Passing Marks <span class="text-danger">*</span></label>
+                <input type="number" min="0" name="passingMarks" class="form-control" value="40" required>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Max Attempts Allowed</label>
+                <input type="number" min="1" max="10" name="maxAttempts" class="form-control" value="3">
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" name="negativeMarking" value="true" id="negCheck">
+                  <label class="form-check-label fw-semibold" for="negCheck">Enable Negative Marking</label>
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" name="randomizeQuestions" value="true" id="randQCheck">
+                  <label class="form-check-label fw-semibold" for="randQCheck">Randomize Question Order</label>
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" name="randomizeOptions" value="true" id="randOptCheck">
+                  <label class="form-check-label fw-semibold" for="randOptCheck">Randomize Option Order</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" name="showResultsImmediately" value="true" id="resCheck" checked>
+                  <label class="form-check-label fw-semibold" for="resCheck">Show Results Immediately after Submission</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" name="certificateEnabled" value="true" id="certCheck" checked>
+                  <label class="form-check-label fw-semibold" for="certCheck">Generate Official Examination Certificate on Pass</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Questions Selection -->
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="bi bi-question-diamond me-2"></i>4. Questions Selection</h5>
+            <p class="text-muted small">Select questions from the reusable Question Bank to include in this examination:</p>
+            
+            <div class="card border p-3 mb-4 bg-light" style="max-height: 360px; overflow-y: auto;">
+              <% if (availableQuestions && availableQuestions.length > 0) { %>
+                <% availableQuestions.forEach(q => { %>
+                  <div class="form-check border-bottom py-2">
+                    <input class="form-check-input" type="checkbox" name="selectedQuestions" value="<%= q._id %>" id="q_<%= q._id %>">
+                    <label class="form-check-label small" for="q_<%= q._id %>">
+                      <span class="badge bg-secondary-subtle text-secondary me-1"><%= q.questionType.toUpperCase() %></span>
+                      <span class="badge bg-light text-dark border me-1"><%= q.category %></span>
+                      <strong class="text-dark"><%= q.questionText %></strong>
+                      <span class="text-muted ms-2">(<%= q.marks %> pts)</span>
+                    </label>
+                  </div>
+                <% }) %>
+              <% } else { %>
+                <div class="text-center py-4 text-muted small">
+                  No active questions in Question Bank. <a href="/admin/questions/create" target="_blank">Add questions here</a> first.
+                </div>
+              <% } %>
+            </div>
+
+            <!-- 5. Initial Status -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Publish Status</label>
+              <select name="status" class="form-select w-auto">
+                <option value="draft" selected>Draft (Hidden from students)</option>
+                <option value="published">Published (Visible to eligible students)</option>
+              </select>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <a href="/admin/examinations" class="btn btn-light">Cancel</a>
+              <button type="submit" class="btn btn-primary px-4">Create Examination</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modeSelect = document.getElementById('availabilityModeSelect');
+  const scheduledFields = document.querySelectorAll('.scheduled-field');
+
+  function updateScheduleVisibility() {
+    if (modeSelect.value === 'scheduled') {
+      scheduledFields.forEach(f => f.classList.remove('d-none'));
+    } else {
+      scheduledFields.forEach(f => f.classList.add('d-none'));
+    }
+  }
+
+  modeSelect.addEventListener('change', updateScheduleVisibility);
+  document.addEventListener('DOMContentLoaded', updateScheduleVisibility);
+</script>
+

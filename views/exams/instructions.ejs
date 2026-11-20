@@ -1,0 +1,149 @@
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <!-- Breadcrumb navigation -->
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+          <li class="breadcrumb-item"><a href="/exams" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>Back to Exams</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= exam.title %></li>
+        </ol>
+      </nav>
+
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <!-- Header -->
+        <div class="card-header bg-primary text-white p-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <span class="badge bg-white text-primary mb-2 fw-semibold"><%= exam.category %></span>
+              <h3 class="fw-bold mb-1"><%= exam.title %></h3>
+              <p class="text-white-50 small mb-0"><%= exam.description || 'Formal assessment examination' %></p>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-white-50 text-white border border-white-50 px-3 py-2 rounded-pill">
+                <i class="bi bi-shield-check me-1"></i> Official Evaluation
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <!-- Key Exam Parameters -->
+          <h5 class="fw-bold text-dark mb-3">Examination Specification</h5>
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-md-3">
+              <div class="p-3 bg-light rounded-3 text-center border">
+                <div class="text-muted small text-uppercase">Time Limit</div>
+                <div class="fs-4 fw-bold text-primary"><%= exam.durationMinutes %> min</div>
+                <div class="text-muted" style="font-size: 11px;">Server-timed</div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="p-3 bg-light rounded-3 text-center border">
+                <div class="text-muted small text-uppercase">Total Questions</div>
+                <div class="fs-4 fw-bold text-dark"><%= questionsCount %></div>
+                <div class="text-muted" style="font-size: 11px;">In snapshot</div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="p-3 bg-light rounded-3 text-center border">
+                <div class="text-muted small text-uppercase">Total Marks</div>
+                <div class="fs-4 fw-bold text-success"><%= exam.totalMarks %></div>
+                <div class="text-muted" style="font-size: 11px;">Pass mark: <%= exam.passingMarks %></div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="p-3 bg-light rounded-3 text-center border">
+                <div class="text-muted small text-uppercase">Negative Mark</div>
+                <div class="fs-4 fw-bold <%= exam.negativeMarking ? 'text-danger' : 'text-secondary' %>">
+                  <%= exam.negativeMarking ? 'Active' : 'None' %>
+                </div>
+                <div class="text-muted" style="font-size: 11px;"><%= exam.negativeMarking ? 'Per question penalty' : 'No penalty' %></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Schedule & Attempt Limits -->
+          <div class="alert alert-light border rounded-3 p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <i class="bi bi-info-circle-fill text-primary me-2"></i>
+              <strong>Attempt Limit:</strong> You have used <strong><%= eligibility.attemptsCount || 0 %></strong> of <strong><%= exam.maxAttempts %></strong> allowed attempts.
+            </div>
+            <div>
+              <span class="badge bg-secondary-subtle text-secondary">
+                Mode: <%= exam.availabilityMode === 'scheduled' ? 'Scheduled Schedule' : 'Anytime Access' %>
+              </span>
+            </div>
+          </div>
+
+          <!-- Instructions & Guidelines -->
+          <h5 class="fw-bold text-dark mb-3">Important Examination Rules & Instructions</h5>
+          <div class="p-4 bg-light rounded-3 border mb-4">
+            <div class="mb-3 text-secondary lh-base">
+              <%- exam.instructions ? exam.instructions.replace(/\n/g, '<br>') : 'Answer all questions to the best of your ability.' %>
+            </div>
+
+            <hr class="my-3 text-muted">
+
+            <ul class="list-unstyled mb-0 small text-secondary">
+              <li class="mb-2 d-flex align-items-start gap-2">
+                <i class="bi bi-clock-history text-primary mt-1"></i>
+                <span><strong>Strict Server Clock:</strong> The countdown timer is calculated and enforced entirely on the server. Closing the tab, refreshing the page, or altering your local computer clock will not pause or extend your allotted time.</span>
+              </li>
+              <li class="mb-2 d-flex align-items-start gap-2">
+                <i class="bi bi-cloud-arrow-up text-primary mt-1"></i>
+                <span><strong>Live Autosave:</strong> Your selected answers are automatically transmitted and safely saved to the database. In case of accidental disconnection or reload, your progress will be fully restored.</span>
+              </li>
+              <li class="mb-2 d-flex align-items-start gap-2">
+                <i class="bi bi-shield-lock text-primary mt-1"></i>
+                <span><strong>Single Session Lock:</strong> You cannot open concurrent attempts for this examination. Starting this attempt consumes 1 of your allocated <%= exam.maxAttempts %> attempts.</span>
+              </li>
+              <li class="d-flex align-items-start gap-2">
+                <i class="bi bi-check2-circle text-primary mt-1"></i>
+                <span><strong>Auto-Finalization:</strong> If time expires before you submit manually, the system will automatically submit your saved responses.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Confirmation and Start Action -->
+          <% if (eligibility.eligible) { %>
+            <form action="/exams/<%= exam._id %>/start" method="POST" id="startExamForm">
+              <div class="form-check mb-4 p-3 bg-white border border-primary-subtle rounded-3">
+                <input class="form-check-input ms-0 me-2" type="checkbox" id="acknowledgeRules" required>
+                <label class="form-check-label fw-semibold text-dark small" for="acknowledgeRules">
+                  I have read and understood all the examination rules and instructions. I confirm that I am ready to begin my timed attempt.
+                </label>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <a href="/exams" class="btn btn-outline-secondary px-4 rounded-3">
+                  <i class="bi bi-arrow-left me-1"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg px-5 fw-bold rounded-3 shadow" id="beginExamBtn" disabled>
+                  <i class="bi bi-play-circle me-1"></i> Begin Examination Now
+                </button>
+              </div>
+            </form>
+
+            <script>
+              document.getElementById('acknowledgeRules').addEventListener('change', function() {
+                document.getElementById('beginExamBtn').disabled = !this.checked;
+              });
+            </script>
+          <% } else { %>
+            <div class="alert alert-warning border-warning d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+              <div>
+                <strong>Cannot Begin Examination:</strong> <%= eligibility.reason %>
+              </div>
+            </div>
+            <a href="/exams" class="btn btn-outline-secondary px-4 rounded-3">
+              <i class="bi bi-arrow-left me-1"></i> Return to Examination List
+            </a>
+          <% } %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

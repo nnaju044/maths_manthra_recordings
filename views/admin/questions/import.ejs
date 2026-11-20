@@ -1,0 +1,69 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>Import Questions via Excel</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 small">
+          <li class="breadcrumb-item"><a href="/admin/questions">Question Bank</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Import</li>
+        </ol>
+      </nav>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/admin/questions/template" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-download me-1"></i> Download Template (.xlsx)
+      </a>
+      <a href="/admin/questions" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Questions
+      </a>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <form method="POST" action="/admin/questions/import" enctype="multipart/form-data">
+            <div class="mb-4 text-center p-4 border border-2 border-dashed rounded bg-light">
+              <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-2 d-block"></i>
+              <h5 class="fw-bold">Select Spreadsheet File</h5>
+              <p class="text-muted small">Upload an Excel (.xlsx or .xls) file matching the Maths Manthra Question Template.</p>
+              <input type="file" name="file" class="form-control w-75 mx-auto" accept=".xlsx, .xls" required>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <a href="/admin/questions/template" class="text-decoration-none small">
+                <i class="bi bi-info-circle me-1"></i>Need the format? Download the official template.
+              </a>
+              <button type="submit" class="btn btn-primary px-4">Upload and Ingest</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Guidelines Card -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+          <h6 class="fw-bold mb-0"><i class="bi bi-lightbulb text-warning me-2"></i>Spreadsheet Format Guidelines</h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0 small text-muted">
+            <li class="mb-2"><strong>Question Text:</strong> Full text of the problem or question (Required).</li>
+            <li class="mb-2"><strong>Question Type:</strong> <code>single_choice</code>, <code>multiple_choice</code>, <code>true_false</code>, <code>fill_blank</code>, <code>short_answer</code>, or <code>descriptive</code>.</li>
+            <li class="mb-2"><strong>Options (A to D):</strong> Required for single and multiple choice questions.</li>
+            <li class="mb-2"><strong>Correct Answer:</strong>
+              <ul>
+                <li>For Single Choice: Enter option letter (e.g. <code>A</code>, <code>B</code>, <code>C</code>, or <code>D</code>).</li>
+                <li>For Multiple Choice: Comma-separated letters (e.g. <code>A,C,D</code>).</li>
+                <li>For True/False: Enter <code>True</code> or <code>False</code>.</li>
+                <li>For Fill in Blank: Pipe-separated accepted variants (e.g. <code>3.14 | 3.1416 | 22/7</code>).</li>
+              </ul>
+            </li>
+            <li><strong>Marks & Negative Marks:</strong> Numeric points awarded or deducted.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
