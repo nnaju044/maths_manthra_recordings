@@ -1,0 +1,36 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-<%= badgeType || 'secondary' %> text-white p-4 text-center">
+          <div class="mb-2">
+            <i class="bi bi-exclamation-octagon-fill display-5"></i>
+          </div>
+          <h4 class="fw-bold mb-1"><%= exam.title %></h4>
+          <p class="text-white-50 small mb-0">Examination Status Notice</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5 text-center">
+          <div class="alert alert-<%= badgeType === 'danger' ? 'danger' : 'light' %> border mb-4">
+            <i class="bi bi-info-circle me-1"></i> <%= notice %>
+          </div>
+
+          <p class="text-muted small">
+            If you believe this is an error or need access to this examination, please contact your course instructor or administrator.
+          </p>
+
+          <div class="mt-4">
+            <a href="/exams/login" class="btn btn-outline-primary px-4 rounded-3">
+              <i class="bi bi-arrow-left me-1"></i> Back to Exam Portal
+            </a>
+          </div>
+        </div>
+
+        <div class="card-footer bg-light p-3 text-center text-muted small border-0">
+          <i class="bi bi-shield-lock-fill me-1"></i> Maths Manthra Examination Platform
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -9,12 +9,17 @@ const courseCtrl = require('../controllers/course.controller');
 const certPublicCtrl = require('../controllers/certificate.controller');
 const scoresCtrl = require('../controllers/scores.controller');
 const verifyCtrl = require('../controllers/verify.controller');
+const examStudentCtrl = require('../controllers/exam.student.controller');
 const { requireCourseAccess } = require('../middleware/auth.middleware');
 
 // Root → redirect to admin login
 router.get('/', (req, res) => {
   res.redirect('/auth/login');
 });
+
+// ── Shareable Examination Public Link ─────────────────────────────────────────
+// e.g. https://recap.mathsmanthra.in/exam/:publicToken
+router.get('/exam/:publicToken', examStudentCtrl.showPublicExam);
 
 // ── Public Certificate & Student Verification ─────────────────────────────────
 router.get('/verify', verifyCtrl.showVerifySearch);

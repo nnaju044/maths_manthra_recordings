@@ -129,6 +129,78 @@ async function calculateExamEligibility(exam, studentId) {
   };
 }
 
+// ─── SHAREABLE PUBLIC EXAMINATION ACCESS ───────────────────────────────────────
+
+/**
+ * GET /exam/:publicToken
+ * Public entrypoint for a shareable examination link.
+ * Verifies publicToken existence, enforces published status, and routes student.
+ */
+exports.showPublicExam = async (req, res) => {
+  try {
+    const { publicToken } = req.params;
+    if (!publicToken || typeof publicToken !== 'string') {
+      req.flash('error', 'Invalid examination link.');
+      return res.redirect('/exams/login');
+    }
+
+    const exam = await Examination.findOne({ publicToken: publicToken.trim() })
+      .populate('courseId', 'title slug');
+
+    if (!exam) {
+      req.flash('error', 'Examination link not found or has been removed.');
+      return res.redirect('/exams/login');
+    }
+
+    // Strict publication status check: Only published exams allow new student access
+    if (exam.status !== 'published') {
+      const statusNotice = exam.status === 'draft'
+        ? 'This examination is currently in draft mode and is not open to students.'
+        : exam.status === 'closed'
+          ? 'This examination has been concluded and is no longer accepting new attempts.'
+          : 'This examination has been archived.';
+      return res.render('exams/notice', {
+        layout: 'layouts/main',
+        title: `${exam.title} — Not Available | Maths Manthra`,
+        exam,
+        notice: statusNotice,
+        badgeType: exam.status === 'draft' ? 'secondary' : 'danger',
+      });
+    }
+
+    // Set return URL to this exam's instructions / portal entry
+    if (req.session) {
+      req.session.examReturnTo = `/exams/${exam.slug}`;
+      req.session.targetExamId = exam._id.toString();
+      req.session.targetExamTitle = exam.title;
+    }
+
+    // If student is already verified in session, take them directly to instructions
+    if (req.session && req.session.examStudent && req.session.examStudent.studentId) {
+      return res.redirect(`/exams/${exam.slug}`);
+    }
+
+    // Otherwise render examination welcome & OTP authentication landing page
+    const questionsCount = exam.questionSelectionMode === 'manual'
+      ? (exam.selectedQuestions ? exam.selectedQuestions.length : 0)
+      : (exam.randomSelectionRules ? exam.randomSelectionRules.reduce((acc, r) => acc + (r.count || 0), 0) : 0);
+
+    res.render('exams/public_landing', {
+      layout: 'layouts/main',
+      title: `${exam.title} — Assessment | Maths Manthra`,
+      exam,
+      questionsCount,
+      email: req.session?.examLoginEmail || '',
+      step: req.session?.examLoginStep || 'email',
+      studentsList: req.session?.examCandidateStudents || [],
+    });
+  } catch (err) {
+    console.error('showPublicExam error:', err);
+    req.flash('error', 'Error opening examination.');
+    return res.redirect('/exams/login');
+  }
+};
+
 // ─── AUTHENTICATION CONTROLLER ──────────────────────────────────────────────────
 
 /**
@@ -239,6 +311,13 @@ exports.sendOTP = async (req, res) => {
     const otp = generateOTP();
     await EmailOTP.deleteMany({ email: rawEmail, verified: false });
     await EmailOTP.create({ email: rawEmail, otp });
+
+    // Development-only terminal OTP logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `\n[MATHS MANTHRA EXAM OTP]\nEmail: ${maskEmail(rawEmail)}\nOTP: ${otp}\nExpires: 10 minutes\n`
+      );
+    }
 
     // Send OTP email (or mock/log in test environment)
     const studentDisplayName = studentRecord.fullName || studentRecord.name || 'Student';
@@ -462,7 +541,12 @@ exports.showInstructions = async (req, res) => {
       return res.redirect('/exams');
     }
 
-    const eligibility = await calculateExamEligibility(exam, studentSession.studentId);
+    let eligibility = await calculateExamEligibility(exam, studentSession.studentId);
+    if (eligibility.requiresFinalization && eligibility.activeAttemptId) {
+      await finalizeAttempt(eligibility.activeAttemptId, 'expired');
+      eligibility = await calculateExamEligibility(exam, studentSession.studentId);
+    }
+
     const questionsCount = exam.questionSelectionMode === 'manual'
       ? (exam.selectedQuestions ? exam.selectedQuestions.length : 0)
       : (exam.randomSelectionRules ? exam.randomSelectionRules.reduce((acc, r) => acc + (r.count || 0), 0) : 0);
@@ -508,7 +592,13 @@ exports.startAttempt = async (req, res) => {
     }
 
     // Check server eligibility
-    const eligibility = await calculateExamEligibility(exam, studentId);
+    let eligibility = await calculateExamEligibility(exam, studentId);
+
+    // If an expired attempt exists that requires finalization, finalize it now
+    if (eligibility.requiresFinalization && eligibility.activeAttemptId) {
+      await finalizeAttempt(eligibility.activeAttemptId, 'expired');
+      eligibility = await calculateExamEligibility(exam, studentId);
+    }
 
     // If an active attempt already exists and is valid, resume it
     if (eligibility.hasActiveAttempt && eligibility.activeAttemptId) {
@@ -829,6 +919,10 @@ exports.saveAnswer = async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
+    // Update attempt's lastActivityAt timestamp
+    attempt.lastActivityAt = now;
+    await attempt.save();
+
     return res.json({
       success: true,
       savedAt: updatedResponse.lastSavedAt,
@@ -858,13 +952,29 @@ exports.submitAttempt = async (req, res) => {
     });
 
     if (!attempt) {
+      // Check if attempt was already finalized (e.g. by auto-expiry or earlier submit)
+      const finalizedResult = await ExamResult.findOne({ attemptId });
+      if (finalizedResult) {
+        const redirectUrl = `/exams/results/${attemptId}`;
+        if (req.xhr || req.headers.accept?.includes('application/json')) {
+          return res.json({
+            success: true,
+            message: 'Examination already submitted.',
+            redirectUrl,
+          });
+        }
+        return res.redirect(redirectUrl);
+      }
       return res.status(404).json({
         success: false,
         message: 'No in-progress attempt found to submit.',
       });
     }
 
-    const result = await finalizeAttempt(attempt._id, 'submitted');
+    // Server-enforced deadline check
+    const now = new Date();
+    const finalStatus = (now > new Date(attempt.expiresAt)) ? 'expired' : 'submitted';
+    const result = await finalizeAttempt(attempt._id, finalStatus);
 
     const redirectUrl = `/exams/results/${attempt._id}`;
     if (req.xhr || req.headers.accept?.includes('application/json')) {

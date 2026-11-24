@@ -92,6 +92,11 @@ const examAttemptSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    lastActivityAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
     submittedAt: {
       type: Date,
       default: null,

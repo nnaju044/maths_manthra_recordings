@@ -21,6 +21,10 @@ const generateExamSlug = (title) => {
   return `${base}-${suffix}`;
 };
 
+const generatePublicToken = () => {
+  return crypto.randomBytes(16).toString('hex'); // 32-character cryptographically secure token
+};
+
 const examinationSchema = new mongoose.Schema(
   {
     title: {
@@ -33,6 +37,13 @@ const examinationSchema = new mongoose.Schema(
       type: String,
       unique: true,
       index: true,
+    },
+    // Unique unguessable public token for shareable student link (/exam/:publicToken)
+    publicToken: {
+      type: String,
+      unique: true,
+      index: true,
+      sparse: true,
     },
     description: {
       type: String,
@@ -185,10 +196,13 @@ const examinationSchema = new mongoose.Schema(
   }
 );
 
-// Auto-generate slug before saving
+// Auto-generate slug and publicToken before saving
 examinationSchema.pre('save', function (next) {
   if (!this.slug) {
     this.slug = generateExamSlug(this.title);
+  }
+  if (!this.publicToken) {
+    this.publicToken = generatePublicToken();
   }
   next();
 });
@@ -198,4 +212,5 @@ examinationSchema.index({ title: 'text', description: 'text', category: 'text' }
 
 module.exports = mongoose.model('Examination', examinationSchema);
 module.exports.generateExamSlug = generateExamSlug;
+module.exports.generatePublicToken = generatePublicToken;
 

@@ -67,13 +67,21 @@
                 <td class="text-muted small"><%= ((pagination.page - 1) * pagination.limit) + idx + 1 %></td>
                 <td>
                   <div class="fw-semibold"><%= exam.title %></div>
-                  <div class="text-muted extra-small">
+                  <div class="text-muted extra-small mb-1">
                     <% if (exam.courseId) { %>
                       <i class="bi bi-book me-1"></i><%= exam.courseId.title %>
                     <% } else { %>
                       <span class="badge bg-light text-secondary border">Standalone Exam</span>
                     <% } %>
                   </div>
+                  <% if (exam.publicToken) { %>
+                    <div class="input-group input-group-sm mt-1" style="max-width: 280px;">
+                      <input type="text" class="form-control form-control-sm font-monospace extra-small bg-light" id="link-<%= exam._id %>" value="<%= typeof appUrl !== 'undefined' ? appUrl : '' %>/exam/<%= exam.publicToken %>" readonly>
+                      <button class="btn btn-outline-secondary btn-sm copy-link-btn" type="button" data-input-id="link-<%= exam._id %>" title="Copy public shareable link">
+                        <i class="bi bi-clipboard"></i>
+                      </button>
+                    </div>
+                  <% } %>
                 </td>
                 <td><span class="badge bg-light text-dark border"><%= exam.category %></span></td>
                 <td>
@@ -157,4 +165,25 @@
     <% } %>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.copy-link-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const inputId = this.getAttribute('data-input-id');
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+          const origIcon = this.innerHTML;
+          this.innerHTML = '<i class="bi bi-check-lg text-success"></i>';
+          setTimeout(() => { this.innerHTML = origIcon; }, 2000);
+        }).catch(err => {
+          console.error('Clipboard copy error:', err);
+        });
+      }
+    });
+  });
+});
+</script>
 

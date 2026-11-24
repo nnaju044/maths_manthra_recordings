@@ -15,6 +15,37 @@ const Course = require('../../models/Course');
 const ExamAttempt = require('../../models/ExamAttempt');
 
 /**
+ * Safe redirect helper for serverless / Vercel environments.
+ * Awaits session persistence before responding with HTTP 303 See Other
+ * to force the client to make a GET request and prevent redirect loops.
+ * Propagates session persistence errors to express error handler.
+ */
+function safeRedirect(req, res, targetUrl, next) {
+  if (res.headersSent) {
+    return;
+  }
+  const errorHandler = typeof next === 'function' ? next : (typeof req.next === 'function' ? req.next : null);
+  if (req.session && typeof req.session.save === 'function') {
+    return req.session.save((err) => {
+      if (err) {
+        console.error('Session save error during safeRedirect:', err.message);
+        if (errorHandler) {
+          return errorHandler(err);
+        }
+        if (!res.headersSent) {
+          return res.status(500).send('Session persistence failure');
+        }
+        return;
+      }
+      if (!res.headersSent) {
+        return res.redirect(303, targetUrl);
+      }
+    });
+  }
+  return res.redirect(303, targetUrl);
+}
+
+/**
  * GET /admin/examinations
  * List all examinations with statistics.
  */
@@ -135,7 +166,7 @@ exports.store = async (req, res, next) => {
 
     if (!title || !category) {
       req.flash('error', 'Please provide Examination Title and Category.');
-      return res.redirect('/admin/examinations/create');
+      return safeRedirect(req, res, '/admin/examinations/create', next);
     }
 
     let parsedStartAt = null;
@@ -143,13 +174,13 @@ exports.store = async (req, res, next) => {
     if (availabilityMode === 'scheduled') {
       if (!startAt || !endAt) {
         req.flash('error', 'Scheduled examinations require both Start Date/Time and End Date/Time.');
-        return res.redirect('/admin/examinations/create');
+        return safeRedirect(req, res, '/admin/examinations/create', next);
       }
       parsedStartAt = new Date(startAt);
       parsedEndAt = new Date(endAt);
       if (parsedEndAt <= parsedStartAt) {
         req.flash('error', 'Scheduled End Date must be after Start Date.');
-        return res.redirect('/admin/examinations/create');
+        return safeRedirect(req, res, '/admin/examinations/create', next);
       }
     }
 
@@ -190,7 +221,7 @@ exports.store = async (req, res, next) => {
     });
 
     req.flash('success', `Examination "${exam.title}" created successfully.`);
-    res.redirect('/admin/examinations');
+    return safeRedirect(req, res, '/admin/examinations', next);
   } catch (err) {
     next(err);
   }
@@ -208,7 +239,7 @@ exports.edit = async (req, res, next) => {
 
     if (!exam) {
       req.flash('error', 'Examination not found.');
-      return res.redirect('/admin/examinations');
+      return safeRedirect(req, res, '/admin/examinations', next);
     }
 
     // Check if any student attempts have started
@@ -330,7 +361,7 @@ exports.update = async (req, res, next) => {
     await exam.save();
 
     req.flash('success', `Examination "${exam.title}" updated successfully.`);
-    res.redirect('/admin/examinations');
+    return safeRedirect(req, res, '/admin/examinations', next);
   } catch (err) {
     next(err);
   }
@@ -345,24 +376,24 @@ exports.updateStatus = async (req, res, next) => {
     const { status } = req.body;
     if (!['draft', 'published', 'closed', 'archived'].includes(status)) {
       req.flash('error', 'Invalid examination status.');
-      return res.redirect('/admin/examinations');
+      return safeRedirect(req, res, '/admin/examinations', next);
     }
 
     const exam = await Examination.findById(req.params.id);
     if (!exam) {
       req.flash('error', 'Examination not found.');
-      return res.redirect('/admin/examinations');
+      return safeRedirect(req, res, '/admin/examinations', next);
     }
 
     // Validation before publishing
     if (status === 'published') {
       if (!exam.selectedQuestions || exam.selectedQuestions.length === 0) {
         req.flash('error', 'Cannot publish an examination without any selected questions.');
-        return res.redirect('/admin/examinations');
+        return safeRedirect(req, res, '/admin/examinations', next);
       }
       if (exam.availabilityMode === 'scheduled' && (!exam.startAt || !exam.endAt)) {
         req.flash('error', 'Cannot publish scheduled examination without Start and End times.');
-        return res.redirect('/admin/examinations');
+        return safeRedirect(req, res, '/admin/examinations', next);
       }
     }
 
@@ -371,7 +402,7 @@ exports.updateStatus = async (req, res, next) => {
     await exam.save();
 
     req.flash('success', `Examination status updated to "${status}".`);
-    res.redirect('/admin/examinations');
+    return safeRedirect(req, res, '/admin/examinations', next);
   } catch (err) {
     next(err);
   }

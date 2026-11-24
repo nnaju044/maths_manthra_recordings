@@ -12,6 +12,37 @@ const QuestionBank = require('../../models/QuestionBank');
 const xlsx = require('xlsx');
 
 /**
+ * Safe redirect helper for serverless / Vercel environments.
+ * Awaits session persistence before responding with HTTP 303 See Other
+ * to force the client to make a GET request and prevent redirect loops.
+ * Propagates session persistence errors to express error handler.
+ */
+function safeRedirect(req, res, targetUrl, next) {
+  if (res.headersSent) {
+    return;
+  }
+  const errorHandler = typeof next === 'function' ? next : (typeof req.next === 'function' ? req.next : null);
+  if (req.session && typeof req.session.save === 'function') {
+    return req.session.save((err) => {
+      if (err) {
+        console.error('Session save error during safeRedirect:', err.message);
+        if (errorHandler) {
+          return errorHandler(err);
+        }
+        if (!res.headersSent) {
+          return res.status(500).send('Session persistence failure');
+        }
+        return;
+      }
+      if (!res.headersSent) {
+        return res.redirect(303, targetUrl);
+      }
+    });
+  }
+  return res.redirect(303, targetUrl);
+}
+
+/**
  * GET /admin/questions
  * List all questions with filtering and pagination.
  */
@@ -123,7 +154,7 @@ exports.store = async (req, res, next) => {
 
     if (!questionText || !questionType || !category) {
       req.flash('error', 'Please fill in Question Text, Type, and Category.');
-      return res.redirect('/admin/questions/create');
+      return safeRedirect(req, res, '/admin/questions/create', next);
     }
 
     let parsedOptions = [];
@@ -142,7 +173,7 @@ exports.store = async (req, res, next) => {
 
       if (!singleCorrectOption) {
         req.flash('error', 'Please designate the single correct answer option.');
-        return res.redirect('/admin/questions/create');
+        return safeRedirect(req, res, '/admin/questions/create', next);
       }
       correctAnswers = [String(singleCorrectOption).trim()];
     } else if (questionType === 'multiple_choice') {
@@ -159,7 +190,7 @@ exports.store = async (req, res, next) => {
 
       if (correctAnswers.length === 0) {
         req.flash('error', 'Please select at least one correct option for Multiple Choice.');
-        return res.redirect('/admin/questions/create');
+        return safeRedirect(req, res, '/admin/questions/create', next);
       }
     } else if (questionType === 'true_false') {
       parsedOptions = [
@@ -175,7 +206,7 @@ exports.store = async (req, res, next) => {
 
       if (acceptedAnswers.length === 0) {
         req.flash('error', 'Please provide at least one accepted answer for Fill in the Blank.');
-        return res.redirect('/admin/questions/create');
+        return safeRedirect(req, res, '/admin/questions/create', next);
       }
       correctAnswers = [acceptedAnswers[0]];
     } else if (questionType === 'short_answer' || questionType === 'descriptive') {
@@ -215,7 +246,7 @@ exports.store = async (req, res, next) => {
     });
 
     req.flash('success', 'Question added to Question Bank successfully.');
-    res.redirect('/admin/questions');
+    return safeRedirect(req, res, '/admin/questions', next);
   } catch (err) {
     next(err);
   }
@@ -230,7 +261,7 @@ exports.edit = async (req, res, next) => {
     const question = await QuestionBank.findById(req.params.id);
     if (!question) {
       req.flash('error', 'Question not found.');
-      return res.redirect('/admin/questions');
+      return safeRedirect(req, res, '/admin/questions', next);
     }
 
     const categories = await QuestionBank.distinct('category');
@@ -256,7 +287,7 @@ exports.update = async (req, res, next) => {
     const question = await QuestionBank.findById(req.params.id);
     if (!question) {
       req.flash('error', 'Question not found.');
-      return res.redirect('/admin/questions');
+      return safeRedirect(req, res, '/admin/questions', next);
     }
 
     const {
@@ -358,7 +389,7 @@ exports.update = async (req, res, next) => {
     await question.save();
 
     req.flash('success', 'Question updated successfully.');
-    res.redirect('/admin/questions');
+    return safeRedirect(req, res, '/admin/questions', next);
   } catch (err) {
     next(err);
   }
@@ -373,12 +404,12 @@ exports.toggleStatus = async (req, res, next) => {
     const question = await QuestionBank.findById(req.params.id);
     if (!question) {
       req.flash('error', 'Question not found.');
-      return res.redirect('/admin/questions');
+      return safeRedirect(req, res, '/admin/questions', next);
     }
     question.status = question.status === 'active' ? 'archived' : 'active';
     await question.save();
     req.flash('success', `Question ${question.status === 'active' ? 'restored' : 'archived'} successfully.`);
-    res.redirect('/admin/questions');
+    return safeRedirect(req, res, '/admin/questions', next);
   } catch (err) {
     next(err);
   }
@@ -597,7 +628,7 @@ exports.postImport = async (req, res, next) => {
 
     if (questionsToInsert.length === 0) {
       req.flash('error', `Import failed with errors: ${errors.slice(0, 5).join(' ')}`);
-      return res.redirect('/admin/questions/import');
+      return safeRedirect(req, res, '/admin/questions/import', next);
     }
 
     await QuestionBank.insertMany(questionsToInsert);
@@ -607,7 +638,7 @@ exports.postImport = async (req, res, next) => {
       msg += ` Skipped ${errors.length} invalid rows.`;
     }
     req.flash('success', msg);
-    res.redirect('/admin/questions');
+    return safeRedirect(req, res, '/admin/questions', next);
   } catch (err) {
     next(err);
   }
