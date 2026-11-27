@@ -4,15 +4,6 @@
  * Compatible with standalone server, Docker, and Vercel serverless functions.
  */
 const mongoose = require('mongoose');
-const dns = require('dns');
-
-// If local DNS resolver fails with ECONNREFUSED on SRV lookup (common in macOS / sandbox setups),
-// fallback to reliable public DNS resolvers
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch (e) {
-  // Ignore in environments where setting servers is restricted
-}
 
 const getMongoUri = () => {
   const uri = (process.env.MONGO_URI || process.env.MONGODB_URI || process.env.MONGO_URL || '').trim();

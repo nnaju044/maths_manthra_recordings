@@ -34,7 +34,10 @@ const examSaveLimiter = rateLimit({
 });
 
 // ── Authentication Routes ─────────────────────────────────────────────────────
-router.get('/login', examStudentCtrl.showLogin);
+router.route('/login')
+  .get(examStudentCtrl.showLogin)
+  .post(examStudentCtrl.showLogin); // Defensive handler: renders login view without processing OTPs if a client preserves POST
+
 router.post('/send-otp', examAuthLimiter, examStudentCtrl.sendOTP);
 router.post('/verify-otp', examAuthLimiter, examStudentCtrl.verifyOTP);
 router.post('/logout', examStudentCtrl.logout);

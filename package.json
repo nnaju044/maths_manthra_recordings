@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
-    "test": "node tests/phase1_1_verification.test.js && node tests/deployment_checks.test.js && node tests/scores_feature.test.js"
+    "test": "node tests/phase1_1_verification.test.js && node tests/deployment_checks.test.js && node tests/scores_feature.test.js && node tests/shareable_exam_timer.test.js && node tests/dev_otp_logging.test.js && node tests/admin_question_redirect_cases.test.js && node tests/question_bank_form.test.js && node tests/exam_otp_redirect_303.test.js",
+    "test:all": "npm test && node tests/playwright_question_bank_browser.test.js",
+    "test:browser": "node tests/playwright_question_bank_browser.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

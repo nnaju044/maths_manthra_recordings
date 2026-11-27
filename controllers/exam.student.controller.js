@@ -22,6 +22,37 @@ const emailService = require('../services/email.service');
 const { evaluateResponse } = require('../utils/scoring');
 
 /**
+ * Safe redirect helper for serverless / Vercel environments.
+ * Awaits session persistence before responding with HTTP 303 See Other
+ * to force the client to make a GET request and prevent redirected POST loops or 404s.
+ * Propagates session persistence errors to express error handler.
+ */
+function safeRedirect(req, res, targetUrl, next) {
+  if (res.headersSent) {
+    return;
+  }
+  const errorHandler = typeof next === 'function' ? next : (typeof req.next === 'function' ? req.next : null);
+  if (req.session && typeof req.session.save === 'function') {
+    return req.session.save((err) => {
+      if (err) {
+        console.error('Session save error during safeRedirect:', err.message);
+        if (errorHandler) {
+          return errorHandler(err);
+        }
+        if (!res.headersSent) {
+          return res.status(500).send('Session persistence failure');
+        }
+        return;
+      }
+      if (!res.headersSent) {
+        return res.redirect(303, targetUrl);
+      }
+    });
+  }
+  return res.redirect(303, targetUrl);
+}
+
+/**
  * Helper: Generate 6-digit numeric OTP
  */
 function generateOTP() {
@@ -225,7 +256,7 @@ exports.showLogin = (req, res) => {
  * Step 1: Receives registered email, validates students in database.
  * If multiple students match, requires record selection before sending OTP.
  */
-exports.sendOTP = async (req, res) => {
+exports.sendOTP = async (req, res, next) => {
   try {
     const rawEmail = (req.body.email || '').trim().toLowerCase();
     if (!rawEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) {
@@ -233,7 +264,7 @@ exports.sendOTP = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
       }
       req.flash('error', 'Please enter a valid email address.');
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // Find all active students with this email
@@ -250,7 +281,7 @@ exports.sendOTP = async (req, res) => {
         });
       }
       req.flash('error', 'No registered student record found for this email. Please check your credentials.');
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // Check for cooldown on recent OTP
@@ -266,7 +297,7 @@ exports.sendOTP = async (req, res) => {
         return res.status(429).json({ success: false, message: waitMsg, cooldownSeconds: remainingSeconds });
       }
       req.flash('error', waitMsg);
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // If multiple students match and studentId was not specified in body
@@ -289,7 +320,7 @@ exports.sendOTP = async (req, res) => {
           message: 'Multiple records found. Please select your student profile to proceed.',
         });
       }
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // If studentId was supplied or only 1 match
@@ -301,7 +332,7 @@ exports.sendOTP = async (req, res) => {
           return res.status(400).json({ success: false, message: 'Invalid student profile selected.' });
         }
         req.flash('error', 'Invalid student profile selected.');
-        return res.redirect('/exams/login');
+        return safeRedirect(req, res, '/exams/login', next);
       }
     } else {
       studentRecord = matchingStudents[0];
@@ -341,7 +372,7 @@ exports.sendOTP = async (req, res) => {
         return res.status(500).json({ success: false, message: failMsg });
       }
       req.flash('error', failMsg);
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // Store in session for verification step
@@ -354,14 +385,14 @@ exports.sendOTP = async (req, res) => {
       return res.json({ success: true, message: okMsg });
     }
     req.flash('success', okMsg);
-    return res.redirect('/exams/login');
+    return safeRedirect(req, res, '/exams/login', next);
   } catch (err) {
     console.error('sendOTP error:', err);
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       return res.status(500).json({ success: false, message: 'Server error processing OTP request.' });
     }
     req.flash('error', 'Server error processing OTP request. Please try again.');
-    return res.redirect('/exams/login');
+    return safeRedirect(req, res, '/exams/login', next);
   }
 };
 
@@ -369,7 +400,7 @@ exports.sendOTP = async (req, res) => {
  * POST /exams/verify-otp
  * Step 2: Validates OTP and creates student examination session
  */
-exports.verifyOTP = async (req, res) => {
+exports.verifyOTP = async (req, res, next) => {
   try {
     const rawEmail = (req.body.email || req.session.examLoginEmail || '').trim().toLowerCase();
     const rawOtp = (req.body.otp || '').trim();
@@ -380,7 +411,7 @@ exports.verifyOTP = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
       }
       req.flash('error', 'Email and OTP are required.');
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     const otpRecord = await EmailOTP.findOne({ email: rawEmail, verified: false }).sort({ createdAt: -1 });
@@ -390,7 +421,7 @@ exports.verifyOTP = async (req, res) => {
         return res.status(400).json({ success: false, message: expiredMsg });
       }
       req.flash('error', expiredMsg);
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     if (otpRecord.attempts >= otpRecord.maxAttempts) {
@@ -400,7 +431,7 @@ exports.verifyOTP = async (req, res) => {
         return res.status(429).json({ success: false, message: lockoutMsg });
       }
       req.flash('error', lockoutMsg);
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     if (otpRecord.otp !== rawOtp) {
@@ -412,7 +443,7 @@ exports.verifyOTP = async (req, res) => {
         return res.status(400).json({ success: false, message: invalidMsg });
       }
       req.flash('error', invalidMsg);
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // OTP Valid! Delete OTP record
@@ -425,7 +456,7 @@ exports.verifyOTP = async (req, res) => {
         return res.status(404).json({ success: false, message: 'Student profile not active or found.' });
       }
       req.flash('error', 'Student profile not active or found.');
-      return res.redirect('/exams/login');
+      return safeRedirect(req, res, '/exams/login', next);
     }
 
     // Establish student exam session
@@ -453,14 +484,14 @@ exports.verifyOTP = async (req, res) => {
       return res.json({ success: true, redirectUrl: returnUrl });
     }
     req.flash('success', `Welcome, ${student.fullName || student.name}! Examination access verified.`);
-    return res.redirect(returnUrl);
+    return safeRedirect(req, res, returnUrl, next);
   } catch (err) {
     console.error('verifyOTP error:', err);
     if (req.xhr || req.headers.accept?.includes('application/json')) {
       return res.status(500).json({ success: false, message: 'Internal error verifying OTP.' });
     }
     req.flash('error', 'Internal error verifying OTP.');
-    return res.redirect('/exams/login');
+    return safeRedirect(req, res, '/exams/login', next);
   }
 };
 

@@ -9,9 +9,9 @@
  *    • YouTube/external → passthrough (no caching)
  */
 
-const CACHE_VERSION = 'mm-v1';
+const CACHE_VERSION = 'mm-v2';
 const PRECACHE_NAME = `precache-${CACHE_VERSION}`;
-const RUNTIME_NAME  = `runtime-${CACHE_VERSION}`;
+const RUNTIME_NAME = `runtime-${CACHE_VERSION}`;
 
 // ─── App Shell: Files to pre-cache on install ──────────────────────────────
 const PRECACHE_URLS = [
@@ -23,8 +23,6 @@ const PRECACHE_URLS = [
   '/js/admin.js',
   '/images/icon-192.png',
   '/images/icon-512.png',
-  '/images/icon-maskable-192.png',
-  '/images/icon-maskable-512.png',
   '/images/apple-touch-icon.png',
   '/images/MM_Logo.jpg',
   '/manifest.json',
@@ -65,7 +63,7 @@ self.addEventListener('fetch', (event) => {
 
   // Skip admin API routes and auth routes (never cache dynamic data)
   if (url.pathname.startsWith('/auth/') ||
-      url.pathname.startsWith('/admin/') && request.headers.get('accept')?.includes('application/json')) {
+    url.pathname.startsWith('/admin/') && request.headers.get('accept')?.includes('application/json')) {
     return;
   }
 
@@ -88,9 +86,9 @@ self.addEventListener('fetch', (event) => {
 // ─── Helper: Is this a static asset? ───────────────────────────────────────
 function isStaticAsset(pathname) {
   return /\.(css|js|png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot|json)$/i.test(pathname) ||
-         pathname.startsWith('/images/') ||
-         pathname.startsWith('/css/') ||
-         pathname.startsWith('/js/');
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/css/') ||
+    pathname.startsWith('/js/');
 }
 
 // ─── Strategy: StaleWhileRevalidate ────────────────────────────────────────
