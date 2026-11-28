@@ -673,7 +673,8 @@
             </button>
           </form>
           <div class="mt-3">
-            <a href="/certificate?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>" class="btn btn-sm btn-outline-light rounded-pill">
+            <a href="/certificate?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>"
+              class="btn btn-sm btn-outline-light rounded-pill">
               <i class="bi bi-arrow-repeat me-1"></i> Verify Again
             </a>
           </div>
@@ -708,10 +709,12 @@
               </div>
             </div>
             <div class="d-flex flex-wrap gap-2">
-              <a href="/certificate<%= selectedCourseSlug ? '?course=' + selectedCourseSlug : '' %>" class="btn btn-sm btn-outline-secondary rounded-pill">
+              <a href="/certificate<%= selectedCourseSlug ? '?course=' + selectedCourseSlug : '' %>"
+                class="btn btn-sm btn-outline-secondary rounded-pill">
                 <i class="bi bi-arrow-left"></i> Back
               </a>
-              <a href="/certificate?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>" class="btn btn-sm btn-outline-primary rounded-pill">
+              <a href="/certificate?reverify=1<%= selectedCourseSlug ? '&course=' + selectedCourseSlug : '' %>"
+                class="btn btn-sm btn-outline-primary rounded-pill">
                 <i class="bi bi-arrow-repeat me-1"></i> Verify Again
               </a>
             </div>
@@ -746,18 +749,21 @@
                   </div>
                 </div>
                 <div class="cert-info-right">
-                  <a href="/certificate/download/<%= s.certificateNumber %>" class="btn-download-cert">
+                  <a href="/certificate/download/<%= encodeURIComponent(s.certificateNumber) %>"
+                    class="btn-download-cert">
                     <i class="bi bi-download"></i> Download PDF
                   </a>
                   <div class="d-flex gap-2">
-                    <a href="/verify/<%= encodeURIComponent(s.certificateNumber) %>" target="_blank" class="btn btn-sm btn-outline-success rounded-pill" title="Public Certificate Verification">
+                    <a href="/verify/<%= encodeURIComponent(s.verifyTarget || s.certificateNumber) %>" target="_blank"
+                      class="btn btn-sm btn-outline-success rounded-pill" title="Public Certificate Verification">
                       <i class="bi bi-shield-check"></i> Verify
                     </a>
-                    <a href="/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>" class="btn btn-sm btn-outline-primary rounded-pill">
+                    <a href="/certificate?cert=<%= encodeURIComponent(s.certificateNumber) %>"
+                      class="btn btn-sm btn-outline-primary rounded-pill">
                       <i class="bi bi-eye"></i> View
                     </a>
                     <button class="btn btn-sm btn-outline-secondary rounded-pill"
-                      onclick="navigator.clipboard.writeText(window.location.origin + '/verify/<%= encodeURIComponent(s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
+                      onclick="navigator.clipboard.writeText(window.location.origin + '/verify/<%= encodeURIComponent(s.verifyTarget || s.certificateNumber) %>'); this.innerHTML='<i class=\'bi bi-check-lg\'></i> Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share\'></i> Share Link'; }, 2000);">
                       <i class="bi bi-share"></i> Share Link
                     </button>
                   </div>
@@ -785,7 +791,7 @@
                   <div class="small">This certificate is verified by Maths Manthra Academy records.</div>
                 </div>
               </div>
-              <a href="/certificate/download/<%= student.certificateNumber %>"
+              <a href="/certificate/download/<%= encodeURIComponent(student.certificateNumber) %>"
                 class="btn btn-sm btn-success rounded-pill px-3">
                 <i class="bi bi-download me-1"></i> Download PDF
               </a>
@@ -837,8 +843,8 @@
                   <div class="cert-field cert-field--completion-date">
                     <% const _certDateLong=student.courseId && student.courseId.certificateCompletionDate ? new
                       Date(student.courseId.certificateCompletionDate) : null; %>
-                      <%= _certDateLong ? _certDateLong.toLocaleDateString('en-IN', { day: 'numeric' , month: 'long' ,
-                        year: 'numeric' }) : 'Date Not Assigned' %>
+                      <%= (_certDateLong && !isNaN(_certDateLong.getTime())) ? _certDateLong.toLocaleDateString('en-IN',
+                        { day: 'numeric' , month: 'long' , year: 'numeric' }) : 'Date Not Assigned' %>
                   </div>
 
 
@@ -854,14 +860,16 @@
                 <i class="bi bi-search"></i> Search Another Certificate
               </a>
               <div class="d-flex gap-2">
-                <a href="/verify/<%= encodeURIComponent(student.certificateNumber) %>" target="_blank" class="btn btn-outline-success">
+                <a href="/verify/<%= encodeURIComponent(student.verifyTarget || student.certificateNumber) %>"
+                  target="_blank" class="btn btn-outline-success">
                   <i class="bi bi-shield-check me-1"></i> Verify Record
                 </a>
                 <button class="btn btn-outline-primary"
-                  onclick="navigator.clipboard.writeText(window.location.origin + '/verify/<%= encodeURIComponent(student.certificateNumber) %>'); alert('Public verification link copied to clipboard!');">
+                  onclick="navigator.clipboard.writeText(window.location.origin + '/verify/<%= encodeURIComponent(student.verifyTarget || student.certificateNumber) %>'); alert('Public verification link copied to clipboard!');">
                   <i class="bi bi-share-fill"></i> Share Link
                 </button>
-                <a href="/certificate/download/<%= student.certificateNumber %>" class="btn btn-primary">
+                <a href="/certificate/download/<%= encodeURIComponent(student.certificateNumber) %>"
+                  class="btn btn-primary">
                   <i class="bi bi-download me-1"></i> Download PDF
                 </a>
               </div>
@@ -1014,7 +1022,8 @@
   <footer class="py-4 text-center text-muted small border-top bg-white no-print">
     <div class="container">
       <p class="mb-1">📐 Maths Manthra Academy — Private Recorded Classes Portal</p>
-      <p class="mb-0 text-muted small">&copy; <%= new Date().getFullYear() %> Maths Manthra Academy. All rights reserved.</p>
+      <p class="mb-0 text-muted small">&copy; <%= new Date().getFullYear() %> Maths Manthra Academy. All rights
+          reserved.</p>
     </div>
   </footer>
 

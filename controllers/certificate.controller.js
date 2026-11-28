@@ -11,8 +11,210 @@ const ejs = require('ejs');
 const QRCode = require('qrcode');
 const CertificateStudent = require('../models/CertificateStudent');
 const Course = require('../models/Course');
+const ExamCertificate = require('../models/ExamCertificate');
 const EmailOTP = require('../models/EmailOTP');
 const { sendOTPEmail } = require('../services/email.service');
+
+/**
+ * Safe redirect helper for serverless / Vercel environments.
+ * Awaits session persistence before responding with HTTP 303 See Other.
+ */
+function safeRedirect(req, res, targetUrl, next) {
+  if (res.headersSent) {
+    return;
+  }
+  const errorHandler = typeof next === 'function' ? next : (typeof req.next === 'function' ? req.next : null);
+  if (req.session && typeof req.session.save === 'function') {
+    return req.session.save((err) => {
+      if (err) {
+        console.error('[Certificate] Session save error during safeRedirect:', err.message);
+        if (errorHandler) {
+          return errorHandler(err);
+        }
+        if (!res.headersSent) {
+          return res.status(500).send('Session persistence failure');
+        }
+        return;
+      }
+      if (!res.headersSent) {
+        return res.redirect(303, targetUrl);
+      }
+    });
+  }
+  return res.redirect(303, targetUrl);
+}
+
+/**
+ * Push a UI error message directly into res.locals.error for non-redirect renders.
+ */
+function pushLocalError(res, message) {
+  if (!message) return;
+  const existing = Array.isArray(res.locals.error) ? res.locals.error : [];
+  if (!existing.includes(message)) {
+    res.locals.error = [...existing, message];
+  }
+}
+
+/**
+ * Safely generate an inline SVG QR code for a certificate verification target.
+ * Returns empty string on missing target or QR generation failure (never mutates null).
+ */
+async function generateSafeQrSvg(req, verifyTarget) {
+  const cleanTarget = String(verifyTarget || '').trim();
+  if (!cleanTarget) {
+    return '';
+  }
+  try {
+    const rawAppUrl = (process.env.APP_URL || '').trim();
+    const host = req && typeof req.get === 'function' ? req.get('host') : '';
+    const baseUrl = rawAppUrl
+      ? rawAppUrl.replace(/\/$/, '')
+      : (host ? `${req.protocol || 'https'}://${host}` : '');
+    const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(cleanTarget)}`;
+    return await QRCode.toString(verifyUrl, {
+      type: 'svg',
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  } catch (err) {
+    console.warn('[Certificate] QR code generation error:', err.message);
+    return '';
+  }
+}
+
+function formatShortDate(value) {
+  const d = value ? new Date(value) : new Date();
+  const safeDate = isNaN(d.getTime()) ? new Date() : d;
+  return safeDate.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatLongDate(value, fallback = 'Date Not Assigned') {
+  if (!value) return fallback;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return fallback;
+  return d.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Resolve an active course certificate (CertificateStudent) or examination certificate (ExamCertificate)
+ * without ever issuing new certificate numbers or mutating database records.
+ */
+async function resolveCertificateRecord(rawIdentifier, { allowEmail = false } = {}) {
+  const identifier = String(rawIdentifier || '').trim();
+  if (!identifier) {
+    return { kind: 'empty' };
+  }
+
+  const courseQueries = [
+    { certificateNumber: identifier.toUpperCase() },
+    { certificateNumber: identifier },
+  ];
+  if (allowEmail) {
+    courseQueries.push({ email: identifier.toLowerCase() });
+  }
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    courseQueries.push({ _id: identifier });
+  }
+
+  const studentDoc = await CertificateStudent.findOne({
+    $or: courseQueries,
+    isActive: true,
+  }).populate('courseId');
+
+  if (studentDoc) {
+    if (!studentDoc.courseId) {
+      return {
+        kind: 'missing_relation',
+        message: 'The course record associated with this certificate could not be found.',
+      };
+    }
+
+    const certNum = (studentDoc.certificateNumber || '').trim();
+    const verifyTarget = certNum || (studentDoc.studentId || '').trim();
+    const issuedDate = studentDoc.issuedDate || studentDoc.createdAt || new Date();
+
+    return {
+      kind: 'course',
+      record: studentDoc,
+      certificateNumber: certNum,
+      verifyTarget,
+      studentName: studentDoc.fullName || studentDoc.name || 'Student',
+      email: (studentDoc.email || '').toLowerCase().trim(),
+      issuedDate: isNaN(new Date(issuedDate).getTime()) ? new Date() : new Date(issuedDate),
+      completionDateValue: studentDoc.courseId.certificateCompletionDate || null,
+      courseTitle: studentDoc.courseId.title || 'Course',
+    };
+  }
+
+  // Fallback: check ExamCertificate collection (new examination certificate system)
+  const examQueries = [
+    { certificateNumber: identifier.toUpperCase() },
+    { certificateNumber: identifier },
+    { verificationToken: identifier },
+    { verificationToken: identifier.toLowerCase() },
+  ];
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    examQueries.push({ _id: identifier });
+  }
+
+  const examCert = await ExamCertificate.findOne({ $or: examQueries })
+    .populate('studentId')
+    .populate('examinationId')
+    .lean();
+
+  if (examCert) {
+    if (examCert.status === 'revoked') {
+      return {
+        kind: 'revoked',
+        message: `Certificate "${examCert.certificateNumber}" has been officially revoked.${examCert.revocationReason ? ' Reason: ' + examCert.revocationReason : ''}`,
+      };
+    }
+
+    if (examCert.status !== 'valid') {
+      return {
+        kind: 'invalid_status',
+        message: `Certificate "${examCert.certificateNumber || ''}" is currently unavailable (status is not valid).`,
+      };
+    }
+
+    if (!examCert.studentId || examCert.studentId.isActive === false) {
+      return {
+        kind: 'missing_relation',
+        message: 'The student record associated with this examination certificate could not be found.',
+      };
+    }
+
+    if (!examCert.examinationId) {
+      return {
+        kind: 'missing_relation',
+        message: 'The examination record associated with this certificate could not be found.',
+      };
+    }
+
+    const issuedDate = examCert.issueDate || examCert.createdAt || new Date();
+    return {
+      kind: 'exam',
+      record: examCert,
+      certificateNumber: (examCert.certificateNumber || '').trim(),
+      verifyTarget: (examCert.verificationToken || examCert.certificateNumber || '').trim(),
+      studentName: examCert.studentId.fullName || examCert.studentId.name || 'Student',
+      email: (examCert.studentId.email || '').toLowerCase().trim(),
+      issuedDate: isNaN(new Date(issuedDate).getTime()) ? new Date() : new Date(issuedDate),
+      completionDateValue: issuedDate,
+      courseTitle: examCert.examinationId.title || 'Certification Examination',
+    };
+  }
+
+  return { kind: 'not_found' };
+}
 
 let puppeteerInstance = null;
 
@@ -110,33 +312,35 @@ exports.showCertificatePage = async (req, res, next) => {
 
     // Check if student certificate requested via cert number, email, or query
     let student = null;
+    let displayIssuedDate = new Date();
     const searchTerm = (cert || email || query || '').trim();
 
     if (searchTerm) {
-      student = await CertificateStudent.findOne({
-        $or: [
-          { certificateNumber: searchTerm.toUpperCase() },
-          { certificateNumber: searchTerm },
-          { email: searchTerm.toLowerCase() },
-        ],
-        isActive: true,
-      }).populate('courseId');
+      const resolved = await resolveCertificateRecord(searchTerm, { allowEmail: true });
 
-      // Block if certificate is disabled for this course
-      if (student && student.courseId && !student.courseId.certificateEnabled) {
+      if (resolved.kind === 'course' || resolved.kind === 'exam') {
+        const qrCodeSvg = await generateSafeQrSvg(req, resolved.verifyTarget);
+        displayIssuedDate = resolved.issuedDate;
+        student = {
+          fullName: resolved.studentName,
+          name: resolved.studentName,
+          email: resolved.email,
+          certificateNumber: resolved.certificateNumber,
+          verifyTarget: resolved.verifyTarget,
+          issuedDate: resolved.issuedDate,
+          courseId: {
+            title: resolved.courseTitle,
+            certificateCompletionDate: resolved.completionDateValue,
+          },
+          qrCode: qrCodeSvg,
+          isExamCertificate: resolved.kind === 'exam',
+        };
+      } else if (resolved.kind === 'revoked' || resolved.kind === 'invalid_status' || resolved.kind === 'missing_relation') {
         student = null;
-        req.flash('error', 'Certificate generation is currently disabled for this course.');
-        try {
-          const baseUrl = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
-          const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(student.certificateNumber)}`;
-          student.qrCode = await QRCode.toString(verifyUrl, {
-            type: 'svg',
-            margin: 1,
-            color: { dark: '#000000', light: '#ffffff' },
-          });
-        } catch (e) {
-          student.qrCode = '';
-        }
+        pushLocalError(res, resolved.message);
+      } else if (resolved.kind === 'not_found') {
+        student = null;
+        pushLocalError(res, `No active certificate found matching "${searchTerm}".`);
       }
     }
 
@@ -150,7 +354,7 @@ exports.showCertificatePage = async (req, res, next) => {
       verifiedEmail: '',
       searchTerm,
       msg,
-      issuedDate: new Date(),
+      issuedDate: displayIssuedDate,
       otpVerified: validateOTPGuard(req),
       layout: false,
     });
@@ -172,52 +376,50 @@ exports.handleCertificateAction = async (req, res, next) => {
       const trimmedQuery = (query || '').trim();
       if (!trimmedQuery) {
         req.flash('error', 'Please enter your email or certificate number to search.');
-        return res.redirect('/certificate');
+        return safeRedirect(req, res, '/certificate', next);
       }
 
-      const student = await CertificateStudent.findOne({
-        $or: [
-          { certificateNumber: trimmedQuery.toUpperCase() },
-          { certificateNumber: trimmedQuery },
-          { email: trimmedQuery.toLowerCase() },
-        ],
-        isActive: true,
-      });
+      const resolved = await resolveCertificateRecord(trimmedQuery, { allowEmail: true });
 
-      if (!student) {
+      if (resolved.kind === 'revoked' || resolved.kind === 'invalid_status' || resolved.kind === 'missing_relation') {
+        req.flash('error', resolved.message);
+        return safeRedirect(req, res, '/certificate', next);
+      }
+
+      if (resolved.kind === 'not_found' || !resolved.certificateNumber) {
         req.flash('error', `No certificate found matching "${trimmedQuery}". You can submit a request below.`);
-        return res.redirect(`/certificate?query=${encodeURIComponent(trimmedQuery)}&notfound=1`);
+        return safeRedirect(req, res, `/certificate?query=${encodeURIComponent(trimmedQuery)}&notfound=1`, next);
       }
 
-      return res.redirect(`/certificate?cert=${encodeURIComponent(student.certificateNumber)}`);
+      return safeRedirect(req, res, `/certificate?cert=${encodeURIComponent(resolved.certificateNumber)}`, next);
     }
 
     // ── Action 2: Request Certificate ──
     if (!fullName || !fullName.trim()) {
       req.flash('error', 'Please enter your full name.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     if (!email || !email.trim()) {
       req.flash('error', 'Please enter your email address.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     if (!courseId) {
       req.flash('error', 'Please select the completed course.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     const course = await Course.findById(courseId);
     if (!course) {
       req.flash('error', 'Selected course does not exist.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
-    // Block if certificate is disabled for this course
+    // Block NEW certificate requests if certificate generation is disabled for this course
     if (!course.certificateEnabled) {
       req.flash('error', 'Certificate generation is currently disabled for this course.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -230,7 +432,7 @@ exports.handleCertificateAction = async (req, res, next) => {
 
     if (student) {
       req.flash('success', `Certificate record located! Certificate Number: ${student.certificateNumber}`);
-      return res.redirect(`/certificate?cert=${encodeURIComponent(student.certificateNumber)}&msg=existing`);
+      return safeRedirect(req, res, `/certificate?cert=${encodeURIComponent(student.certificateNumber)}&msg=existing`, next);
     }
 
     // Auto-generate certificate number
@@ -249,7 +451,7 @@ exports.handleCertificateAction = async (req, res, next) => {
     });
 
     req.flash('success', `Congratulations! Your certificate has been issued. Certificate Number: ${certificateNumber}`);
-    return res.redirect(`/certificate?cert=${encodeURIComponent(student.certificateNumber)}&msg=issued`);
+    return safeRedirect(req, res, `/certificate?cert=${encodeURIComponent(student.certificateNumber)}&msg=issued`, next);
   } catch (err) {
     next(err);
   }
@@ -258,7 +460,7 @@ exports.handleCertificateAction = async (req, res, next) => {
 /**
  * POST /certificate/verify
  * Verify student eligibility by email.
- * Returns all active certificates for the given email address.
+ * Returns all active certificates (both course and examination) for the given email address.
  * REQUIRES OTP session — user must have verified their email via OTP first.
  */
 exports.verifyCertificate = async (req, res, next) => {
@@ -268,7 +470,7 @@ exports.verifyCertificate = async (req, res, next) => {
 
     if (!normalizedEmail) {
       req.flash('error', 'Please enter your email address to verify.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     // ── OTP Guard: ensure user has verified this email via OTP ──
@@ -276,18 +478,61 @@ exports.verifyCertificate = async (req, res, next) => {
       req.session.certificateVerifiedEmail !== normalizedEmail) {
       // Not yet verified — redirect to OTP flow
       req.flash('error', 'Please verify your email with OTP first (or your session may have expired).');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
-    // Find all active certificates for this email
-    const students = await CertificateStudent.find({
+    // Find all active student records for this email
+    const matchingStudents = await CertificateStudent.find({
       email: normalizedEmail,
       isActive: true,
     }).populate('courseId').sort({ createdAt: -1 });
 
-    if (!students || students.length === 0) {
+    const studentIds = matchingStudents.map(s => s._id);
+
+    // Find valid examination certificates linked to these student records
+    const examCerts = studentIds.length > 0
+      ? await ExamCertificate.find({
+        studentId: { $in: studentIds },
+        status: 'valid',
+      })
+        .populate('studentId')
+        .populate('examinationId')
+        .sort({ issueDate: -1 })
+      : [];
+
+    const courseCertEntries = matchingStudents
+      .filter(s => Boolean(s.certificateNumber && s.courseId))
+      .map(s => ({
+        fullName: s.fullName || s.name || 'Student',
+        name: s.name || s.fullName || 'Student',
+        email: s.email,
+        certificateNumber: s.certificateNumber,
+        verifyTarget: s.certificateNumber,
+        issuedDate: s.issuedDate || s.createdAt,
+        createdAt: s.createdAt,
+        courseId: s.courseId,
+      }));
+
+    const examCertEntries = examCerts
+      .filter(ec => Boolean(ec.certificateNumber && ec.studentId && ec.examinationId))
+      .map(ec => ({
+        fullName: ec.studentId.fullName || ec.studentId.name || 'Student',
+        name: ec.studentId.name || ec.studentId.fullName || 'Student',
+        email: ec.studentId.email,
+        certificateNumber: ec.certificateNumber,
+        verifyTarget: ec.verificationToken || ec.certificateNumber,
+        issuedDate: ec.issueDate || ec.createdAt,
+        createdAt: ec.createdAt,
+        courseId: {
+          title: ec.examinationId.title || 'Certification Examination',
+        },
+      }));
+
+    const verifiedStudents = [...courseCertEntries, ...examCertEntries];
+
+    if (verifiedStudents.length === 0) {
       req.flash('error', `No certificate found for "${email}". Please check your email or request a new certificate below.`);
-      return res.redirect('/certificate?notfound=1');
+      return safeRedirect(req, res, '/certificate?notfound=1', next);
     }
 
     // Load courses for the request form
@@ -299,7 +544,7 @@ exports.verifyCertificate = async (req, res, next) => {
       selectedCourse: null,
       selectedCourseSlug: '',
       student: null,
-      verifiedStudents: students,
+      verifiedStudents,
       verifiedEmail: normalizedEmail,
       searchTerm: '',
       msg: '',
@@ -315,10 +560,8 @@ exports.verifyCertificate = async (req, res, next) => {
 /**
  * GET /certificate/download/:certificateId
  * Generate and download official PDF certificate using Puppeteer.
+ * Supports both existing course certificates (CertificateStudent) and examination certificates (ExamCertificate).
  * REQUIRES OTP session — user must have verified their email via OTP first.
- *
- * Returns the PDF with proper headers so all browsers (mobile + desktop)
- * handle the download natively — no client-side JS required.
  */
 exports.downloadCertificate = async (req, res, next) => {
   let browser = null;
@@ -328,76 +571,56 @@ exports.downloadCertificate = async (req, res, next) => {
 
     if (!certParam) {
       req.flash('error', 'Certificate ID is required.');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     // ── OTP Guard: ensure user has verified their email via OTP ──
     if (!validateOTPGuard(req)) {
       req.flash('error', 'Please verify your email with OTP before downloading (session may have expired).');
-      return res.redirect('/certificate');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
-    const query = [
-      { certificateNumber: certParam.toUpperCase() },
-      { certificateNumber: certParam },
-    ];
+    const resolved = await resolveCertificateRecord(certParam, { allowEmail: false });
 
-    if (mongoose.Types.ObjectId.isValid(certParam)) {
-      query.push({ _id: certParam });
-    }
-
-    const student = await CertificateStudent.findOne({
-      $or: query,
-      isActive: true,
-    }).populate('courseId');
-
-    if (!student) {
+    if (resolved.kind === 'not_found' || resolved.kind === 'empty') {
       return res.status(404).render('404', {
         title: 'Certificate Not Found — Maths Manthra',
         message: 'The requested certificate could not be found.',
+        currentUser: null,
+        layout: false,
+      });
+    }
+
+    if (resolved.kind === 'revoked') {
+      return res.status(403).send(resolved.message);
+    }
+
+    if (resolved.kind === 'invalid_status') {
+      return res.status(403).send(resolved.message);
+    }
+
+    if (resolved.kind === 'missing_relation' || !resolved.certificateNumber) {
+      return res.status(404).render('404', {
+        title: 'Certificate Unavailable — Maths Manthra',
+        message: resolved.message || 'The requested certificate record is missing required details.',
+        currentUser: null,
+        layout: false,
       });
     }
 
     // Ensure the verified email matches the certificate's email
-    if (req.session.certificateVerifiedEmail !== student.email) {
+    const verifiedEmail = (req.session.certificateVerifiedEmail || '').toLowerCase().trim();
+    if (!resolved.email || verifiedEmail !== resolved.email) {
       req.flash('error', 'You can only download certificates associated with your verified email.');
-      return res.redirect('/certificate');
-    }
-
-    // Direct access protection: check if certificates are enabled for this course
-    if (student.courseId && student.courseId.certificateEnabled === false) {
-      return res.status(403).send('Certificate generation is currently disabled for this course.');
+      return safeRedirect(req, res, '/certificate', next);
     }
 
     // Dynamic dates
-    const issuedDate = new Date().toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    const issuedDate = formatShortDate(resolved.issuedDate);
+    const completionDate = formatLongDate(resolved.completionDateValue, 'Date Not Assigned');
 
-    const certDateLong = student.courseId && student.courseId.certificateCompletionDate
-      ? new Date(student.courseId.certificateCompletionDate)
-      : null;
-    const completionDate = certDateLong
-      ? certDateLong.toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-      : 'Date Not Assigned';
-
-    // Verification URL for QR code
-    const baseUrl = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
-    const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(student.certificateNumber)}`;
-    const qrCodeSvg = await QRCode.toString(verifyUrl, {
-      type: 'svg',
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#ffffff',
-      },
-    });
+    // Verification URL for QR code (safely defaults to '' if QR generation fails)
+    const qrCodeSvg = await generateSafeQrSvg(req, resolved.verifyTarget);
 
     // Template assets
     const { bgDataUri, sigDataUri } = getCertificateAssets();
@@ -405,12 +628,12 @@ exports.downloadCertificate = async (req, res, next) => {
     // Render HTML template
     const templatePath = path.join(__dirname, '../views/course/certificate-pdf.ejs');
     const html = await ejs.renderFile(templatePath, {
-      bgImagePath: bgDataUri,
-      signaturePath: sigDataUri,
-      qrCode: qrCodeSvg,
-      studentName: student.fullName || student.name || 'Student',
+      bgImagePath: bgDataUri || '',
+      signaturePath: sigDataUri || '',
+      qrCode: qrCodeSvg || '',
+      studentName: resolved.studentName,
       issuedDate,
-      certificateNumber: student.certificateNumber,
+      certificateNumber: resolved.certificateNumber,
       completionDate,
     });
 
@@ -466,11 +689,12 @@ exports.downloadCertificate = async (req, res, next) => {
     }));
 
     // Close browser immediately after PDF generation
-    await browser.close().catch(() => {});
+    await browser.close().catch(() => { });
     browser = null;
 
     // ── Send PDF with maximum browser compatibility headers ──
-    const filename = `MathsManthra-Certificate-${student.certificateNumber}.pdf`;
+    const safeFileCert = resolved.certificateNumber.replace(/[^A-Za-z0-9\-_.]/g, '_');
+    const filename = `MathsManthra-Certificate-${safeFileCert}.pdf`;
 
     res.set({
       'Content-Type': 'application/pdf',
@@ -485,10 +709,10 @@ exports.downloadCertificate = async (req, res, next) => {
   } catch (err) {
     console.error('[PDF Download] Error generating certificate:', err.message);
     req.flash('error', 'Failed to generate certificate PDF. Please try again.');
-    return res.redirect('/certificate');
+    return safeRedirect(req, res, '/certificate', next);
   } finally {
     if (browser) {
-      await browser.close().catch(() => {});
+      await browser.close().catch(() => { });
     }
   }
 };

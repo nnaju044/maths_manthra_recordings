@@ -184,7 +184,7 @@
 
         <!-- QR Code -->
         <div class="cert-field cert-field--qr">
-          <%- qrCode %>
+          <%- typeof qrCode !=='undefined' && qrCode ? qrCode : '' %>
         </div>
 
         <!-- Student Name -->
